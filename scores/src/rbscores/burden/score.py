@@ -10,8 +10,13 @@ Method, for one unit of text (paragraph, section or paper):
    counts as defined throughout. A defined single word also stops counting
    inside longer terms: if "apoptosis" is defined, "neuronal apoptosis" is
    weighted by its other words.
-3. Weight each remaining term by its unfamiliarity (0 to 1, the rarest
-   word's weight).
+3. Weight each remaining term by its unfamiliarity (0 to 1): the weight of
+   its rarest word **not already counted** in the unit. Terms are taken
+   shortest first (fewest unfamiliar words), then heaviest, then first to
+   appear, so "Pxl1" is counted once, "paxillin homolog Pxl1" adds only for
+   "paxillin" and "homolog", and "Pxl1 concentration" adds nothing and drops
+   off the list. The unfamiliar *words* are what the reader must bring; the
+   phrases are how they are shown.
 4. Add each citation marker in the unit with weight
    :data:`DEFAULT_CITATION_WEIGHT` (an external result the text leans on).
 5. Burden = (sum of term weights + citation weights) x 1000 / words.
@@ -89,7 +94,9 @@ class TermBurden:
     Attributes:
         key: Normalised term key.
         text: The most common way it is written.
-        weight: Unfamiliarity after removing defined words, 0 to 1.
+        weight: What the term adds to the burden, 0 to 1: the unfamiliarity
+            of its rarest word that is neither defined nor already counted
+            for another term in the unit.
         min_zipf: Zipf frequency of its rarest word.
         count: Occurrences in the unit.
         locations: Every occurrence, in document order.
@@ -194,20 +201,33 @@ def compute_burden(
     for located in terms:
         by_key[located.occurrence.key].append(located)
 
-    # Weight each term, skipping defined terms and defined words inside terms.
-    undefined: list[TermBurden] = []
+    # Word weights per term, with defined terms and defined words removed.
+    first_seen = {key: index for index, key in enumerate(by_key)}
+    word_weights: dict[str, dict[str, float]] = {}
     defined_used: set[str] = set()
     for key, group in by_key.items():
-        weight = max(_effective_weight(g.occurrence, defined_words) for g in group)
+        weights = _undefined_word_weights(group, defined_words)
         raw_weight = max(g.occurrence.weight for g in group)
-        if key in active.keys or weight == 0.0:
+        if key in active.keys or not weights:
             if raw_weight > 0.0:
                 defined_used.add(key)
             continue
-        undefined.append(_term_burden(key, group, weight))
+        word_weights[key] = weights
+
+    # Count each unfamiliar word once: shortest terms first, then heaviest.
+    order = sorted(
+        word_weights,
+        key=lambda k: (len(word_weights[k]), -max(word_weights[k].values()), first_seen[k]),
+    )
+    counted: set[str] = set()
+    undefined: list[TermBurden] = []
+    for key in order:
+        new = {w: x for w, x in word_weights[key].items() if w not in counted}
+        counted.update(new)
+        if new:
+            undefined.append(_term_burden(key, by_key[key], max(new.values())))
 
     # Rank: heaviest first, then most frequent, then first to appear.
-    first_seen = {key: index for index, key in enumerate(by_key)}
     undefined.sort(key=lambda t: (-t.weight, -t.count, first_seen[t.key]))
 
     term_total = sum(t.weight for t in undefined)
@@ -224,24 +244,26 @@ def compute_burden(
     )
 
 
-def _effective_weight(occurrence: TermOccurrence, defined_words: frozenset[str]) -> float:
-    """Return a term's weight with defined words set to zero.
+def _undefined_word_weights(
+    group: Sequence[LocatedTerm], defined_words: frozenset[str]
+) -> dict[str, float]:
+    """Collect a term's unfamiliar words that the document does not define.
 
     Args:
-        occurrence: A term occurrence.
+        group: The term's occurrences.
         defined_words: Single-word keys the document defines.
 
     Returns:
-        The largest weight among its words that are not defined.
+        Word key to its largest weight across occurrences, for words with a
+        weight above 0 that are not defined.
     """
-    return max(
-        (
-            w
-            for k, w in zip(occurrence.word_keys, occurrence.word_weights, strict=True)
-            if k not in defined_words
-        ),
-        default=0.0,
-    )
+    weights: dict[str, float] = {}
+    for located in group:
+        occurrence = located.occurrence
+        for word, weight in zip(occurrence.word_keys, occurrence.word_weights, strict=True):
+            if weight > 0.0 and word not in defined_words:
+                weights[word] = max(weight, weights.get(word, 0.0))
+    return weights
 
 
 def _term_burden(key: str, group: list[LocatedTerm], weight: float) -> TermBurden:
@@ -250,7 +272,7 @@ def _term_burden(key: str, group: list[LocatedTerm], weight: float) -> TermBurde
     Args:
         key: Term key.
         group: Its occurrences, in document order.
-        weight: Its effective weight.
+        weight: The weight it adds (its rarest word not already counted).
 
     Returns:
         The term's entry in the ranked list.

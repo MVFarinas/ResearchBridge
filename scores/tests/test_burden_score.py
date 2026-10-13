@@ -139,3 +139,20 @@ def test_zero_words_gives_zero_burden() -> None:
     assert (
         compute_burden([], words=0, citations=2, defined=EMPTY_DEFINITIONS).burden_per_1000 == 0.0
     )
+
+
+def test_each_unfamiliar_word_counts_once_per_unit() -> None:
+    """A rare word shared by several phrases adds its weight once; shorter terms go first."""
+    terms = [
+        LocatedTerm("p1", _term("paxillin homolog pxl1", 0, (1.0, 0.6, 1.0))),
+        LocatedTerm("p1", _term("pxl1", 30, (1.0,))),
+        LocatedTerm("p1", _term("pxl1 concentration", 40, (1.0, 0.0))),
+    ]
+    result = compute_burden(terms, words=1000, citations=0, defined=EMPTY_DEFINITIONS)
+    # Equal weights and counts are listed in order of first appearance.
+    assert [(t.key, t.weight) for t in result.undefined_terms] == [
+        ("paxillin homolog pxl1", 1.0),
+        ("pxl1", 1.0),
+    ]
+    assert result.burden_per_1000 == pytest.approx(2.0)
+    assert result.defined_terms == ()

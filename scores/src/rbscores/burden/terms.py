@@ -6,12 +6,14 @@ This is the term extraction shared with Phase 3's annotation targeting
 A term is found in three ways, over a spaCy-parsed paragraph:
 
 1. **Noun-phrase terms.** For each noun chunk, the *term core* runs from the
-   first word that is unfamiliar (burden weight above 0) or looks like an
-   abbreviation, to the end of the chunk (its head). "A large randomized
+   first word that is unfamiliar (burden weight at least
+   :data:`MIN_TERM_WEIGHT`) or looks like an abbreviation, to the end of the
+   chunk (its head). "A large randomized
    controlled trial" gives "randomized controlled trial"; "the new method"
    gives nothing, because every word is familiar. Only the part of the chunk
-   after its last comma, bracket or conjunction is used, so a mis-chunked
-   "ADP or AMPPNP, an analog" does not become one term.
+   after its last comma, bracket, conjunction or determiner is used, so a
+   mis-chunked "ADP or AMPPNP, an analog" or "consequently the absence" does
+   not become one term.
 2. **Abbreviations** inside chunks are covered by (1), since an abbreviation
    starts a core.
 3. **Single words** outside any core: unfamiliar verbs, adjectives, adverbs
@@ -46,6 +48,13 @@ _CORE_SEPARATORS: Final = frozenset({",", ";", ":", "(", ")", "[", "]"})
 _ABBREVIATION_SHAPE = re.compile(r"[A-Za-z0-9][A-Za-z0-9\-/+.]{1,11}")
 _MIN_ABBREVIATION_CAPITALS: Final = 2
 _MIN_LETTERS_AFTER_DIGIT_START: Final = 2
+
+MIN_TERM_WEIGHT: Final = 0.1
+"""A word must be at least this unfamiliar (Zipf below about 3.75) to start a term.
+
+Words just under the familiarity threshold ("consequently", "mortality") would
+otherwise start terms with negligible weight and clutter the ranked list.
+"""
 
 
 @dataclass(frozen=True, slots=True)
@@ -170,11 +179,14 @@ def _starts_term(token: Token, familiarity: Familiarity) -> bool:
         familiarity: Word-frequency source.
 
     Returns:
-        True for a term word that is an abbreviation or has a burden weight above 0.
+        True for a term word that is an abbreviation or has a burden weight of
+        at least :data:`MIN_TERM_WEIGHT`.
     """
     if not is_term_word(token):
         return False
-    return looks_like_abbreviation(token.text) or unfamiliarity(word_zipf(token, familiarity)) > 0
+    if looks_like_abbreviation(token.text):
+        return True
+    return unfamiliarity(word_zipf(token, familiarity)) >= MIN_TERM_WEIGHT
 
 
 def term_core(span: Span, familiarity: Familiarity) -> Span | None:
@@ -186,13 +198,13 @@ def term_core(span: Span, familiarity: Familiarity) -> Span | None:
 
     Returns:
         The span from the first term-starting word after the last separator
-        (comma, bracket, colon, semicolon or conjunction) to the end, or None
-        if no word there starts a term.
+        (comma, bracket, colon, semicolon, conjunction or determiner) to the
+        end, or None if no word there starts a term.
     """
     # Only the stretch after the last separator belongs to the phrase's head.
     begin = 0
     for index, token in enumerate(span):
-        if token.text in _CORE_SEPARATORS or token.pos_ == "CCONJ":
+        if token.text in _CORE_SEPARATORS or token.pos_ in {"CCONJ", "DET"}:
             begin = index + 1
 
     for index in range(begin, len(span)):

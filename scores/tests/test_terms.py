@@ -108,3 +108,12 @@ def test_real_frequencies_flag_jargon_not_everyday_words(
     weights = {t.key: t.weight for t in terms}
     assert weights.get("nephron", 0) > 0.5
     assert "kidney" not in weights
+
+
+def test_core_starts_after_a_determiner_and_needs_minimum_weight(
+    nlp: Language, make_familiarity: SyntheticFactory
+) -> None:
+    """Nearly familiar words do not start terms, and a determiner cuts the core."""
+    familiarity = make_familiarity({"consequently": 3.9, "paxillin": 1.0})
+    doc = nlp("Consequently the paxillin absence was clear.")
+    assert [t.key for t in extract_terms(doc, familiarity)] == ["paxillin absence"]

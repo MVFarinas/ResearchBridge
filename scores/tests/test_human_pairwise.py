@@ -61,6 +61,8 @@ def test_documented_example_is_valid(repo_root: Path) -> None:
         (lambda d: d["judgements"][0].update(harder="maybe"), "harder must be one of"),
         (lambda d: d["judgements"][0].update(passage_b="s1"), "compares a passage with itself"),
         (lambda d: d["judgements"][0].update(passage_b="nope"), "not a listed passage"),
+        (lambda d: d["judgements"][0].update(rater_id=["r01"]), "is not a listed rater"),
+        (lambda d: d["judgements"][0].update(passage_a={"x": 1}), "not a listed passage"),
         (lambda d: d["judgements"][0].update(shown_first="c"), "shown_first"),
         (lambda d: d["judgements"].append(dict(d["judgements"][1])), "repeats rater"),
         (lambda d: d.update(judgements=[]), "'judgements' must be a non-empty list"),

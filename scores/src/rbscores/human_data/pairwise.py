@@ -158,11 +158,12 @@ def _parse_judgements(items: Any, header: StudyHeader, problems: list[str]) -> l
         # References, verdict and display order.
         rater, first, second = item.get("rater_id"), item.get("passage_a"), item.get("passage_b")
         harder, shown = item.get("harder"), item.get("shown_first")
+        # IDs must be strings before the membership tests (a list is unhashable).
         errors = []
-        if rater not in header.raters:
+        if not isinstance(rater, str) or rater not in header.raters:
             errors.append(f"{where}.rater_id {rater!r} is not a listed rater")
         for name, value in (("passage_a", first), ("passage_b", second)):
-            if value not in header.passages:
+            if not isinstance(value, str) or value not in header.passages:
                 errors.append(f"{where}.{name} {value!r} is not a listed passage")
         if first == second:
             errors.append(f"{where} compares a passage with itself")

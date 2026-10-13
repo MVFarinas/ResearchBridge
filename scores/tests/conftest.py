@@ -53,6 +53,12 @@ class SyntheticFamiliarity:
 
 
 @pytest.fixture(scope="session")
+def repo_root() -> Path:
+    """The repository root (for committed fixtures and documented examples)."""
+    return REPO_ROOT
+
+
+@pytest.fixture(scope="session")
 def jats_fixtures() -> Path:
     """Directory of the real CC BY JATS fixtures committed with rbcore."""
     return JATS_FIXTURES

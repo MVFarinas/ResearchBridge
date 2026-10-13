@@ -17,11 +17,14 @@ paragraph:
 * ``gloss``: "X (Y)", "X (i.e., Y)" and "X, or Y,".
 
 For appositives and glosses either side may be the term ("IL-6 (a cytokine)"
-versus "programmed cell death (apoptosis)"). For an appositive, a side that
+versus "programmed cell death (apoptosis)"). For an appositive, the side that
 starts with a determiner ("a cytokine", "the protein") is the explanation and
-the other side the term. Otherwise the side with the less familiar words is
-taken as the defined term and the other as its explanation; if neither is
-less familiar, no definition is recorded. An explanation must contain a word
+the other side the term; an appositive with a determiner on neither or both
+sides is ignored, because spaCy's small model often mislabels plain noun
+phrases as appositives (parenthetical ones are handled as glosses). For a
+gloss, the side with the less familiar words is taken as the defined term and
+the other as its explanation; if neither is less familiar, no definition is
+recorded. An explanation must contain a word
 of three or more letters and must not be a citation, a figure or table
 reference, or a statistic.
 
@@ -262,7 +265,7 @@ class _Finder:
         self._record(DefinitionKind.COPULAR, self._phrase(subject), _subtree(attribute).text)
 
     def _appositive(self, token: Token) -> None:
-        """Record "X, a Y ...," and "a Y, X,", choosing which side is the term.
+        """Record "X, a Y ...," and "a Y, X,", the determiner marking the explanation.
 
         Args:
             token: Candidate appositive head.
@@ -274,15 +277,14 @@ class _Finder:
         if not len(anchor) or not len(appositive):
             return
 
-        # A determiner marks the describing side ("IL-6, a cytokine, ...").
+        # A determiner marks the describing side ("IL-6, a cytokine, ...");
+        # without exactly one, the direction (and often the parse) is unreliable.
         anchor_det = anchor[0].pos_ == "DET"
         appositive_det = appositive[0].pos_ == "DET"
         if appositive_det and not anchor_det:
             self._record_directed(DefinitionKind.APPOSITIVE, anchor, appositive)
         elif anchor_det and not appositive_det:
             self._record_directed(DefinitionKind.APPOSITIVE, appositive, anchor)
-        else:
-            self._record_pair(DefinitionKind.APPOSITIVE, anchor, appositive)
 
     def _or_gloss(self, token: Token) -> None:
         """Record "X, or Y," (but not the last item of a list "A, B, or C").

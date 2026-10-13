@@ -99,3 +99,12 @@ def test_offsets_index_the_paragraph(nlp: Language, familiarity: Familiarity) ->
     text = "First sentence here. Cells undergo a process known as autophagy."
     (definition,) = find_definitions(nlp(text), familiarity)
     assert text[definition.start : definition.end] == "autophagy"
+
+
+def test_misparsed_appositive_without_determiner_defines_nothing(
+    nlp: Language, make_familiarity: SyntheticFactory
+) -> None:
+    """SpaCy tags "hepatocytes" as an appositive of "Apoptosis" here; that is not a definition."""
+    familiarity = make_familiarity({"apoptosis": 1.0, "hepatocytes": 0.5, "hepatocyte": 0.5})
+    text = "Apoptosis, or programmed cell death, removed damaged hepatocytes."
+    assert _defined(nlp, familiarity, text) == [("gloss", "apoptosis")]

@@ -1,0 +1,36 @@
+{
+  "schema": "researchbridge.pairwise-judgements",
+  "version": 1,
+  "study_id": "synthetic-example-pairwise",
+  "synthetic": true,
+  "description": "SYNTHETIC example for the format documentation and tests. Not real data: the passages were written for this file and the judgements are invented.",
+  "passages": [
+    {
+      "passage_id": "s1",
+      "text": "The drug blocked a growth signal in liver cells.",
+      "source": {"licence": "CC0-1.0"}
+    },
+    {
+      "passage_id": "s2",
+      "text": "Pharmacological inhibition of mTORC1 attenuated S6K1 phosphorylation in hepatocytes.",
+      "source": {"licence": "CC0-1.0"}
+    },
+    {
+      "passage_id": "s3",
+      "text": "Mice that ate less lived longer than mice that ate freely.",
+      "source": {"licence": "CC0-1.0"}
+    }
+  ],
+  "raters": [
+    {"rater_id": "r01", "background": "secondary_or_less"},
+    {"rater_id": "r02", "background": "university_other_field"},
+    {"rater_id": "r03", "background": "not_reported"}
+  ],
+  "judgements": [
+    {"rater_id": "r01", "passage_a": "s1", "passage_b": "s2", "harder": "b", "shown_first": "a"},
+    {"rater_id": "r02", "passage_a": "s2", "passage_b": "s1", "harder": "a", "shown_first": "b"},
+    {"rater_id": "r03", "passage_a": "s1", "passage_b": "s2", "harder": "b"},
+    {"rater_id": "r01", "passage_a": "s1", "passage_b": "s3", "harder": "same"},
+    {"rater_id": "r02", "passage_a": "s3", "passage_b": "s2", "harder": "b"}
+  ]
+}

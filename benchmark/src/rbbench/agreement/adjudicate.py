@@ -97,6 +97,26 @@ class FinalLabel:
             "rater_values": dict(self.rater_values),
         }
 
+    @classmethod
+    def from_record(cls, record: Mapping[str, Any]) -> FinalLabel:
+        """Build a final label from its JSON form.
+
+        Args:
+            record: A dict written by :meth:`to_record`.
+
+        Returns:
+            The final label.
+        """
+        value = record["value"]
+        return cls(
+            unit=Unit(record["unit"]),
+            unit_id=str(record["unit_id"]),
+            code_id=str(record["code_id"]),
+            value=None if value is None else str(value),
+            basis=Basis(record["basis"]),
+            rater_values={str(k): str(v) for k, v in record["rater_values"].items()},
+        )
+
 
 AdjudicationKey = tuple[str, str, str]
 

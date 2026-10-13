@@ -5,23 +5,33 @@ Politeness rules (docs/conventions.md):
 * A per-host minimum interval between requests: arXiv 3 s, NCBI E-utilities
   about 3 per second without a key, 1 s for any other host by default.
 * A neutral User-Agent with no personal identifiers.
-* Small, cached, resumable downloads: a response is written to the cache
-  atomically and served from there on every later call, so an interrupted run
-  resumes where it stopped.
-* Responses are size-limited and treated as untrusted data.
+* Small, cached, resumable downloads: a response is written to a uniquely
+  named temporary file and atomically renamed into the cache, so neither a
+  crash nor two processes fetching the same URL can leave a truncated
+  response that later runs would trust. It is served from the cache on every
+  later call, so an interrupted run resumes where it stopped.
+* Responses are size-limited, checked against ``Content-Length``, and
+  treated as untrusted data.
+* Redirects are followed by hand (at most :data:`MAX_REDIRECTS`, http(s)
+  only), and every hop waits for its own host's interval.
 
 Retries: 429 and 5xx responses are retried with exponential backoff that
 honours a numeric ``Retry-After`` header (capped).
+
+Limitation: the rate limiter is per process; concurrent processes do not
+share intervals.
 """
 
 from __future__ import annotations
 
 import hashlib
+import tempfile
 import time
 from collections.abc import Callable, Mapping
+from dataclasses import dataclass
 from pathlib import Path
 from types import TracebackType
-from urllib.parse import urlsplit
+from urllib.parse import urljoin, urlsplit
 
 import httpx
 
@@ -36,12 +46,31 @@ DEFAULT_HOST_INTERVALS: Mapping[str, float] = {
 }
 DEFAULT_INTERVAL = 1.0
 DEFAULT_MAX_BYTES = 50 * 1024 * 1024
+MAX_REDIRECTS = 5
 _RETRY_STATUSES = frozenset({429, 500, 502, 503, 504})
+_REDIRECT_STATUSES = frozenset({301, 302, 303, 307, 308})
 _MAX_RETRY_AFTER = 60.0
 
 
 class FetchError(RuntimeError):
     """Raised when a URL cannot be fetched within the rules."""
+
+
+@dataclass(frozen=True, slots=True)
+class _Response:
+    """The parts of one HTTP response the fetcher acts on.
+
+    Attributes:
+        status: HTTP status code.
+        body: The body for success statuses, else empty.
+        retry_after: Seconds from a numeric ``Retry-After`` header, if any.
+        location: The ``Location`` header of a redirect, if any.
+    """
+
+    status: int
+    body: bytes = b""
+    retry_after: float | None = None
+    location: str | None = None
 
 
 class RateLimiter:
@@ -131,7 +160,8 @@ class PoliteFetcher:
             headers={"User-Agent": user_agent},
             timeout=timeout,
             transport=transport,
-            follow_redirects=True,
+            # Redirects are followed by hand so each hop is rate-limited.
+            follow_redirects=False,
         )
 
     def __enter__(self) -> PoliteFetcher:
@@ -186,70 +216,81 @@ class PoliteFetcher:
             The response body.
 
         Raises:
-            FetchError: For a non-http(s) URL, an oversized response, or a
+            FetchError: For a non-http(s) URL or redirect target, too many
+                redirects, an oversized or truncated response, or a
                 non-success status after retries.
         """
-        parts = urlsplit(url)
-        if parts.scheme not in {"http", "https"} or not parts.netloc:
-            raise FetchError(f"only absolute http(s) URLs may be fetched, got {url!r}")
-
+        _require_http(url)
         cached = self.cache_path(url) if use_cache else None
         if cached is not None and cached.is_file():
             return cached.read_bytes()
 
-        body = self._fetch_with_retries(url, parts.netloc.lower())
+        body = self._fetch_with_retries(url)
         if cached is not None:
-            # Write to a temporary file then rename, so a crash never leaves
-            # a truncated response that later runs would trust.
-            cached.parent.mkdir(parents=True, exist_ok=True)
-            partial = cached.with_suffix(".partial")
-            partial.write_bytes(body)
-            partial.replace(cached)
+            _write_atomically(cached, body)
         return body
 
-    def _fetch_with_retries(self, url: str, host: str) -> bytes:
-        """Fetch a URL, retrying 429/5xx responses with backoff.
+    def _fetch_with_retries(self, url: str) -> bytes:
+        """Fetch a URL, following redirects and retrying 429/5xx with backoff.
 
         Args:
-            url: The URL.
-            host: Its lower-case host, for rate limiting.
+            url: An absolute http(s) URL.
 
         Returns:
-            The response body.
+            The final response body.
 
         Raises:
-            FetchError: On a non-retryable status or when retries run out.
+            FetchError: On a non-retryable status, a bad or excessive
+                redirect, or when retries run out.
         """
         attempt = 0
+        redirects = 0
+        current = url
         while True:
-            self._limiter.wait(host)
-            status, retry_after, body = self._fetch_once(url)
-            if status < 300:
-                return body
-            if status not in _RETRY_STATUSES or attempt >= self._max_retries:
-                raise FetchError(f"GET {url} returned HTTP {status}")
+            # Every request, including each redirect hop, waits for its own host.
+            self._limiter.wait(urlsplit(current).netloc.lower())
+            response = self._fetch_once(current)
+            if response.location is not None:
+                if redirects >= MAX_REDIRECTS:
+                    raise FetchError(f"GET {url} exceeded {MAX_REDIRECTS} redirects")
+                current = urljoin(current, response.location)
+                _require_http(current)
+                redirects += 1
+                continue
+            if response.status < 300:
+                return response.body
+            if response.status not in _RETRY_STATUSES or attempt >= self._max_retries:
+                raise FetchError(f"GET {current} returned HTTP {response.status}")
             # Back off exponentially, but defer to the server's Retry-After.
-            delay = retry_after if retry_after is not None else 2.0**attempt
+            delay = response.retry_after if response.retry_after is not None else 2.0**attempt
             self._sleep(min(delay, _MAX_RETRY_AFTER))
             attempt += 1
 
-    def _fetch_once(self, url: str) -> tuple[int, float | None, bytes]:
-        """Perform one streamed GET, enforcing the size limit.
+    def _fetch_once(self, url: str) -> _Response:
+        """Perform one streamed GET without following redirects.
 
         Args:
             url: The URL.
 
         Returns:
-            ``(status, retry_after_seconds, body)``; the body is empty for
-            error statuses.
+            The status with the body (success), the ``Location`` (redirect)
+            or the ``Retry-After`` delay (error).
 
         Raises:
-            FetchError: If the body exceeds ``max_bytes`` or the request fails.
+            FetchError: If the body exceeds ``max_bytes``, is shorter or longer
+                than its ``Content-Length``, or the request fails.
         """
         try:
             with self._client.stream("GET", url) as response:
+                # A redirect without a Location is treated as an error status.
+                location = response.headers.get("location")
+                if response.status_code in _REDIRECT_STATUSES and location:
+                    return _Response(response.status_code, location=location)
                 if response.status_code >= 300:
-                    return response.status_code, _retry_after(response.headers), b""
+                    return _Response(
+                        response.status_code, retry_after=_retry_after(response.headers)
+                    )
+                # Stream with a running size check so a huge body is never held whole.
                 chunks: list[bytes] = []
                 size = 0
                 for chunk in response.iter_bytes():
@@ -257,9 +298,77 @@ class PoliteFetcher:
                     if size > self._max_bytes:
                         raise FetchError(f"GET {url} exceeded {self._max_bytes} bytes")
                     chunks.append(chunk)
-                return response.status_code, None, b"".join(chunks)
+                _check_length(url, response.headers, size)
+                return _Response(response.status_code, body=b"".join(chunks))
         except httpx.HTTPError as exc:
             raise FetchError(f"GET {url} failed: {exc}") from exc
+
+
+def _require_http(url: str) -> None:
+    """Refuse anything but an absolute http(s) URL.
+
+    Args:
+        url: The URL to check.
+
+    Raises:
+        FetchError: If the URL is not absolute http or https.
+    """
+    parts = urlsplit(url)
+    if parts.scheme not in {"http", "https"} or not parts.netloc:
+        raise FetchError(f"only absolute http(s) URLs may be fetched, got {url!r}")
+
+
+def _check_length(url: str, headers: httpx.Headers, size: int) -> None:
+    """Verify a body's size against ``Content-Length`` when it is comparable.
+
+    The header counts encoded bytes, so it is only compared when the body was
+    not content-encoded (httpx decodes gzip and similar transparently).
+
+    Args:
+        url: The URL, for the error message.
+        headers: Response headers.
+        size: Bytes received.
+
+    Raises:
+        FetchError: If the sizes differ (a truncated or padded response).
+    """
+    declared = headers.get("content-length")
+    encoding = headers.get("content-encoding", "identity").strip().lower()
+    if declared is None or not declared.strip().isdigit() or encoding != "identity":
+        return
+    if int(declared) != size:
+        raise FetchError(f"GET {url} returned {size} bytes, but Content-Length is {declared}")
+
+
+def _write_atomically(path: Path, body: bytes) -> None:
+    """Write a cache file through a uniquely named temporary file and rename it.
+
+    A unique name (not a fixed ``.partial``) means two processes fetching the
+    same URL never write into the same temporary file; the final rename
+    (``os.replace``) is atomic, so readers see either nothing or a whole body.
+
+    Args:
+        path: The cache file to create or replace.
+        body: Its content.
+
+    Raises:
+        OSError: If the file cannot be written; the temporary file is removed.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary: Path | None = None
+    try:
+        # Same directory as the target, so the rename never crosses filesystems.
+        with tempfile.NamedTemporaryFile(
+            dir=path.parent, prefix=f".{path.name}.", suffix=".tmp", delete=False
+        ) as handle:
+            temporary = Path(handle.name)
+            handle.write(body)
+        temporary.replace(path)
+    except BaseException:
+        # Never leave a half-written temporary file behind.
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
+        raise
 
 
 def _retry_after(headers: httpx.Headers) -> float | None:

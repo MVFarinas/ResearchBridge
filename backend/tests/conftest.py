@@ -7,6 +7,9 @@ from pathlib import Path
 
 import httpx
 import pytest
+from procrastinate import App
+from procrastinate.contrib.django import app as procrastinate_app
+from procrastinate.testing import InMemoryConnector
 from support import RecordedBucket
 
 from rb_backend.ingestion.pmc import PmcBucket
@@ -35,3 +38,11 @@ def fetcher(recorded: RecordedBucket, tmp_path: Path) -> Iterator[PoliteFetcher]
 def bucket(fetcher: PoliteFetcher) -> PmcBucket:
     """A bucket client on the fake host."""
     return PmcBucket(fetcher)
+
+
+@pytest.fixture
+def queue() -> Iterator[tuple[App, InMemoryConnector]]:
+    """The Procrastinate app with an in-memory connector instead of Postgres."""
+    connector = InMemoryConnector()
+    with procrastinate_app.replace_connector(connector) as app:
+        yield app, connector

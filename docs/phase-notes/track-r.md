@@ -37,7 +37,7 @@ with its 95% Wilson interval. Full report: [scores/reports/validation_1.md](../.
 | Metric | eLife | PLOS | Pooled | Pooled, length-matched |
 |---|---|---|---|---|
 | Composite readability | 88.8% [84.2, 92.2] | 66.9% [64.3, 69.3] | 70.1% [67.9, 72.3] | 69.0% [66.7, 71.2] |
-| Burden | 99.6% [97.7, 99.9] | 70.9% [68.5, 73.3] | 75.2% [73.0, 77.2] | 82.6% [80.7, 84.4] |
+| Burden | 99.6% [97.7, 99.9] | 70.9% [68.5, 73.3] | 75.2% [73.0, 77.2] | 82.6% [80.6, 84.3] |
 | Jargon density alone | 99.6% | 79.4% | 82.4% | 83.6% |
 | Flesch-Kincaid (baseline) | 95.0% | 59.0% | 64.4% | 63.1% |
 
@@ -51,7 +51,7 @@ What the results show:
   p < 0.001).
 - Detecting definitions does not help in this test: abstracts define about as many terms as
   lay summaries, mostly abbreviations. Ignoring definitions is still slightly better when
-  length-matched (85.1% vs 82.6% pooled, p < 0.001), after the fix below.
+  length-matched (85.0% vs 82.6% pooled, p < 0.001), after the fix below.
 - None of this is a human-difficulty result. The "truth" is a genre label.
 
 ## Definition-detection precision (review fix round 1)
@@ -73,6 +73,39 @@ Abbreviations were 28 of 29 correct in the held-out sample; the other kinds 16 o
 parenthetical glosses the weakest (2 of 6). One labeller, no agreement figure; recall
 unmeasured. The burden score's definition step should not be relied on beyond this until the
 "terms I don't know" study measures whether defined terms really cost readers nothing.
+
+## Review fix round 2
+
+- **Names in attribution sentences are no longer terms.** An eLife Insight's "Now, in eLife,
+  Rut Carballido-López and colleagues ... including Wei Mao (Université Paris-Saclay)" put
+  "carballido", "université paris saclay" and "elife" in the top 20 of the ranked-term list.
+  Three patterns now exclude such names (`rbscores.burden.references.find_personal_names`):
+  names before "and colleagues" (and similar), "Surname et al." without a year, and a
+  parenthesised affiliation with a capitalised institution word, together with the names
+  before it. A JATS document's own journal title and NLM abbreviation are not terms where the
+  text mentions them (`TextDocument.names`). NER is still not used (decision 4). On the five
+  committed fixtures these changes removed only names (eLife Insight: 7 keys; PLOS Medicine:
+  "plos medicine") and changed no definition or citation count.
+- **More stock parentheticals** (colour and marker combinations such as "black arrowheads",
+  controls, vehicle, scale and error bars, open or filled symbols, insets, log-rank) are not
+  glosses.
+- **Lower-case Schwartz-Hearst short forms need word initials.** In the "long form (SF)" order
+  a short form with no capital or digit must contain the first letters of the long form's
+  words in order ("base pairs (bp)"), so "increased in hepatocytes (inset)" is no
+  abbreviation. *Deviation from the review's suggestion* (a word-frequency guard): wordfreq
+  cannot separate the cases, as "inset" (Zipf 2.85) is rarer than "bp" (3.83).
+- **Recall fixes.** "Mean", "median" and "CI" count as statistics only in a statistical shape,
+  so "carpal tunnel syndrome (compression of the median nerve)" is a gloss again. A numbered
+  name ("trisomy 21", one or two digits after a word that is not all capitals) may be the
+  defined side of a gloss, never the explanation; quantities ("EUR 5000", "12 mice") still
+  rule a parenthetical out.
+- **"X and Y, YEAR" needs the comma** to be a citation (eLife house style), so "the Wnt and
+  Notch 2019 consortium" is not one.
+- **`make test` and `make typecheck` now fail on the first failing package** under macOS's
+  GNU Make 3.81, which ignores `.SHELLFLAGS`. This is a Phase 0 issue; it is recorded in
+  Phase 0's notes and fixed on this branch.
+- Validation 1 was re-run: only burden rows moved, by at most 0.1 points (tables updated).
+  The 88.0% definition precision was measured before these changes and was not re-measured.
 
 ## How to run
 
@@ -192,6 +225,9 @@ make setup && make check                      # lint, typecheck, tests (no netwo
   and gerunds.
 - **Burden per 1,000 words depends on length**, because terms count once per unit. Compare units
   of similar length.
+- **Names outside the recognised patterns still count as terms**: a researcher named without
+  "and colleagues", "et al." or an affiliation ("as Carballido-López showed"), another
+  journal's name, or a place. Proper names are a disclosed limitation of not using NER.
 - **Citation patterns** cover numeric brackets and author-year forms only. Superscript citations
   lose their marking in JATS flattening and are not counted.
 - **Validation 1 caveats:** corpus tokenisation artefacts; truncation keeps the opening of the

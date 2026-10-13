@@ -26,7 +26,7 @@ inserted verbatim from [validation_1_tables.md](validation_1_tables.md), both wr
 - **The composite beats Flesch-Kincaid on PLOS** (66.9% vs 59.0%, p < 0.001) **but not on
   eLife** (88.8% vs 95.0%, p = 0.006).
 - **Definition detection does not help here.** Ignoring definitions makes no significant
-  difference on full texts (pooled p = 0.382) and is slightly better when length-matched (85.1%
+  difference on full texts (pooled p = 0.378) and is slightly better when length-matched (85.0%
   vs 82.6%, p < 0.001). Abstracts define about as many terms as lay summaries, mostly
   abbreviations, so this test cannot reward definition detection. Whether a defined term
   really costs readers nothing is a question for the "terms I don't know" study. The
@@ -150,8 +150,8 @@ incorrect.
 | Passive-voice rate | 33.2% [27.6, 39.4]; 21 ties | 48.2% [45.6, 50.8]; 136 ties | 45.9% [43.5, 48.4]; 157 ties |
 | Jargon density | 99.6% [97.7, 99.9] | 80.8% [78.6, 82.8]; 3 ties | 83.6% [81.7, 85.3]; 3 ties |
 | **Composite readability** | 90.5% [86.1, 93.6] | 65.2% [62.6, 67.7] | 69.0% [66.7, 71.2] |
-| **Burden** | 97.9% [95.2, 99.1] | 79.9% [77.7, 82.0] | 82.6% [80.7, 84.4] |
-| Burden, definitions ignored (ablation) | 97.9% [95.2, 99.1] | 82.8% [80.8, 84.7] | 85.1% [83.3, 86.7] |
+| **Burden** | 97.9% [95.2, 99.1] | 79.9% [77.7, 81.9] | 82.6% [80.6, 84.3] |
+| Burden, definitions ignored (ablation) | 97.9% [95.2, 99.1] | 82.8% [80.7, 84.7] | 85.0% [83.2, 86.7] |
 | Flesch-Kincaid grade (baseline, not ours) | 96.7% [93.6, 98.3] | 57.3% [54.6, 59.9]; 2 ties | 63.1% [60.8, 65.5]; 2 ties |
 
 ### Paired comparisons (exact McNemar test on discordant pairs)
@@ -163,19 +163,19 @@ incorrect.
 | Burden vs Burden, definitions ignored (ablation), full | eLife | 240 | 0 | 1 | 0 | 1.000 |
 | Composite readability vs Flesch-Kincaid grade (baseline, not ours), full | PLOS | 705 | 215 | 107 | 349 | < 0.001 |
 | Composite readability vs Jargon density, full | PLOS | 770 | 150 | 323 | 133 | < 0.001 |
-| Burden vs Burden, definitions ignored (ablation), full | PLOS | 928 | 48 | 57 | 343 | 0.435 |
+| Burden vs Burden, definitions ignored (ablation), full | PLOS | 929 | 47 | 56 | 344 | 0.431 |
 | Composite readability vs Flesch-Kincaid grade (baseline, not ours), full | Pooled | 913 | 221 | 128 | 355 | < 0.001 |
 | Composite readability vs Jargon density, full | Pooled | 984 | 150 | 349 | 134 | < 0.001 |
-| Burden vs Burden, definitions ignored (ablation), full | Pooled | 1168 | 48 | 58 | 343 | 0.382 |
+| Burden vs Burden, definitions ignored (ablation), full | Pooled | 1169 | 47 | 57 | 344 | 0.378 |
 | Composite readability vs Flesch-Kincaid grade (baseline, not ours), matched | eLife | 213 | 5 | 20 | 3 | 0.004 |
 | Composite readability vs Jargon density, matched | eLife | 218 | 0 | 22 | 1 | < 0.001 |
 | Burden vs Burden, definitions ignored (ablation), matched | eLife | 235 | 1 | 1 | 4 | 1.000 |
 | Composite readability vs Flesch-Kincaid grade (baseline, not ours), matched | PLOS | 668 | 229 | 120 | 359 | < 0.001 |
 | Composite readability vs Jargon density, matched | PLOS | 755 | 142 | 357 | 122 | < 0.001 |
-| Burden vs Burden, definitions ignored (ablation), matched | PLOS | 1082 | 18 | 58 | 218 | < 0.001 |
+| Burden vs Burden, definitions ignored (ablation), matched | PLOS | 1082 | 17 | 57 | 220 | < 0.001 |
 | Composite readability vs Flesch-Kincaid grade (baseline, not ours), matched | Pooled | 881 | 234 | 140 | 362 | < 0.001 |
 | Composite readability vs Jargon density, matched | Pooled | 973 | 142 | 379 | 123 | < 0.001 |
-| Burden vs Burden, definitions ignored (ablation), matched | Pooled | 1317 | 19 | 59 | 222 | < 0.001 |
+| Burden vs Burden, definitions ignored (ablation), matched | Pooled | 1317 | 18 | 58 | 224 | < 0.001 |
 
 ### Median word counts
 
@@ -189,7 +189,7 @@ incorrect.
 
 | Group | Lay undefined | Abstract undefined | Lay defined | Abstract defined |
 |---|---|---|---|---|
-| eLife | 14 | 20 | 3 | 1 |
+| eLife | 13 | 20 | 3 | 1 |
 | PLOS | 17 | 25 | 1 | 2 |
 | Pooled | 16 | 24 | 1 | 2 |
 
@@ -203,8 +203,8 @@ incorrect.
 | Passive-voice rate | 0.32 | 0.22 | 0.29 | 0.29 |
 | Jargon density | 0.10 | 0.20 | 0.14 | 0.17 |
 | **Composite readability** | -0.51 | 0.00 | -0.04 | 0.11 |
-| **Burden** | 13.67 | 62.31 | 41.75 | 51.55 |
-| Burden, definitions ignored (ablation) | 18.49 | 68.41 | 45.12 | 55.80 |
+| **Burden** | 11.84 | 62.31 | 41.67 | 51.49 |
+| Burden, definitions ignored (ablation) | 16.98 | 68.41 | 45.12 | 55.80 |
 | Flesch-Kincaid grade (baseline, not ours) | 13.15 | 16.94 | 16.73 | 17.11 |
 
 <!-- END GENERATED TABLES -->
@@ -281,7 +281,11 @@ not a difficulty judgement.
   see [definition_precision.md](definition_precision.md)) and unbracketed eLife citations
   ("Smith et al., 2020") became citation markers. Those changes were developed on the committed
   JATS fixtures and on 80 inspected validation-split pairs, and every number here was then
-  re-run. Even so, the validation split was not strictly held out. A fresh sample, such as training-split pairs not used for calibration,
+  re-run. Review fix round 2 (more stock figure idioms, numbered-name and "median" glosses,
+  researchers' names, affiliations and the journal title excluded from terms, and the comma
+  required in "X and Y, YEAR") was developed on the committed fixtures and hand-written
+  sentences only, and every number was re-run again; only burden rows moved, by at most 0.1
+  points in share correct. Even so, the validation split was not strictly held out. A fresh sample, such as training-split pairs not used for calibration,
   should confirm the numbers.
 - **Corpus artefacts.** The texts went through the corpus's tokenisation and our detokenising.
   Superscripts, italics and some symbols were lost, and stray spacing may remain.

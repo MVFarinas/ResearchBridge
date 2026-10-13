@@ -79,6 +79,12 @@ cannot reward definition detection: abstracts define about as many terms as lay 
 mostly abbreviations, and the genre label says nothing about whether a defined term costs a
 reader anything. The "terms I don't know" study (docs/data-formats/) is the test that can.
 
+Review fix round 2 changed the detector again (more stock figure idioms; a lower-case short
+form must match its long form's word initials; "median" and numbered names such as "trisomy
+21" allowed in glosses). On the committed fixtures it changed no detection. The precision
+figures above were measured before it and were not re-measured; validation 1 was re-run
+(length-matched pooled: burden 82.6%, definitions ignored 85.0%).
+
 ## Labelled detections
 
 ### Held-out sample (after the fix)

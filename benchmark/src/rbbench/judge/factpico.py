@@ -153,27 +153,33 @@ def load_factpico(path: Path) -> list[FactPicoRecord]:
     Raises:
         FactPicoError: If a required column is missing.
     """
-    csv.field_size_limit(MAX_MEMBER_BYTES)
-    with path.open(encoding="utf-8", newline="") as handle:
-        reader = csv.DictReader(handle)
-        required = {"Abstract", "generation", "model_type", EXPERT_TARGET}
-        missing = required - set(reader.fieldnames or ())
-        if missing:
-            raise FactPicoError(f"{path}: missing columns {sorted(missing)}")
-        records = []
-        for row in reader:
-            abstract, summary = row["Abstract"], row["generation"]
-            digest = hashlib.sha256(f"{abstract}\x00{summary}".encode()).hexdigest()[:12]
-            records.append(
-                FactPicoRecord(
-                    record_id=digest,
-                    abstract=abstract,
-                    summary=summary,
-                    model_type=row["model_type"],
-                    expert=_numbers(row, EXPERT_COLUMNS),
-                    metrics=_numbers(row, METRIC_COLUMNS),
+    # Abstracts exceed the csv module's default field limit; raise it for this
+    # read only and restore it, so the process-wide setting is left unchanged.
+    previous_limit = csv.field_size_limit(MAX_MEMBER_BYTES)
+    try:
+        with path.open(encoding="utf-8", newline="") as handle:
+            reader = csv.DictReader(handle)
+            required = {"Abstract", "generation", "model_type", EXPERT_TARGET}
+            missing = required - set(reader.fieldnames or ())
+            if missing:
+                raise FactPicoError(f"{path}: missing columns {sorted(missing)}")
+            # One record per row; the ID hashes the text so it survives reordering.
+            records = []
+            for row in reader:
+                abstract, summary = row["Abstract"], row["generation"]
+                digest = hashlib.sha256(f"{abstract}\x00{summary}".encode()).hexdigest()[:12]
+                records.append(
+                    FactPicoRecord(
+                        record_id=digest,
+                        abstract=abstract,
+                        summary=summary,
+                        model_type=row["model_type"],
+                        expert=_numbers(row, EXPERT_COLUMNS),
+                        metrics=_numbers(row, METRIC_COLUMNS),
+                    )
                 )
-            )
+    finally:
+        csv.field_size_limit(previous_limit)
     return records
 
 

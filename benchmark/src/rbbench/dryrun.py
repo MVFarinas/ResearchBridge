@@ -31,10 +31,11 @@ from rbbench.agreement import (
     read_adjudications,
     write_disagreements,
 )
+from rbbench.attribution import attribution_line
 from rbbench.claims import Claim, Method, decompose
 from rbbench.clients import ClientKind, make_client
 from rbbench.ingest import IngestedPaper, ingest_paper, load_passages, load_units, write_ingest
-from rbbench.jsonl import read_json, utc_now_iso, write_json, write_jsonl
+from rbbench.jsonl import read_json, utc_now_iso, write_json, write_jsonl, write_text_atomic
 from rbbench.judge.harness import build_items, judge_items
 from rbbench.packets.build import build_packets
 from rbbench.packets.importer import import_ratings, load_key
@@ -94,7 +95,16 @@ def run_dry_run(out_dir: Path, *, fixtures_dir: Path = RBCORE_FIXTURES_DIR) -> D
     # 2. Rewrite every passage in every matrix arm with the fake client.
     generator, requested = make_client(ClientKind.FAKE, role="generation", settings=settings)
     matrix = load_matrix(CONFIG_DIR / "rewrite_matrix_v1.yaml")
-    rewrites = run_rewrites(passages, units, titles, matrix, generator, requested_model=requested)
+    usable = {paper.paper_key for paper in papers if paper.usable}
+    rewrites = run_rewrites(
+        passages,
+        units,
+        titles,
+        matrix,
+        generator,
+        requested_model=requested,
+        usable_papers=usable,
+    )
     write_jsonl(out_dir / "rewrites.jsonl", (r.to_record() for r in rewrites))
     valid = [r for r in rewrites if r.valid]
 
@@ -148,7 +158,7 @@ def run_dry_run(out_dir: Path, *, fixtures_dir: Path = RBCORE_FIXTURES_DIR) -> D
     }
     write_json(out_dir / "report.json", report)
     markdown = _markdown(report, papers, rewrites, agreement, judge_vs_final)
-    (out_dir / "report.md").write_text(markdown, encoding="utf-8")
+    write_text_atomic(out_dir / "report.md", markdown)
     return DryRunSummary(out_dir, out_dir / "report.md", out_dir / "report.json", counts)
 
 
@@ -171,10 +181,8 @@ def _rate_synthetically(
     Returns:
         The imported (synthetic) ratings from every rater.
     """
-    attributions = {
-        p.paper_key: f"Source licence: {p.licence}. {p.metadata.get('doi', '')}".strip()
-        for p in papers
-    }
+    # The same attribution the CLI uses: the source text shown is real CC BY text.
+    attributions = {p.paper_key: attribution_line(p.to_record()) for p in papers if p.usable}
     build_packets(
         rewrites,
         claims,
@@ -278,6 +286,7 @@ def _markdown(
     Returns:
         The Markdown text.
     """
+    # Pre-render the pieces that need loops; the template below is plain text.
     counts = report["counts"]
     arms = Counter(r.arm for r in rewrites if r.valid)
     paper_rows = "\n".join(

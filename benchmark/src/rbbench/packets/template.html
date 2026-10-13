@@ -149,11 +149,14 @@ if (typeof module !== "undefined") module.exports = { listUnits, codesFor, missi
 
   // Saved answers survive reloads; storage may be unavailable (private mode), so guard it.
   try { state = JSON.parse(window.localStorage.getItem(storageKey) || "{}"); } catch (e) { state = {}; }
+
+  /** Persist the answers in browser storage (best effort) and update the progress display. */
   function save() {
     try { window.localStorage.setItem(storageKey, JSON.stringify(state)); } catch (e) { /* ignore */ }
     refresh();
   }
 
+  /** Create an element with attributes; any text is set as text, never parsed as HTML. */
   function el(tag, attrs, text) {
     const node = document.createElement(tag);
     for (const [name, value] of Object.entries(attrs || {})) node.setAttribute(name, value);
@@ -161,7 +164,7 @@ if (typeof module !== "undefined") module.exports = { listUnits, codesFor, missi
     return node;
   }
 
-  // Render rewritten text with the marked additions highlighted.
+  /** Render rewritten text with the marked additions highlighted. */
   function renderRewritten(paragraph) {
     const box = el("p");
     let cursor = 0;
@@ -176,7 +179,7 @@ if (typeof module !== "undefined") module.exports = { listUnits, codesFor, missi
     return box;
   }
 
-  // One fieldset of radio buttons per code; answers go into state immediately.
+  /** Add one fieldset of radio buttons per code, plus a comment box; answers save immediately. */
   function renderCodes(container, unit, unitId) {
     const saved = state[unitId] || (state[unitId] = { labels: {}, comment: "" });
     for (const code of codesFor(packet, unit)) {
@@ -203,6 +206,7 @@ if (typeof module !== "undefined") module.exports = { listUnits, codesFor, missi
     container.appendChild(comment);
   }
 
+  /** Build the whole form: header, banner, then each rewrite with its paragraphs and claims. */
   function render() {
     document.getElementById("title").textContent = "Faithfulness rating packet " + packet.packet_id;
     document.getElementById("meta").textContent =
@@ -247,6 +251,7 @@ if (typeof module !== "undefined") module.exports = { listUnits, codesFor, missi
     });
   }
 
+  /** Update the progress count and mark each unit done or not. */
   function refresh() {
     const missing = new Set(missingUnits(packet, state));
     const total = listUnits(packet).length;
@@ -257,6 +262,7 @@ if (typeof module !== "undefined") module.exports = { listUnits, codesFor, missi
     }
   }
 
+  /** Export: download the answers as JSON and say whether anything is still unanswered. */
   document.getElementById("export").addEventListener("click", () => {
     const doc = buildExport(packet, state, new Date().toISOString());
     const blob = new Blob([JSON.stringify(doc, null, 2)], { type: "application/json" });
@@ -271,6 +277,7 @@ if (typeof module !== "undefined") module.exports = { listUnits, codesFor, missi
     status.className = doc.complete ? "" : "missing";
   });
 
+  /** Scroll to the first unit that still lacks an answer. */
   document.getElementById("next-missing").addEventListener("click", () => {
     const [first] = missingUnits(packet, state);
     const node = first && document.getElementById("unit-" + first);

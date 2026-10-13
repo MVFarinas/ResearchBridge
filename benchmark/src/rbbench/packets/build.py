@@ -24,7 +24,8 @@ from __future__ import annotations
 import hashlib
 import json
 import random
-from collections.abc import Sequence
+import re
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from importlib import resources
 from pathlib import Path
@@ -36,6 +37,8 @@ from rbbench.rewrite.harness import RewriteRecord
 from rbbench.rubric import Rubric
 
 PACKET_FORMAT = "rbbench-packet/1"
+# Rater IDs become file names, so only a safe, separator-free alphabet is allowed.
+RATER_ID_PATTERN = re.compile(r"^[A-Za-z0-9_-]+$")
 KEY_FORMAT = "rbbench-packet-key/1"
 SYNTHETIC_BANNER = (
     "SYNTHETIC DRY RUN: this packet was built from fake (synthetic) rewrites and claims. "
@@ -118,8 +121,8 @@ def build_packets(
     out_dir: Path,
     *,
     packet_id: str,
-    titles: dict[str, str] | None = None,
-    attributions: dict[str, str] | None = None,
+    attributions: Mapping[str, str],
+    titles: Mapping[str, str] | None = None,
     seed: str = "rbbench-packets-v1",
 ) -> list[PacketPaths]:
     """Write one packet per rater plus the packet key.
@@ -128,11 +131,14 @@ def build_packets(
         rewrites: Valid rewrites to rate.
         claims: Their claims.
         rubric: The rubric.
-        rater_ids: Pseudonymous rater IDs (unique).
+        rater_ids: Pseudonymous rater IDs (unique; letters, digits, "_" and
+            "-" only, since they name the files).
         out_dir: Output directory (gitignored data).
         packet_id: Identifier for this packet set.
+        attributions: Attribution line by paper key (title, source and
+            licence; see :func:`rbbench.attribution.attribution_line`). Every
+            paper needs one, because packets show its text verbatim.
         titles: Paper titles by paper key.
-        attributions: Attribution line by paper key (licence and source).
         seed: Seed for the per-rater item order.
 
     Returns:
@@ -140,14 +146,23 @@ def build_packets(
 
     Raises:
         PacketError: If there is nothing to rate, a rewrite is invalid, rater
-            IDs repeat, or a rewrite has no claims.
+            IDs repeat or are unsafe as file names, a paper has no
+            attribution, or a rewrite has no claims.
     """
+    # Refuse bad inputs before anything is written.
     if not rewrites or not rater_ids or len(set(rater_ids)) != len(rater_ids):
         raise PacketError("need at least one rewrite and unique rater IDs")
+    unsafe = [r for r in rater_ids if not RATER_ID_PATTERN.fullmatch(r)]
+    if unsafe:
+        raise PacketError(f"rater IDs may use only letters, digits, '_' and '-': {unsafe}")
     if any(not r.valid for r in rewrites):
         raise PacketError("only valid rewrites can be rated")
+    unattributed = sorted({r.paper_key for r in rewrites if not attributions.get(r.paper_key)})
+    if unattributed:
+        raise PacketError(f"no attribution for source text of: {', '.join(unattributed)}")
+
     synthetic = any(r.synthetic for r in rewrites) or any(c.synthetic for c in claims)
-    items, key = _items_and_key(rewrites, claims, packet_id, titles or {}, attributions or {})
+    items, key = _items_and_key(rewrites, claims, packet_id, titles or {}, attributions)
 
     out_dir.mkdir(parents=True, exist_ok=True)
     write_json(
@@ -164,6 +179,7 @@ def build_packets(
         },
     )
 
+    # One HTML form and one JSON file per rater, from the same packet data.
     template = resources.files("rbbench.packets").joinpath("template.html").read_text("utf-8")
     written: list[PacketPaths] = []
     for rater_id in rater_ids:
@@ -209,8 +225,8 @@ def _items_and_key(
     rewrites: Sequence[RewriteRecord],
     claims: Sequence[Claim],
     packet_id: str,
-    titles: dict[str, str],
-    attributions: dict[str, str],
+    titles: Mapping[str, str],
+    attributions: Mapping[str, str],
 ) -> tuple[list[dict[str, Any]], dict[str, dict[str, str]]]:
     """Build the blinded items and the opaque-ID key.
 
@@ -228,6 +244,7 @@ def _items_and_key(
     Raises:
         PacketError: If a rewrite has no claims.
     """
+    # Index claims by (rewrite, paragraph) so each paragraph finds its own.
     by_paragraph: dict[tuple[str, str], list[Claim]] = {}
     for claim in claims:
         by_paragraph.setdefault((claim.rewrite_id, claim.paragraph_id), []).append(claim)
@@ -241,6 +258,7 @@ def _items_and_key(
             paragraph_claims = by_paragraph.get((rewrite.rewrite_id, paragraph.paragraph_id), [])
             if not paragraph_claims:
                 raise PacketError(f"{rewrite.rewrite_id}#{paragraph.paragraph_id} has no claims")
+            # Opaque IDs for the paragraph and its claims; the key maps them back.
             real_paragraph = paragraph_unit_id(rewrite.rewrite_id, paragraph.paragraph_id)
             paragraph_opaque = opaque_id(packet_id, real_paragraph, "p")
             key[paragraph_opaque] = _key_entry("paragraph", real_paragraph, rewrite)
@@ -260,10 +278,11 @@ def _items_and_key(
                     "claims": claim_entries,
                 }
             )
+        # One item per rewrite: the source passage, its attribution and the paragraphs.
         items.append(
             {
                 "paper_title": titles.get(rewrite.paper_key, rewrite.paper_key),
-                "attribution": attributions.get(rewrite.paper_key, ""),
+                "attribution": attributions[rewrite.paper_key],
                 "source_passage": [{"text": text} for _, text in rewrite.source],
                 "paragraphs": paragraphs,
             }

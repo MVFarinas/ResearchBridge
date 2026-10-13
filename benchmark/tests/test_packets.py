@@ -18,6 +18,7 @@ from rbbench.rewrite.markup import parse_rewrite
 from rbbench.rubric import Rubric, Unit
 
 HOSTILE = "</script><script>alert(1)</script>"
+SYNTHETIC_ATTRIBUTION = {"synthetic": "SYNTHETIC source text written for the tests; no licence."}
 
 
 def _synthetic_rewrite(arm: str) -> RewriteRecord:
@@ -65,6 +66,7 @@ def packets(tmp_path: Path, rubric: Rubric) -> Path:
         ["synthetic-r1", "synthetic-r2"],
         tmp_path,
         packet_id="synthetic-packet",
+        attributions=SYNTHETIC_ATTRIBUTION,
         titles={"synthetic": "A synthetic paper"},
     )
     return tmp_path
@@ -124,7 +126,15 @@ def test_each_rater_gets_a_seeded_order(tmp_path: Path, rubric: Rubric) -> None:
 
     def orders(directory: Path) -> list[list[str]]:
         """Build packets and return each rater's first-paragraph unit order."""
-        build_packets(rewrites, claims, rubric, raters, directory, packet_id="synthetic")
+        build_packets(
+            rewrites,
+            claims,
+            rubric,
+            raters,
+            directory,
+            packet_id="synthetic",
+            attributions=SYNTHETIC_ATTRIBUTION,
+        )
         return [
             [
                 item["paragraphs"][0]["unit_id"]
@@ -195,12 +205,56 @@ def test_incomplete_export_needs_explicit_permission(packets: Path, rubric: Rubr
 def test_build_refuses_invalid_inputs(tmp_path: Path, rubric: Rubric) -> None:
     """No raters, duplicate raters or claimless paragraphs are refused."""
     rewrites, claims = _inputs()
+    attributions = SYNTHETIC_ATTRIBUTION
     with pytest.raises(PacketError):
-        build_packets(rewrites, claims, rubric, [], tmp_path, packet_id="x")
+        build_packets(
+            rewrites, claims, rubric, [], tmp_path, packet_id="x", attributions=attributions
+        )
     with pytest.raises(PacketError):
-        build_packets(rewrites, claims, rubric, ["a", "a"], tmp_path, packet_id="x")
+        build_packets(
+            rewrites, claims, rubric, ["a", "a"], tmp_path, packet_id="x", attributions=attributions
+        )
     with pytest.raises(PacketError, match="no claims"):
-        build_packets(rewrites, [], rubric, ["a"], tmp_path, packet_id="x")
+        build_packets(
+            rewrites, [], rubric, ["a"], tmp_path, packet_id="x", attributions=attributions
+        )
+
+
+@pytest.mark.parametrize("rater_id", ["../escaped-rater", "a/b", "a b", "", ".hidden", "r1\\x"])
+def test_unsafe_rater_ids_are_refused_before_writing(
+    tmp_path: Path, rubric: Rubric, rater_id: str
+) -> None:
+    """A rater ID that is not a plain file name is refused and nothing is written."""
+    rewrites, claims = _inputs()
+    out = tmp_path / "out"
+    with pytest.raises(PacketError, match="rater IDs may use only"):
+        build_packets(
+            rewrites,
+            claims,
+            rubric,
+            ["synthetic-ok", rater_id],
+            out,
+            packet_id="x",
+            attributions=SYNTHETIC_ATTRIBUTION,
+        )
+    assert not out.exists()
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_source_text_without_attribution_is_refused(tmp_path: Path, rubric: Rubric) -> None:
+    """Packets reproduce source text, so a paper without an attribution line is refused."""
+    rewrites, claims = _inputs()
+    for attributions in ({}, {"synthetic": ""}):
+        with pytest.raises(PacketError, match="no attribution for source text of: synthetic"):
+            build_packets(
+                rewrites, claims, rubric, ["a"], tmp_path, packet_id="x", attributions=attributions
+            )
+
+
+def test_attribution_is_shown_with_every_item(packets: Path) -> None:
+    """Each item carries its paper's attribution line."""
+    packet = json.loads((packets / "synthetic-r1.packet.json").read_text(encoding="utf-8"))
+    assert {item["attribution"] for item in packet["items"]} == set(SYNTHETIC_ATTRIBUTION.values())
 
 
 def test_embed_json_escapes_markup() -> None:

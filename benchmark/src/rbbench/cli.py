@@ -14,6 +14,7 @@ from __future__ import annotations
 import argparse
 import sys
 from collections.abc import Callable, Sequence
+from dataclasses import dataclass
 from pathlib import Path
 
 from rbbench import baselines, comprehension
@@ -27,19 +28,24 @@ from rbbench.agreement import (
     read_adjudications,
     write_disagreements,
 )
+from rbbench.attribution import AttributionError, attribution_line
 from rbbench.claims import Claim, Method, decompose
 from rbbench.clients import ClientKind, LiveCallsNotAllowedError, make_client
 from rbbench.dryrun import run_dry_run
 from rbbench.ingest import (
+    PAPERS_FILE,
+    LicenceGateError,
+    gate_violations,
     ingest_paper,
     load_passages,
     load_units,
+    load_usable_papers,
     write_ingest,
 )
 from rbbench.jsonl import read_jsonl, write_json, write_jsonl
 from rbbench.judge import factpico
 from rbbench.judge.harness import build_items, judge_items
-from rbbench.packets.build import build_packets
+from rbbench.packets.build import PacketError, build_packets
 from rbbench.packets.importer import import_ratings, load_key
 from rbbench.paths import CONFIG_DIR, RBCORE_FIXTURES_DIR, SELECTION_DIR, data_root
 from rbbench.ratings import load_ratings, save_ratings
@@ -50,6 +56,7 @@ from rbbench.selection.shortlist import (
     build_shortlist,
     read_candidates,
     write_candidates,
+    write_pool_log,
     write_screening_log,
 )
 from rbbench.sources.eutils import EutilsClient
@@ -58,6 +65,48 @@ from rbcore.config import ConfigError, Settings
 from rbcore.http import PoliteFetcher
 
 Handler = Callable[[argparse.Namespace], int]
+
+
+class UsageError(Exception):
+    """Raised by a command for a user-fixable problem; reported without a traceback."""
+
+
+@dataclass(frozen=True, slots=True)
+class _DataDefault:
+    """A default path inside the data directory, resolved only when a command runs.
+
+    Resolving lazily keeps ``rbbench --help`` working when the environment's
+    settings are invalid (the error then comes from the command, cleanly).
+
+    Attributes:
+        relative: Path relative to ``<RB_DATA_DIR>/benchmark``.
+    """
+
+    relative: str
+
+    def __str__(self) -> str:
+        """Return the path as shown in help text.
+
+        Returns:
+            ``<RB_DATA_DIR>/benchmark/<relative>``.
+        """
+        return f"<RB_DATA_DIR>/benchmark/{self.relative}"
+
+
+def _resolve_data_defaults(args: argparse.Namespace) -> None:
+    """Replace every unresolved data-directory default with a real path.
+
+    Args:
+        args: Parsed arguments, updated in place.
+
+    Raises:
+        rbcore.config.ConfigError: If the environment's settings are invalid.
+    """
+    defaults = {k: v for k, v in vars(args).items() if isinstance(v, _DataDefault)}
+    if defaults:
+        root = data_root()
+        for name, default in defaults.items():
+            setattr(args, name, root / default.relative)
 
 
 def _say(message: str) -> None:
@@ -93,6 +142,46 @@ def _load_rewrites(path: Path) -> list[RewriteRecord]:
     return [RewriteRecord.from_record(r) for r in read_jsonl(path)]
 
 
+def _require_ingest(ingest: Path) -> None:
+    """Check that an ingest directory exists before a command relies on it.
+
+    Args:
+        ingest: The ingest directory.
+
+    Raises:
+        UsageError: If its papers file is missing.
+    """
+    if not (ingest / PAPERS_FILE).is_file():
+        raise UsageError(f"no {PAPERS_FILE} in {ingest}: run `rbbench ingest` or pass --ingest")
+
+
+def _require_gated_rewrites(rewrites: Sequence[RewriteRecord], ingest: Path) -> None:
+    """Re-apply the §1.1 gate to rewrites before their source text is shown or sent.
+
+    Defence in depth: rewrites are gated when generated, but a rewrites file
+    could have been produced from an edited ingest or another directory.
+
+    Args:
+        rewrites: The rewrites.
+        ingest: The ingest directory they came from.
+
+    Raises:
+        UsageError: If the ingest directory is missing.
+        rbbench.ingest.LicenceGateError: Listing every rewrite over refused text.
+    """
+    _require_ingest(ingest)
+    units, usable = load_units(ingest), load_usable_papers(ingest)
+    violations = [
+        f"{rewrite.rewrite_id}: {message}"
+        for rewrite in rewrites
+        for message in gate_violations(
+            rewrite.paper_key, [pid for pid, _ in rewrite.source], units, usable
+        )
+    ]
+    if violations:
+        raise LicenceGateError("licence gate (§1.1) refused: " + "; ".join(violations))
+
+
 def _load_claims(path: Path) -> list[Claim]:
     """Read claims.
 
@@ -122,6 +211,7 @@ def cmd_select(args: argparse.Namespace) -> int:
         )
     write_candidates(args.out_dir / "candidates.csv", shortlist.candidates)
     write_screening_log(args.out_dir / "screening_log.csv", shortlist.screening)
+    write_pool_log(args.out_dir / "pool_log.csv", shortlist.pools)
     _say(f"{len(shortlist.candidates)} candidates written to {args.out_dir / 'candidates.csv'}")
     if shortlist.unfilled:
         _say(f"unfilled slots: {', '.join(shortlist.unfilled)}")
@@ -140,14 +230,21 @@ def cmd_ingest(args: argparse.Namespace) -> int:
     """
     settings = Settings.from_env()
     if args.fixtures:
+        if args.only:
+            raise UsageError(
+                "--only selects shortlist candidates; it cannot be used with --fixtures"
+            )
         sources = fixture_sources(RBCORE_FIXTURES_DIR)
     else:
         candidates = read_candidates(args.candidates)
-        if args.only:
-            wanted = set(args.only.split(","))
-            candidates = [
-                c for c in candidates if {c.pmcid, c.paper_key, c.slot + c.option} & wanted
-            ]
+        # --only must match something, and every name given must match, or nothing is written.
+        if args.only is not None:
+            wanted = {name.strip() for name in args.only.split(",") if name.strip()}
+            names = {c: {c.pmcid, c.paper_key, c.slot + c.option} for c in candidates}
+            unmatched = wanted.difference(*names.values())
+            if not wanted or unmatched:
+                raise UsageError(f"--only matches no candidate: {', '.join(sorted(unmatched))}")
+            candidates = [c for c in candidates if names[c] & wanted]
         with _fetcher(settings) as fetcher:
             sources = candidate_sources(candidates, fetcher)
     papers = [ingest_paper(s, min_words=args.min_words, max_words=args.max_words) for s in sources]
@@ -167,8 +264,14 @@ def cmd_rewrite(args: argparse.Namespace) -> int:
 
     Returns:
         Exit status (1 if any rewrite is invalid).
+
+    Raises:
+        UsageError: If the ingest directory is missing.
+        rbbench.ingest.LicenceGateError: If any passage includes text the
+            §1.1 gate refused (nothing is sent).
     """
     settings = Settings.from_env()
+    _require_ingest(args.ingest)
     client, requested = make_client(
         ClientKind(args.client),
         role="generation",
@@ -176,7 +279,7 @@ def cmd_rewrite(args: argparse.Namespace) -> int:
         live=args.live,
         model=args.model,
     )
-    papers = {r["paper_key"]: r["title"] for r in read_jsonl(args.ingest / "papers.jsonl")}
+    papers = {r["paper_key"]: r["title"] for r in read_jsonl(args.ingest / PAPERS_FILE)}
     records = run_rewrites(
         load_passages(args.ingest),
         load_units(args.ingest),
@@ -186,6 +289,7 @@ def cmd_rewrite(args: argparse.Namespace) -> int:
         requested_model=requested,
         repeats=args.repeats,
         progress=_say,
+        usable_papers=load_usable_papers(args.ingest),
     )
     write_jsonl(args.out, (r.to_record() for r in records))
     invalid = sum(not r.valid for r in records)
@@ -227,11 +331,17 @@ def cmd_packets(args: argparse.Namespace) -> int:
 
     Returns:
         Exit status.
+
+    Raises:
+        UsageError: If the ingest directory is missing.
+        rbbench.ingest.LicenceGateError: If a rewrite's source text was refused.
+        rbbench.packets.build.PacketError: If the packets cannot be built.
     """
+    # Packets show source text verbatim, so it must pass the gate and be attributed.
     rewrites = [r for r in _load_rewrites(args.rewrites) if r.valid]
-    titles = {}
-    if args.ingest:
-        titles = {r["paper_key"]: r["title"] for r in read_jsonl(args.ingest / "papers.jsonl")}
+    _require_gated_rewrites(rewrites, args.ingest)
+    papers = {r["paper_key"]: r for r in read_jsonl(args.ingest / PAPERS_FILE)}
+    needed = {r.paper_key for r in rewrites}
     paths = build_packets(
         rewrites,
         _load_claims(args.claims),
@@ -239,7 +349,8 @@ def cmd_packets(args: argparse.Namespace) -> int:
         args.raters.split(","),
         args.out,
         packet_id=args.packet_id,
-        titles=titles,
+        attributions={key: attribution_line(papers[key]) for key in needed},
+        titles={key: str(papers[key]["title"]) for key in needed},
     )
     for path in paths:
         _say(f"{path.rater_id}: {path.html}")
@@ -314,8 +425,15 @@ def cmd_judge(args: argparse.Namespace) -> int:
 
     Returns:
         Exit status (1 if any judgement is invalid).
+
+    Raises:
+        UsageError: If the ingest directory is missing.
+        rbbench.ingest.LicenceGateError: If a rewrite's source text was refused.
     """
+    # The judge sends source text to a model, so the gate is re-applied first.
     rubric = load_rubric()
+    rewrites = [r for r in _load_rewrites(args.rewrites) if r.valid]
+    _require_gated_rewrites(rewrites, args.ingest)
     client, model = make_client(
         ClientKind(args.client),
         role="judge",
@@ -323,7 +441,6 @@ def cmd_judge(args: argparse.Namespace) -> int:
         live=args.live,
         model=args.model,
     )
-    rewrites = [r for r in _load_rewrites(args.rewrites) if r.valid]
     records = judge_items(
         build_items(rewrites, _load_claims(args.claims)),
         rubric,
@@ -335,6 +452,8 @@ def cmd_judge(args: argparse.Namespace) -> int:
     write_jsonl(args.out, (r.to_record() for r in records))
     invalid = sum(not r.valid for r in records)
     _say(f"{len(records)} judgements written to {args.out} ({invalid} invalid)")
+
+    # Optionally compare the judge with adjudicated human labels, as two "raters".
     if args.finals:
         finals = [FinalLabel.from_record(r) for r in read_jsonl(args.finals)]
         reference = finals_as_ratings(finals, rubric)
@@ -354,22 +473,33 @@ def cmd_factpico(args: argparse.Namespace) -> int:
 
     Returns:
         Exit status.
+
+    Raises:
+        UsageError: If the FactPICO data has not been downloaded yet.
     """
     settings = Settings.from_env()
     directory = data_root(settings) / "factpico"
     csv_path = directory / "all_evaluations.csv"
+
+    # Download: the only step that touches the network.
     if args.action == "download":
         with _fetcher(settings) as fetcher:
             path = factpico.download_factpico(fetcher, directory)
         _say(f"FactPICO evaluations extracted to {path} (CC BY 4.0; never commit it)")
         return 0
+    if not csv_path.is_file():
+        raise UsageError(f"{csv_path} not found: run `rbbench factpico download` first")
     records = factpico.load_factpico(csv_path)
+
+    # Check: reproduce the published metric correlations (no model involved).
     if args.action == "check":
         sys.stdout.write("| Metric | Kendall tau-b vs Avg. PICO-R | n |\n|---|---|---|\n")
         for metric, (tau, n) in factpico.metric_correlations(records).items():
             value = "undefined" if tau is None else f"{tau:.3f}"
             sys.stdout.write(f"| {metric} | {value} | {n} |\n")
         return 0
+
+    # Calibrate: run the judge on the summaries and correlate with the experts.
     client, model = make_client(
         ClientKind(args.client), role="judge", settings=settings, live=args.live, model=args.model
     )
@@ -446,12 +576,15 @@ def build_parser() -> argparse.ArgumentParser:
     """Build the argument parser.
 
     Returns:
-        The parser with one subcommand per step.
+        The parser with one subcommand per step. Defaults inside the data
+        directory are :class:`_DataDefault` markers that :func:`main`
+        resolves, so building the parser never reads the environment.
     """
-    data = data_root()
+    data = _DataDefault
     parser = argparse.ArgumentParser(prog="rbbench", description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
 
+    # Selection and ingest: the network steps.
     p = sub.add_parser("select", help="build the PROPOSED candidate shortlist (network)")
     p.add_argument("--config", type=Path, default=SELECTION_DIR / "slots_v1.yaml")
     p.add_argument("--out-dir", type=Path, default=SELECTION_DIR)
@@ -464,38 +597,40 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--only", help="comma-separated PMCIDs, paper keys or slot options (S01A)")
     p.add_argument("--min-words", type=int, default=350)
     p.add_argument("--max-words", type=int, default=650)
-    p.add_argument("--out", type=Path, default=data / "ingest")
+    p.add_argument("--out", type=Path, default=data("ingest"))
     p.set_defaults(handler=cmd_ingest)
 
+    # Generation steps: rewrite and decompose (fake client unless --live).
     p = sub.add_parser("rewrite", help="rewrite passages for every matrix arm")
-    p.add_argument("--ingest", type=Path, default=data / "ingest")
+    p.add_argument("--ingest", type=Path, default=data("ingest"))
     p.add_argument("--matrix", type=Path, default=CONFIG_DIR / "rewrite_matrix_v1.yaml")
     p.add_argument("--repeats", type=int, default=1)
-    p.add_argument("--out", type=Path, default=data / "rewrites.jsonl")
+    p.add_argument("--out", type=Path, default=data("rewrites.jsonl"))
     _add_client_options(p)
     p.set_defaults(handler=cmd_rewrite)
 
     p = sub.add_parser("decompose", help="split rewrites into claims")
-    p.add_argument("--rewrites", type=Path, default=data / "rewrites.jsonl")
+    p.add_argument("--rewrites", type=Path, default=data("rewrites.jsonl"))
     p.add_argument("--method", choices=[m.value for m in Method], default="llm")
-    p.add_argument("--out", type=Path, default=data / "claims.jsonl")
+    p.add_argument("--out", type=Path, default=data("claims.jsonl"))
     _add_client_options(p)
     p.set_defaults(handler=cmd_decompose)
 
+    # Human rating: packets, import, agreement, adjudication.
     p = sub.add_parser("packets", help="build per-rater HTML packets and the key")
-    p.add_argument("--rewrites", type=Path, default=data / "rewrites.jsonl")
-    p.add_argument("--claims", type=Path, default=data / "claims.jsonl")
-    p.add_argument("--ingest", type=Path, default=data / "ingest")
+    p.add_argument("--rewrites", type=Path, default=data("rewrites.jsonl"))
+    p.add_argument("--claims", type=Path, default=data("claims.jsonl"))
+    p.add_argument("--ingest", type=Path, default=data("ingest"))
     p.add_argument("--raters", required=True, help="comma-separated pseudonymous rater IDs")
     p.add_argument("--packet-id", required=True)
-    p.add_argument("--out", type=Path, default=data / "packets")
+    p.add_argument("--out", type=Path, default=data("packets"))
     p.set_defaults(handler=cmd_packets)
 
     p = sub.add_parser("import-ratings", help="import rater exports")
     p.add_argument("--key", type=Path, required=True)
     p.add_argument("exports", type=Path, nargs="+")
     p.add_argument("--allow-incomplete", action="store_true")
-    p.add_argument("--out", type=Path, default=data / "ratings.jsonl")
+    p.add_argument("--out", type=Path, default=data("ratings.jsonl"))
     p.set_defaults(handler=cmd_import)
 
     p = sub.add_parser("agreement", help="per-code inter-rater agreement")
@@ -507,16 +642,18 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("ratings", type=Path, nargs="+")
     p.add_argument("--adjudications", type=Path)
     p.add_argument("--policy", choices=[x.value for x in Policy], default="unanimous")
-    p.add_argument("--out", type=Path, default=data / "final_labels.jsonl")
-    p.add_argument("--disagreements", type=Path, default=data / "disagreements.csv")
+    p.add_argument("--out", type=Path, default=data("final_labels.jsonl"))
+    p.add_argument("--disagreements", type=Path, default=data("disagreements.csv"))
     p.set_defaults(handler=cmd_adjudicate)
 
+    # The LLM judge and its calibration.
     p = sub.add_parser("judge", help="run the LLM judge on claims and paragraphs")
-    p.add_argument("--rewrites", type=Path, default=data / "rewrites.jsonl")
-    p.add_argument("--claims", type=Path, default=data / "claims.jsonl")
+    p.add_argument("--rewrites", type=Path, default=data("rewrites.jsonl"))
+    p.add_argument("--claims", type=Path, default=data("claims.jsonl"))
+    p.add_argument("--ingest", type=Path, default=data("ingest"))
     p.add_argument("--temperature", type=float)
     p.add_argument("--finals", type=Path, help="final labels to compare the judge with")
-    p.add_argument("--out", type=Path, default=data / "judgements.jsonl")
+    p.add_argument("--out", type=Path, default=data("judgements.jsonl"))
     _add_client_options(p)
     p.set_defaults(handler=cmd_judge)
 
@@ -527,6 +664,7 @@ def build_parser() -> argparse.ArgumentParser:
     _add_client_options(p)
     p.set_defaults(handler=cmd_factpico)
 
+    # Utilities.
     p = sub.add_parser("baselines", help="show which optional baselines are installed")
     p.set_defaults(handler=cmd_baselines)
 
@@ -536,7 +674,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.set_defaults(handler=cmd_comprehension)
 
     p = sub.add_parser("dry-run", help="end-to-end run on fixtures; everything synthetic")
-    p.add_argument("--out", type=Path, default=data / "dry-run")
+    p.add_argument("--out", type=Path, default=data("dry-run"))
     p.set_defaults(handler=cmd_dry_run)
     return parser
 
@@ -553,8 +691,16 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     handler: Handler = args.handler
     try:
+        _resolve_data_defaults(args)
         return handler(args)
-    except (ConfigError, LiveCallsNotAllowedError) as exc:
+    except (
+        AttributionError,
+        ConfigError,
+        LicenceGateError,
+        LiveCallsNotAllowedError,
+        PacketError,
+        UsageError,
+    ) as exc:
         _say(f"error: {exc}")
         return 2
 

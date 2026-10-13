@@ -9,8 +9,8 @@ from pathlib import Path
 import pytest
 
 from rbbench.cli import main
-from rbbench.jsonl import read_json, read_jsonl, write_json
-from rbbench.paths import COMPREHENSION_DIR
+from rbbench.jsonl import read_json, read_jsonl, write_json, write_jsonl
+from rbbench.paths import COMPREHENSION_DIR, SELECTION_DIR
 from rbbench.synthetic import synthetic_export
 
 
@@ -74,6 +74,14 @@ def test_step_by_step_pipeline(tmp_path: Path, capsys: pytest.CaptureFixture[str
         )
         == 0
     )
+    # Every item shows its paper's attribution: title, DOI, licence and the NLM credit.
+    packet = read_json(packets / "synthetic-a.packet.json")
+    attributions = {item["attribution"] for item in packet["items"]}
+    assert attributions
+    for line in attributions:
+        assert "https://doi.org/10.7554/eLife." in line
+        assert "Licence: CC BY" in line
+        assert "U.S. National Library of Medicine" in line
 
     # Two synthetic raters fill in their packets.
     exports = []
@@ -139,6 +147,8 @@ def test_step_by_step_pipeline(tmp_path: Path, capsys: pytest.CaptureFixture[str
                 str(work / "rw.jsonl"),
                 "--claims",
                 str(work / "claims.jsonl"),
+                "--ingest",
+                str(work / "ingest"),
                 "--finals",
                 str(finals),
                 "--out",
@@ -209,3 +219,121 @@ def test_factpico_check_and_fake_calibration(
     assert "| AlignScore | 1.000 | 4 |" in capsys.readouterr().out
     assert main(["factpico", "calibrate", "--limit", "3"]) == 0
     assert "SYNTHETIC: fake judge" in capsys.readouterr().out
+
+
+def _ingest_fixtures(directory: Path) -> None:
+    """Ingest the committed fixtures into a directory."""
+    assert main(["ingest", "--fixtures", "--out", str(directory)]) == 0
+
+
+def test_rewrite_refuses_an_edited_passage_over_refused_text(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A passage the owner points at gate-refused paragraphs stops the run; nothing is written."""
+    ingest = tmp_path / "ingest"
+    _ingest_fixtures(ingest)
+    # The Europe PMC copy has no machine-readable licence, so its units are not rewritable.
+    refused = [
+        u for u in read_jsonl(ingest / "units.jsonl") if u["paper_key"] == "elife-93719-europepmc"
+    ]
+    assert refused
+    assert not any(u["can_rewrite"] for u in refused)
+    passages = list(read_jsonl(ingest / "passages.jsonl"))
+    passages.append(
+        {
+            "record_type": "passage",
+            "passage_id": "elife-93719-europepmc:edited",
+            "paper_key": "elife-93719-europepmc",
+            "paragraph_ids": [refused[0]["paragraph_id"], refused[1]["paragraph_id"]],
+            "words": refused[0]["words"] + refused[1]["words"],
+            "strategy": "edited",
+            "status": "PROPOSED",
+        }
+    )
+    write_jsonl(ingest / "passages.jsonl", passages)
+
+    out = tmp_path / "rw.jsonl"
+    capsys.readouterr()
+    assert main(["rewrite", "--ingest", str(ingest), "--out", str(out)]) == 2
+    error = capsys.readouterr().err
+    assert "licence gate" in error
+    assert f"elife-93719-europepmc#{refused[0]['paragraph_id']} may not be rewritten" in error
+    assert not out.exists()
+
+
+def test_packets_and_judge_refuse_rewrites_of_refused_papers(tmp_path: Path) -> None:
+    """Rewrites whose paper the ingest gate refused never reach packets or the judge."""
+    ingest = tmp_path / "ingest"
+    _ingest_fixtures(ingest)
+    assert main(["rewrite", "--ingest", str(ingest), "--out", str(tmp_path / "rw.jsonl")]) == 0
+    claims = tmp_path / "claims.jsonl"
+    assert main(["decompose", "--rewrites", str(tmp_path / "rw.jsonl"), "--out", str(claims)]) == 0
+
+    # Mark one paper unusable after the fact, as a later refusal would.
+    papers = list(read_jsonl(ingest / "papers.jsonl"))
+    for paper in papers:
+        if paper["paper_key"] == "elife-65180-pmc-s3":
+            paper["usable"] = False
+    write_jsonl(ingest / "papers.jsonl", papers)
+
+    common = ["--rewrites", str(tmp_path / "rw.jsonl"), "--claims", str(claims)]
+    common += ["--ingest", str(ingest)]
+    packets = tmp_path / "packets"
+    packet_args = ["--raters", "synthetic-a", "--packet-id", "x", "--out", str(packets)]
+    assert main(["packets", *common, *packet_args]) == 2
+    assert not packets.exists()
+    judgements = tmp_path / "judgements.jsonl"
+    assert main(["judge", *common, "--out", str(judgements)]) == 2
+    assert not judgements.exists()
+
+
+def test_packets_refuse_a_rater_id_that_escapes_the_output_directory(tmp_path: Path) -> None:
+    """--raters ../x is refused with exit status 2 and nothing is written outside --out."""
+    ingest = tmp_path / "ingest"
+    _ingest_fixtures(ingest)
+    assert main(["rewrite", "--ingest", str(ingest), "--out", str(tmp_path / "rw.jsonl")]) == 0
+    claims = tmp_path / "claims.jsonl"
+    assert main(["decompose", "--rewrites", str(tmp_path / "rw.jsonl"), "--out", str(claims)]) == 0
+    args = ["packets", "--rewrites", str(tmp_path / "rw.jsonl"), "--claims", str(claims)]
+    args += ["--ingest", str(ingest), "--raters", "../escaped-rater", "--packet-id", "x"]
+    assert main([*args, "--out", str(tmp_path / "packets")]) == 2
+    assert not (tmp_path / "escaped-rater.html").exists()
+    assert not (tmp_path / "packets").exists()
+
+
+def test_ingest_only_must_match_and_cannot_combine_with_fixtures(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """--only that matches nothing, or --only with --fixtures, exits 2 and writes nothing."""
+    out = tmp_path / "ingest"
+    capsys.readouterr()
+    assert main(["ingest", "--fixtures", "--only", "S01A", "--out", str(out)]) == 2
+    assert "cannot be used with --fixtures" in capsys.readouterr().err
+    candidates = str(SELECTION_DIR / "candidates.csv")
+    for only in ("NOT-A-CANDIDATE", "S01A,S99Z", ","):
+        assert main(["ingest", "--candidates", candidates, "--only", only, "--out", str(out)]) == 2
+        assert "--only matches no candidate" in capsys.readouterr().err
+    assert not out.exists()
+
+
+def test_factpico_without_downloaded_data_gives_a_hint(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Before the download, check and calibrate exit 2 and say to run the download."""
+    for action in ("check", "calibrate"):
+        capsys.readouterr()
+        assert main(["factpico", action]) == 2
+        assert "run `rbbench factpico download` first" in capsys.readouterr().err
+
+
+def test_bad_settings_do_not_break_help_and_are_reported_cleanly(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """An invalid RB_DB_PORT leaves --help working and makes a command exit 2, no traceback."""
+    monkeypatch.setenv("RB_DB_PORT", "not-a-port")
+    with pytest.raises(SystemExit) as exited:
+        main(["--help"])
+    assert exited.value.code == 0
+    capsys.readouterr()
+    assert main(["dry-run"]) == 2
+    assert "RB_DB_PORT must be an integer" in capsys.readouterr().err

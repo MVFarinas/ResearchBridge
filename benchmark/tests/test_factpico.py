@@ -93,6 +93,18 @@ def test_metric_correlations_on_synthetic_data(tmp_path: Path) -> None:
     assert correlations["DAE"] == (None, 0)
 
 
+def test_loading_leaves_the_csv_field_limit_unchanged(tmp_path: Path) -> None:
+    """The raised field size limit is restored after a load, even a failing one."""
+    before = csv.field_size_limit()
+    load_factpico(_write_synthetic_csv(tmp_path / "synthetic.csv"))
+    assert csv.field_size_limit() == before
+    bad = tmp_path / "bad.csv"
+    bad.write_text("Abstract\nx\n", encoding="utf-8")
+    with pytest.raises(FactPicoError):
+        load_factpico(bad)
+    assert csv.field_size_limit() == before
+
+
 def test_missing_columns_are_reported(tmp_path: Path) -> None:
     """A CSV without the expert target is refused."""
     path = tmp_path / "bad.csv"

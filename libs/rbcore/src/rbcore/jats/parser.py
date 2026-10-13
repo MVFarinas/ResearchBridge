@@ -101,8 +101,10 @@ def parse_jats(data: bytes, *, max_bytes: int = DEFAULT_MAX_BYTES) -> Article:
         The parsed article.
 
     Raises:
-        JatsParseError: If the input is too large, not well-formed, or not a
-            JATS ``article``.
+        JatsParseError: If the input is too large, not well-formed, contains
+            an entity reference other than the five predefined XML entities
+            (internal-subset and DTD entities are never resolved, so their
+            text would otherwise be lost), or is not a JATS ``article``.
     """
     if len(data) > max_bytes:
         raise JatsParseError(f"input is {len(data)} bytes, over the {max_bytes}-byte limit")
@@ -111,6 +113,13 @@ def parse_jats(data: bytes, *, max_bytes: int = DEFAULT_MAX_BYTES) -> Article:
         root = etree.fromstring(data, parser=_safe_parser())
     except etree.XMLSyntaxError as exc:
         raise JatsParseError(f"not well-formed XML: {exc}") from exc
+    # Entities are never resolved, so a reference left in the tree would make
+    # its text vanish silently; refuse the document instead.
+    entity = next(root.iter(etree.Entity), None)
+    if entity is not None:
+        raise JatsParseError(
+            f"unresolved entity reference {entity.text} (DTD-declared entities are not supported)"
+        )
     return _ArticleParser(_article_root(root)).parse()
 
 

@@ -28,8 +28,11 @@ defusedxml==0.7.1
     # via researchbridge-backend
 django==5.2.18
     # via
+    #   djangorestframework
     #   procrastinate
     #   researchbridge-backend
+djangorestframework==3.18.3
+    # via researchbridge-backend
 gunicorn==26.2.0
     # via researchbridge-backend
 h11==0.16.0

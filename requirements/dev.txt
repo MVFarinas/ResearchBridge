@@ -49,12 +49,19 @@ django==5.2.18
     # via
     #   django-stubs
     #   django-stubs-ext
+    #   djangorestframework
     #   procrastinate
     #   researchbridge-backend
 django-stubs==6.1.2
-    # via -r requirements/dev.in
+    # via
+    #   -r requirements/dev.in
+    #   djangorestframework-stubs
 django-stubs-ext==6.1.2
     # via django-stubs
+djangorestframework==3.18.3
+    # via researchbridge-backend
+djangorestframework-stubs==3.18.1
+    # via -r requirements/dev.in
 docstring-parser==0.18.0
     # via anthropic
 gunicorn==26.2.0
@@ -153,7 +160,9 @@ types-html5lib==1.1.11.20260518
 types-lxml==2026.2.16
     # via -r requirements/dev.in
 types-pyyaml==6.0.12.20260906
-    # via django-stubs
+    # via
+    #   django-stubs
+    #   djangorestframework-stubs
 types-webencodings==0.6.0.20260907
     # via types-html5lib
 typing-extensions==4.16.0
@@ -163,6 +172,7 @@ typing-extensions==4.16.0
     #   beautifulsoup4
     #   django-stubs
     #   django-stubs-ext
+    #   djangorestframework-stubs
     #   httpx2
     #   mypy
     #   procrastinate

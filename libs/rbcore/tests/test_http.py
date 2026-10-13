@@ -125,10 +125,11 @@ def test_gives_up_after_max_retries() -> None:
     clock = FakeClock()
     with (
         _fetcher(httpx.MockTransport(handler), None, clock, max_retries=2) as fetcher,
-        pytest.raises(FetchError, match="503"),
+        pytest.raises(FetchError, match="503") as caught,
     ):
         fetcher.get("https://example.org/x")
     assert calls == 3
+    assert caught.value.status == 503
     assert 1.0 in clock.sleeps
     assert 2.0 in clock.sleeps
 
@@ -145,10 +146,12 @@ def test_client_errors_are_not_retried() -> None:
 
     with (
         _fetcher(httpx.MockTransport(handler), None, FakeClock()) as fetcher,
-        pytest.raises(FetchError, match="404"),
+        pytest.raises(FetchError, match="404") as caught,
     ):
         fetcher.get("https://example.org/missing")
     assert calls == 1
+    # The status is exposed so callers can tell "not found" from "refused".
+    assert caught.value.status == 404
 
 
 def test_size_limit_aborts_large_responses(tmp_path: Path) -> None:
@@ -179,9 +182,11 @@ def test_transport_errors_become_fetch_errors() -> None:
 
     with (
         _fetcher(httpx.MockTransport(handler), None, FakeClock()) as fetcher,
-        pytest.raises(FetchError, match="refused"),
+        pytest.raises(FetchError, match="refused") as caught,
     ):
         fetcher.get("https://example.org/x")
+    # A failure without an HTTP response carries no status.
+    assert caught.value.status is None
 
 
 class RecordingLimiter(RateLimiter):

@@ -89,6 +89,7 @@ def compute_reference(
     Raises:
         ValueError: If fewer than two texts have words.
     """
+    # Collect each feature's value for every text that has words.
     values: dict[str, list[float]] = {name: [] for name in FEATURE_NAMES}
     for doc in nlp.pipe(texts):
         features = aggregate(sentence_stats(doc, familiarity))
@@ -97,6 +98,7 @@ def compute_reference(
         for name, value in features.values().items():
             values[name].append(value)
 
+    # Means and sample SDs need at least two units.
     units = len(values[FEATURE_NAMES[0]])
     if units < _MIN_UNITS:
         raise ValueError(f"need at least {_MIN_UNITS} calibration texts with words, got {units}")

@@ -101,6 +101,8 @@ def analyse_document(
     """
     # Refuse over-long paragraphs before loading or running the parser.
     check_paragraph_lengths(document)
+
+    # Parse every paragraph in one batch and analyse each parse.
     pipeline = nlp or load_pipeline()
     lookup = familiarity or WordfreqFamiliarity()
     paragraphs = document.iter_paragraphs()
@@ -109,6 +111,7 @@ def analyse_document(
         analyse_paragraph(paragraph, doc, lookup)
         for paragraph, doc in zip(paragraphs, docs, strict=True)
     )
+    # A term defined in any paragraph counts as defined throughout the document.
     defined = DefinedTerms.from_definitions(
         (a.paragraph.id, d) for a in analyses for d in a.definitions
     )

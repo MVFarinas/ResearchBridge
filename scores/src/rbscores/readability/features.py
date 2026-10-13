@@ -201,11 +201,13 @@ def aggregate(stats: Sequence[SentenceStats]) -> ReadabilityFeatures | None:
     Returns:
         The features, or None if the unit has no words.
     """
+    # A unit without words has no features.
     sentences = len(stats)
     words = sum(s.words for s in stats)
     if sentences == 0 or words == 0:
         return None
 
+    # Rates are pooled over the unit's sentences and words, not averaged per sentence.
     alphabetic = sum(s.alphabetic_words for s in stats)
     jargon = sum(s.rare_words + 0.5 * s.mid_words for s in stats)
     return ReadabilityFeatures(

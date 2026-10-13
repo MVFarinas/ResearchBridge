@@ -94,6 +94,7 @@ def reference_from_json(data: Mapping[str, Any]) -> ReferenceStats:
     Raises:
         ReferenceStatsError: If a field or feature is missing, or an SD is not positive.
     """
+    # Parse every field, turning any missing or mistyped one into one error.
     try:
         raw_features = data["features"]
         features = {
@@ -111,6 +112,7 @@ def reference_from_json(data: Mapping[str, Any]) -> ReferenceStats:
     except (KeyError, TypeError, ValueError) as exc:
         raise ReferenceStatsError(f"malformed reference statistics: {exc!r}") from exc
 
+    # A zero or negative SD would make z-scores meaningless (or divide by zero).
     bad = [name for name, ref in features.items() if not ref.sd > 0]
     if bad:
         raise ReferenceStatsError(f"reference SD must be positive for: {', '.join(bad)}")

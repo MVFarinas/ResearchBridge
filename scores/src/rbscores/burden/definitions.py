@@ -276,6 +276,7 @@ class _Finder:
         Args:
             token: Candidate defining verb.
         """
+        # Each defining verb has its own subject and explanation slots.
         lemma = token.lemma_.lower()
         children = list(token.children)
         subject: Token | None = None
@@ -292,6 +293,7 @@ class _Finder:
         elif lemma == "stand":
             gloss_head = _child_with_text(children, "for")
             subject = _child_with_dep(children, "nsubj")
+        # "which refers to ..." defines the noun the relative clause hangs on.
         if subject is None or gloss_head is None:
             return
         subject = _resolve_relative(subject, token)
@@ -518,6 +520,7 @@ class _Finder:
             span: The phrase being defined.
             gloss: The explanation text.
         """
+        # Only the technical core counts, and never one inside a citation.
         core = term_core(span, self.familiarity)
         occurrence = occurrence_for(core, self.familiarity) if core is not None else None
         if occurrence is None or overlaps_any(occurrence.start, occurrence.end, self.skip):

@@ -185,6 +185,7 @@ def _parse_passages(items: Any, problems: list[str]) -> dict[str, Passage]:
     Returns:
         Valid passages by ID.
     """
+    # The list itself must exist and hold objects.
     passages: dict[str, Passage] = {}
     if not isinstance(items, list) or not items:
         problems.append("'passages' must be a non-empty list")
@@ -194,6 +195,8 @@ def _parse_passages(items: Any, problems: list[str]) -> dict[str, Passage]:
         if not isinstance(item, dict):
             problems.append(f"{where} must be an object")
             continue
+
+        # Each passage needs a valid, unique ID and some text; problems skip it.
         passage_id = item.get("passage_id")
         text = item.get("text")
         if not valid_id(passage_id):
@@ -205,6 +208,8 @@ def _parse_passages(items: Any, problems: list[str]) -> dict[str, Passage]:
         if passage_id in passages:
             problems.append(f"{where}.passage_id {passage_id!r} is duplicated")
             continue
+
+        # The optional source reports its own problems without dropping the passage.
         passages[passage_id] = Passage(
             passage_id, text, _parse_source(item.get("source"), where, problems)
         )
@@ -247,6 +252,7 @@ def _parse_raters(items: Any, problems: list[str]) -> dict[str, Rater]:
     Returns:
         Valid raters by ID.
     """
+    # The list itself must exist and hold objects.
     raters: dict[str, Rater] = {}
     if not isinstance(items, list) or not items:
         problems.append("'raters' must be a non-empty list")
@@ -256,6 +262,8 @@ def _parse_raters(items: Any, problems: list[str]) -> dict[str, Rater]:
         if not isinstance(item, dict):
             problems.append(f"{where} must be an object")
             continue
+
+        # A pseudonymous, unique ID and a known background; problems skip the rater.
         rater_id = item.get("rater_id")
         background = item.get("background", "not_reported")
         if not valid_id(rater_id):

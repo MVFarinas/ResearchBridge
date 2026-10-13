@@ -234,6 +234,7 @@ def compare(results: Sequence[PairResult], metric: str, comparison: str) -> dict
         Counts, the share correct (ties count as incorrect) with its 95%
         Wilson interval, a sign test on the untied pairs, and medians.
     """
+    # Count pairs where the lay text has the strictly lower value; ties are failures.
     correct = ties = 0
     lay_values: list[float] = []
     technical_values: list[float] = []
@@ -247,6 +248,7 @@ def compare(results: Sequence[PairResult], metric: str, comparison: str) -> dict
         elif lay_value == technical_value:
             ties += 1
 
+    # Share correct with its Wilson interval, a sign test on untied pairs, and medians.
     share = wilson_interval(correct, len(results))
     differences = [a - b for a, b in zip(lay_values, technical_values, strict=True)]
     return {
@@ -279,6 +281,7 @@ def paired_comparison(
         correctly (ties count as incorrect), and the two-sided exact p-value
         on the discordant pairs.
     """
+    # Tally the 2x2 table of right and wrong for the two metrics on each pair.
     counts = {"both": 0, "only_first": 0, "only_second": 0, "neither": 0}
     for result in results:
         lay, technical = result.texts(comparison)
@@ -292,6 +295,7 @@ def paired_comparison(
             counts["only_second"] += 1
         else:
             counts["neither"] += 1
+    # McNemar's exact test: a sign test on the pairs exactly one metric gets right.
     discordant = counts["only_first"] + counts["only_second"]
     return {
         "first": first,

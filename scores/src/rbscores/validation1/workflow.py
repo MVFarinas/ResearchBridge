@@ -161,9 +161,12 @@ def calibrate(data_dir: Path, output: Path, *, version: str) -> ReferenceStats:
     Returns:
         The statistics written.
     """
+    # Read the windows written by the download step.
     path = validation_dir(data_dir) / "calibration-windows.jsonl"
     with path.open(encoding="utf-8") as handle:
         rows = [json.loads(line) for line in handle if line.strip()]
+
+    # Record where the statistics come from, so the JSON documents itself.
     sources = sorted({row["source"] for row in rows})
     description = (
         "PROVISIONAL. Means and sample SDs of the five readability features over "
@@ -174,6 +177,7 @@ def calibrate(data_dir: Path, output: Path, *, version: str) -> ReferenceStats:
         f"spaCy {pipeline_label(load_pipeline())}, "
         f"wordfreq {package_version('wordfreq')}."
     )
+    # Compute and write the statistics.
     reference = compute_reference(
         [row["text"] for row in rows],
         nlp=load_pipeline(),

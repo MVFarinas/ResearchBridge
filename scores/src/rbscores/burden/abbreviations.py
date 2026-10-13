@@ -87,12 +87,15 @@ def find_abbreviations(sentence: str, *, offset: int = 0) -> list[Abbreviation]:
     Returns:
         Definitions in the order their parentheses appear.
     """
+    # Visit each top-level parenthetical in turn; an unclosed one ends the search.
     found: list[Abbreviation] = []
     position = 0
     while (open_index := sentence.find("(", position)) >= 0:
         close_index = _matching_close(sentence, open_index)
         if close_index < 0:
             break
+
+        # Pick the candidate short form and long-form text, then match them.
         pair = _pair_at(sentence, open_index, close_index)
         if pair is not None:
             short, short_start, long_candidate, long_base = pair

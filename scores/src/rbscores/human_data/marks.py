@@ -185,6 +185,7 @@ def _parse_responses(items: Any, header: StudyHeader, problems: list[str]) -> li
     Returns:
         Valid responses.
     """
+    # The list itself must exist and hold objects.
     if not isinstance(items, list) or not items:
         problems.append("'responses' must be a non-empty list")
         return []
@@ -195,6 +196,7 @@ def _parse_responses(items: Any, header: StudyHeader, problems: list[str]) -> li
         if not isinstance(item, dict):
             problems.append(f"{where} must be an object")
             continue
+        # Each response names a listed rater and passage, once per pair.
         rater, passage_id = item.get("rater_id"), item.get("passage_id")
         if not isinstance(rater, str) or not isinstance(passage_id, str):
             problems.append(f"{where} must name a listed rater and a listed passage")
@@ -206,6 +208,8 @@ def _parse_responses(items: Any, header: StudyHeader, problems: list[str]) -> li
             problems.append(f"{where} repeats rater {rater!r} on passage {passage_id!r}")
             continue
         seen.add((rater, passage_id))
+
+        # Marks are checked against the passage text they point into.
         marks = _parse_marks_list(
             item.get("marks"), header.passages[passage_id].text, where, problems
         )

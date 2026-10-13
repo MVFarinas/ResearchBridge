@@ -3,7 +3,7 @@
 Pipeline: :mod:`~rbscores.burden.terms` (candidate terms) ->
 :mod:`~rbscores.burden.definitions` (terms the text defines, including
 Schwartz-Hearst abbreviations from :mod:`~rbscores.burden.abbreviations`) ->
-:mod:`~rbscores.burden.citations` (external results leaned on) ->
+:mod:`~rbscores.burden.references` (citation markers: external results leaned on) ->
 :mod:`~rbscores.burden.score` (weighting and the per-1,000-word score).
 """
 

@@ -162,6 +162,7 @@ def fetch_rows(
         DatasetFormatError: If a page is not the expected JSON shape.
         KeyError: If ``source`` is unknown.
     """
+    # Page through the split until its reported total (or the limit) is reached.
     dataset = DATASETS[source]
     offset = 0
     total: int | None = None
@@ -172,6 +173,8 @@ def fetch_rows(
         rows = page["rows"]
         if not rows:
             return
+
+        # Skip rows with truncated cells rather than score cut-short text.
         for item in rows:
             if not item.get("truncated_cells"):
                 yield int(item["row_idx"]), item["row"]
@@ -213,10 +216,12 @@ def pair_from_row(source: str, split: str, row: int, fields: Mapping[str, Any]) 
         The pair, or None if the first section is not headed "Abstract" or
         either text is empty.
     """
+    # The abstract is the first section, and only if it is headed "Abstract".
     headings = fields.get("section_headings") or []
     sections = str(fields.get("article", "")).split("\n")
     if not headings or str(headings[0]).strip().lower() != "abstract":
         return None
+    # Restore normal spacing; keep lay-summary paragraphs apart.
     abstract = detokenise(sections[0])
     paragraphs = (detokenise(p) for p in str(fields.get("summary", "")).split("\n"))
     lay_summary = "\n\n".join(p for p in paragraphs if p)

@@ -105,6 +105,22 @@ def test_rank_undefined_terms_covers_abstracts(nlp: Language, jats_fixtures: Pat
     assert any(pid.startswith("abs") for pid in located_in)
 
 
+def test_rank_undefined_terms_skips_the_related_article_reference(
+    nlp: Language, jats_fixtures: Path
+) -> None:
+    """The Insight's "Related research article" box (body-p1) adds no author names or IDs."""
+    document = load_document(jats_fixtures / "elife-93719-pmc-s3.xml")
+    ranked = rank_undefined_terms(document, nlp=nlp, familiarity=WordfreqFamiliarity())
+    top = ranked[:20]
+    assert all(loc.paragraph_id != "body-p1" for t in ranked for loc in t.locations)
+    top_words = {word for t in top for word in t.text.replace("-", " ").split()}
+    for surname in ("Cornilleau", "Gallay", "Afensiss", "Benlamara", "Tilbeurgh", "Nessler"):
+        assert surname not in top_words
+    assert not any("e84505" in t.key for t in ranked)
+    # Real technical terms of the Insight are still ranked.
+    assert {"protofilament", "liposome"} <= {t.key for t in top}
+
+
 def test_real_lay_text_scores_easier_than_its_technical_version(nlp: Language) -> None:
     """A plain sentence pair (written for this test) ranks as expected on both scores."""
     technical = (

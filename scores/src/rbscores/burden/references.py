@@ -9,13 +9,18 @@ it lists) counts once towards the burden score. Recognised forms:
 * parenthetical author-year: ``(Smith, 2019)``, ``(Smith et al., 2019;
   Lee and Park 2020a)``, ``(see Smith et al., 2019)``, with name particles
   and non-English letters (``van den Ent et al., 2014``, ``Domínguez-Escobar``);
-* narrative author-year: ``Smith et al. (2019)``.
+* narrative author-year: ``Smith et al. (2019)``, and eLife's unbracketed
+  ``Smith et al., 2019`` and ``Day and Bentley, 1911`` (a single author with
+  a bare year, "Crick, 1984", is too easily confused with prose to count).
 
 Superscript numbers are not recognised: JATS flattening keeps a citation's
 text but not that it was superscript, and bare digits are ambiguous.
 
-Figure and table references ("Figure 1A", "Fig. 2B-D", "Table S1") are found
-only so that their labels are not mistaken for terms; they add no burden.
+Figure and table references ("Figure 1A", "Fig. 2B-D", "Table S1") and full
+bibliographic reference strings (three or more "Surname AB" authors and a
+year, extended to a DOI that follows, as in an eLife Insight's "Related
+research article" box) are found only so that their words are not mistaken
+for terms; they add no burden.
 """
 
 from __future__ import annotations
@@ -25,7 +30,8 @@ from collections.abc import Iterable
 
 _YEAR = r"(?:19|20)\d{2}[a-z]?"
 # A surname: optional lower-case particles ("van den Ent"), then a capitalised word.
-_PARTICLES = r"(?:(?:van|von|de|der|den|del|della|di|da|du|la|le|ter|ten)\s+)*"
+_PARTICLE_WORDS = r"(?:van|von|de|der|den|del|della|di|da|du|la|le|ter|ten)"
+_PARTICLES = rf"(?:{_PARTICLE_WORDS}\s+)*"
 _AUTHOR = rf"{_PARTICLES}[A-Z][^\W\d_][\w'\u2019\-]*"
 _AUTHOR_YEAR = rf"{_AUTHOR}(?:\s+et\s+al\.?|\s+(?:and|&)\s+{_AUTHOR})?,?\s+{_YEAR}"
 
@@ -34,6 +40,19 @@ _PARENTHETICAL = re.compile(
     rf"\((?:see\s+|e\.g\.,?\s+)?{_AUTHOR_YEAR}(?:\s*[;,]\s*(?:{_AUTHOR_YEAR}|{_YEAR}))*\)"
 )
 _NARRATIVE = re.compile(rf"\b{_AUTHOR}\s+et\s+al\.?\s*\({_YEAR}\)")
+_NARRATIVE_BARE = re.compile(rf"\b{_AUTHOR}\s+(?:et\s+al\.?|(?:and|&)\s+{_AUTHOR}),?\s+{_YEAR}\b")
+
+# A reference-list author: up to three name words or particles, a surname, initials.
+_REF_NAME_WORD = rf"(?:[A-Z][^\W\d_][\w'\u2019\-]*|{_PARTICLE_WORDS})"
+_REF_AUTHOR = (
+    rf"(?<![\w'\u2019\-])(?:{_REF_NAME_WORD}\s+){{0,3}}[A-Z][^\W\d_][\w'\u2019\-]*\s+[A-Z]{{1,3}}\b"
+)
+# At most 50 authors, which bounds the backtracking on long capitalised runs.
+_AUTHOR_LIST = re.compile(
+    rf"{_REF_AUTHOR}(?:,\s+{_REF_AUTHOR}){{2,49}}(?:,?\s+et\s+al)?\.?\s+\(?{_YEAR}\)?"
+)
+_DOI = re.compile(r"\b(?:doi:?\s*|https?://(?:dx\.)?doi\.org/)10\.\d{4,9}/[^\s,;]*[^\s,;.)]")
+_MAX_REFERENCE_TO_DOI_CHARS = 600
 _DISPLAY_OBJECT = re.compile(
     r"\b(?:Fig(?:ure)?s?\.?|Tables?|Videos?|Appendix|Box|Equations?|Eq\.)"
     r"\s*S?\d+[A-Za-z]?(?:\s*[-\u2013\u2014,]\s*S?(?:\d+[A-Za-z]?|[A-Za-z])\b)*"
@@ -51,7 +70,7 @@ def find_citations(text: str) -> list[tuple[int, int]]:
     """
     return _non_overlapping(
         (match.start(), match.end())
-        for pattern in (_NUMERIC, _PARENTHETICAL, _NARRATIVE)
+        for pattern in (_NUMERIC, _PARENTHETICAL, _NARRATIVE, _NARRATIVE_BARE)
         for match in pattern.finditer(text)
     )
 
@@ -68,6 +87,36 @@ def find_display_references(text: str) -> list[tuple[int, int]]:
     return _non_overlapping((m.start(), m.end()) for m in _DISPLAY_OBJECT.finditer(text))
 
 
+def find_reference_strings(text: str) -> list[tuple[int, int]]:
+    """Find full bibliographic references and DOIs written into running text.
+
+    A reference starts at a list of three or more "Surname AB" authors
+    followed by a year ("Mao W, Renner LD, Cornilleau C, ... 2023.") and runs
+    to the end of the first DOI within :data:`_MAX_REFERENCE_TO_DOI_CHARS`
+    characters, so its title, journal and article number are covered too;
+    without a DOI it covers the authors and year only. Every DOI is also
+    returned on its own.
+
+    Args:
+        text: Paragraph text.
+
+    Returns:
+        Non-overlapping ``(start, end)`` spans, sorted by start.
+    """
+    spans: list[tuple[int, int]] = []
+    dois = [(m.start(), m.end()) for m in _DOI.finditer(text)]
+
+    # Extend each author list to the DOI that closes its reference, if any.
+    for match in _AUTHOR_LIST.finditer(text):
+        end = match.end()
+        for doi_start, doi_end in dois:
+            if end <= doi_start <= match.end() + _MAX_REFERENCE_TO_DOI_CHARS:
+                end = doi_end
+                break
+        spans.append((match.start(), end))
+    return _non_overlapping(spans + dois)
+
+
 def excluded_spans(text: str) -> list[tuple[int, int]]:
     """Return the spans that can hold neither terms nor definitions.
 
@@ -75,9 +124,12 @@ def excluded_spans(text: str) -> list[tuple[int, int]]:
         text: Paragraph text.
 
     Returns:
-        Citation markers and display-object references, sorted by start.
+        Citation markers, display-object references and reference strings,
+        sorted by start (they may overlap one another).
     """
-    return sorted(find_citations(text) + find_display_references(text))
+    return sorted(
+        find_citations(text) + find_display_references(text) + find_reference_strings(text)
+    )
 
 
 def overlaps_any(start: int, end: int, spans: Iterable[tuple[int, int]]) -> bool:

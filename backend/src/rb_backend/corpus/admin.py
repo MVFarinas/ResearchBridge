@@ -9,10 +9,11 @@ re-runs the gate.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, ClassVar
 
 from django import forms
 from django.contrib import admin, messages
+from django.db import models
 from django.db.models import QuerySet
 from django.http import HttpRequest
 
@@ -32,6 +33,11 @@ from rbcore.licences import LicenceFamily, normalise_licence
 
 class ReadOnlyAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
     """An admin that shows rows but never adds, edits or deletes them."""
+
+    # Source URLs are https; say so explicitly (Django 6 changes the default).
+    formfield_overrides: ClassVar[dict[type[models.Field[Any, Any]], dict[str, Any]]] = {
+        models.URLField: {"assume_scheme": "https"}
+    }
 
     def has_add_permission(self, request: HttpRequest, obj: Any = None) -> bool:
         """Never add rows by hand.

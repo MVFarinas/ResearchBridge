@@ -18,7 +18,7 @@ from datetime import timedelta
 from functools import wraps
 
 from django.conf import settings
-from django.db import close_old_connections
+from django.db import connections
 from django.db.models import Q
 from django.utils import timezone
 from procrastinate import RetryStrategy
@@ -34,8 +34,19 @@ logger = logging.getLogger(__name__)
 INGESTION_QUEUE = "ingestion"
 
 
+def close_stale_connections() -> None:
+    """Close unusable or expired database connections, as Django does per request.
+
+    A connection inside an atomic block is never closed (a caller, such as a
+    test or a management command, may be running the task in a transaction).
+    """
+    for conn in connections.all(initialized_only=True):
+        if not conn.in_atomic_block:
+            conn.close_if_unusable_or_obsolete()
+
+
 def _with_fresh_connections[**P, R](func: Callable[P, R]) -> Callable[P, R]:
-    """Close stale database connections around a task, as Django does per request.
+    """Close stale database connections around a task.
 
     Args:
         func: The task function.
@@ -47,11 +58,11 @@ def _with_fresh_connections[**P, R](func: Callable[P, R]) -> Callable[P, R]:
     @wraps(func)
     def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
         """Run the task between two connection clean-ups."""
-        close_old_connections()
+        close_stale_connections()
         try:
             return func(*args, **kwargs)
         finally:
-            close_old_connections()
+            close_stale_connections()
 
     return wrapper
 

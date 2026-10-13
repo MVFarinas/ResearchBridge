@@ -321,3 +321,10 @@ migration applied cleanly; `recheck_licences --offline` recomputed all 241 versi
 changes, and `corpus_stats` matched the counts above; a live `recheck_licences --sync` of three
 stored articles (two approved, one TDM) reported all three `unchanged`.
 `docker compose -p rb-phase2 down` was run at the end.
+
+Fix round 2 (2026-10-13, night): from a fresh `.venv` (`rm -rf .venv` plus every cache, then
+`make setup`), `make check` passed: ruff lint and format, docstring and lock checks, mypy on
+backend, rbcore and tools, and pytest with 266 backend cases, 257 rbcore and 11 tools. On the
+local corpus, migration `corpus/0004` applied cleanly and `recheck_licences --offline` recomputed
+all 241 versions (197 approved, 44 rejected) with 0 changes. The backend image was not rebuilt
+(no dependency or Dockerfile change). `docker compose -p rb-phase2 down` was run at the end.

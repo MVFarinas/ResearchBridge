@@ -1,0 +1,23 @@
+# Rewrite configuration matrix, version 1 (decisions.md §1.4, Plan.md Phase 1).
+#
+# Every passage is rewritten once per arm. The model ID is NOT here: it comes
+# from configuration (RB_LLM_GENERATION_MODEL, or `rbbench rewrite --model`),
+# never from code or this file, because the benchmark chooses it.
+#
+# The two arms test the reported effect of temperature on overgeneralisation
+# (Peters & Chin-Yee 2025: temperature 0 cut the odds by about 76%).
+#
+# Caveat recorded in docs/phase-notes/phase-0.md: some current Claude models
+# reject non-default sampling parameters (HTTP 400). If the chosen model does,
+# the temperature-0 arm fails with a recorded error rather than silently
+# running at the default; pick a model that accepts it, or replace this arm.
+
+version: rewrite_matrix_v1
+prompt: rewrite_v1
+max_added_sentences: 2
+arms:
+  - name: temperature-0
+    temperature: 0.0
+  - name: default
+    # null: send no temperature, so the model's default applies.
+    temperature: null

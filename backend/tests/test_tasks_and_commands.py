@@ -236,6 +236,8 @@ def test_corpus_stats_counts_by_licence_and_status(use_bucket: PmcBucket) -> Non
     run("ingest_pmc", "--pmcid", "PMC10718527", "PMC7781593", "PMC13641010", "--sync")
     stats = json.loads(run("corpus_stats", "--json"))
     assert stats["totals"]["papers"] == 3
+    assert stats["totals"]["withdrawn_from_source"] == 0
+    assert stats["content_state"] == {"parsed": 2, "skipped": 1}
     assert stats["approved_by_licence"] == {"cc-by": 2}
     assert stats["rejected_by_licence"] == {"tdm": 1}
     assert stats["open_reviews_by_scope"] == {"figure": 1}

@@ -40,9 +40,11 @@ def corpus_stats() -> dict[str, Any]:
 
     Returns:
         A JSON-serialisable dictionary: totals, current versions by gate
-        status, licence families of approved and rejected versions, open
-        reviews by scope, part decisions, and what the gated querysets return.
+        status and by content state, licence families of approved and
+        rejected versions, open reviews by scope, part decisions, and what
+        the gated querysets return.
     """
+    # Every count below is about current versions, the only ones ever served.
     current = PaperVersion.objects.filter(is_current=True)
     by_status_family = current.values("gate_status", "licence_family").annotate(n=Count("pk"))
 
@@ -53,18 +55,25 @@ def corpus_stats() -> dict[str, Any]:
         )
 
     return {
+        # Headline totals, including papers the source no longer lists.
         "totals": {
             "papers": Paper.objects.count(),
             "current_versions": current.count(),
             "author_manuscripts": current.filter(is_manuscript=True).count(),
             "retracted_papers": Paper.objects.filter(is_retracted=True).count(),
+            "withdrawn_from_source": current.filter(source_withdrawn_at__isnull=False).count(),
         },
+        # Version-level gate decisions, whether full text is held, and the licences behind them.
         "gate_status": _counts(
             current.values("gate_status").annotate(n=Count("pk")), "gate_status"
+        ),
+        "content_state": _counts(
+            current.values("content_state").annotate(n=Count("pk")), "content_state"
         ),
         "approved_by_licence": families(GateStatus.APPROVED),
         "rejected_by_licence": families(GateStatus.REJECTED),
         "review_by_proposed_licence": families(GateStatus.REVIEW),
+        # What still needs a human, and how the parts were decided.
         "open_reviews_by_scope": _counts(
             LicenceReview.objects.filter(status=ReviewStatus.OPEN)
             .values("scope")
@@ -83,6 +92,7 @@ def corpus_stats() -> dict[str, Any]:
             .annotate(n=Count("pk")),
             "gate_status",
         ),
+        # Exactly what the access layer would serve to readers and generators.
         "gated_querysets": {
             "displayable_papers": Paper.objects.displayable().count(),
             "rewriteable_papers": Paper.objects.rewriteable().count(),

@@ -195,3 +195,25 @@ def test_xml_from_a_corrupt_cache_is_replaced(
     cached.write_bytes(b"<corrupt-synthetic/>")
     assert b"<article" in bucket.article_xml(metadata)
     assert len(recorded.fetched(".xml")) == 1
+
+
+def test_forget_xml_deletes_only_the_cached_copy(bucket: PmcBucket, fetcher: PoliteFetcher) -> None:
+    """Forgetting an article's XML removes its cache file and reports whether one existed."""
+    # Arrange: download (and so cache) one recorded article's XML.
+    metadata, _ = bucket.metadata("PMC7853715.1")
+    assert metadata.xml_url is not None
+    bucket.article_xml(metadata)
+    cached = fetcher.cache_path(metadata.xml_url)
+    assert cached is not None
+    assert cached.is_file()
+
+    # The first call deletes it; a second has nothing left to delete.
+    assert bucket.forget_xml(metadata.xml_url) is True
+    assert not cached.exists()
+    assert bucket.forget_xml(metadata.xml_url) is False
+
+
+def test_forget_xml_without_a_cache_is_a_no_op() -> None:
+    """A fetcher with no cache directory has nothing to forget."""
+    with PoliteFetcher(cache_dir=None) as uncached:
+        assert PmcBucket(uncached).forget_xml(f"{BASE_URL}/PMC1.1/PMC1.1.xml") is False

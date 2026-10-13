@@ -31,7 +31,7 @@ from rb_backend.ingestion.pipeline import (
     normalise_doi,
 )
 from rb_backend.ingestion.pmc import PmcBucket
-from rbcore.http import FetchError
+from rbcore.http import FetchError, PoliteFetcher
 from rbcore.jats import parse_jats
 
 pytestmark = pytest.mark.django_db
@@ -281,7 +281,7 @@ def test_article_removed_from_bucket_is_held_for_review_until_relisted(
 
 
 def test_jats_rejection_removes_text_and_does_not_refetch_it(
-    bucket: PmcBucket, recorded: RecordedBucket
+    bucket: PmcBucket, recorded: RecordedBucket, fetcher: PoliteFetcher
 ) -> None:
     """No code plus an all-rights-reserved JATS licence: rejected, and no text is kept."""
     # A synthetic article without a PMC code whose JATS licence reserves all rights.
@@ -300,6 +300,11 @@ def test_jats_rejection_removes_text_and_does_not_refetch_it(
     assert version.content_state == ContentState.REMOVED
     assert not Paragraph.objects.exists()
     assert PermissionsBlockRecord.objects.active().filter(scope="article").count() == 1
+
+    # Neither the database nor the download cache keeps the rejected XML.
+    cached = fetcher.cache_path(version.content_url)
+    assert cached is not None
+    assert not cached.exists()
 
     # A re-check with the same XML keeps the rejection without parsing the text again.
     report = ingest(SYNTHETIC_PMCID, bucket, now=NOW + timedelta(days=8))

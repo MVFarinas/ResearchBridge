@@ -22,7 +22,8 @@ Order of work for the latest version of an article:
    ``license_code`` (with history) and ``is_retracted``, store the content and
    every ``<permissions>`` block (or purge stored text the code now refuses),
    and recompute the licence gate for the version and its parts. A version
-   the gate rejects loses its stored text in the same step.
+   the gate rejects loses its stored text in the same step, and its XML is
+   then deleted from the local download cache too.
 
 Network requests happen before the transaction. Because the evidence and the
 decision drawn from it are written together, a crash can never leave a
@@ -157,6 +158,10 @@ def ingest_pmc_article(
             report = _write(
                 metadata, raw, metadata_url, refused=False, content=content, now=now, today=today
             )
+
+    # A rejected version keeps no text anywhere: drop the cached XML as well.
+    if report.gate_status == GateStatus.REJECTED and metadata.xml_url:
+        bucket.forget_xml(metadata.xml_url)
     logger.info(
         "%s: %s, gate %s (%s)",
         version_id,

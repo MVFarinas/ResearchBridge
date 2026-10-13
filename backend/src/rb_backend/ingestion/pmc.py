@@ -366,6 +366,25 @@ class PmcBucket:
             raise PmcError(f"{metadata.version_id} XML does not match its MD5 {metadata.xml_md5}")
         return data
 
+    def forget_xml(self, xml_url: str) -> bool:
+        """Delete the locally cached copy of an article's XML, if there is one.
+
+        Used when the licence gate rejects a version: its text must not be kept
+        anywhere, the download cache included (decisions.md §1.1).
+
+        Args:
+            xml_url: The XML's HTTPS URL (``PmcMetadata.xml_url``, also stored
+                as ``PaperVersion.content_url``).
+
+        Returns:
+            True if a cached file was deleted.
+        """
+        cached = self._fetcher.cache_path(xml_url)
+        if cached is None or not cached.is_file():
+            return False
+        cached.unlink(missing_ok=True)
+        return True
+
 
 def _md5_matches(data: bytes, expected: str | None) -> bool:
     """Check bytes against the MD5 the bucket publishes.

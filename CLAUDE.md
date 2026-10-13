@@ -16,6 +16,8 @@ Guidance for Claude (and other agents) working in this repository.
   go in the gitignored `data/`.
 - **Commands:** `make setup`, `make lint`, `make format`, `make typecheck`, `make test`,
   `make check` (what CI runs), `make lock` (after changing dependencies), `make db-up` / `make db-down`.
+  Benchmark (Phase 1): `rbbench --help`; `rbbench dry-run` runs every step offline on the
+  fixtures with fake clients and synthetic raters ([benchmark/README.md](benchmark/README.md)).
 - **Layout:** `libs/rbcore` (shared library), `tools` (repo checks), `benchmark` (Phase 1),
   `backend` (Phase 2), `scores` (Track R), `web` (Phases 4-5), `docs`, `third_party`.
   A directory with a `pyproject.toml` is a Python package and is picked up automatically.

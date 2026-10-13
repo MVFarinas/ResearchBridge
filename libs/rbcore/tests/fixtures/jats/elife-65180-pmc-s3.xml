@@ -1,0 +1,690 @@
+
+<!DOCTYPE article
+  PUBLIC "-//NLM//DTD JATS (Z39.96) Journal Archiving and Interchange DTD with MathML3 v1.4 20241031//EN" "JATS-archivearticle1-4-mathml3.dtd">
+<article xml:lang="en" article-type="review-article" dtd-version="1.4"><processing-meta base-tagset="archiving" mathml-version="3.0" table-model="xhtml" tagset-family="jats"><restricted-by>pmc</restricted-by></processing-meta><front><journal-meta><journal-id journal-id-type="nlm-ta">eLife</journal-id><journal-id journal-id-type="iso-abbrev">Elife</journal-id><journal-id journal-id-type="pmc-domain-id">1894</journal-id><journal-id journal-id-type="pmc-domain">elife</journal-id><journal-id journal-id-type="nlm-id">101579614</journal-id><journal-id journal-id-type="publisher-id">eLife</journal-id><journal-title-group><journal-title>eLife</journal-title></journal-title-group><issn pub-type="epub">2050-084X</issn><publisher><publisher-name>eLife Sciences Publications, Ltd</publisher-name></publisher></journal-meta><article-meta><article-id pub-id-type="pmcid">PMC7853715</article-id><article-id pub-id-type="pmcid-ver">PMC7853715.1</article-id><article-id pub-id-type="pmcaid">7853715</article-id><article-id pub-id-type="pmcaiid">7853715</article-id><article-id pub-id-type="pmid">33526169</article-id><article-id pub-id-type="doi">10.7554/eLife.65180</article-id><article-id pub-id-type="publisher-id">65180</article-id><article-version article-version-type="pmc-version">1</article-version><article-categories><subj-group subj-group-type="display-channel"><subject>Review Article</subject></subj-group><subj-group subj-group-type="heading"><subject>Immunology and Inflammation</subject></subj-group></article-categories><title-group><article-title>Gross ways to live long: Parasitic worms as an anti-inflammaging therapy?</article-title></title-group><contrib-group><contrib id="author-216247" contrib-type="author"><name name-style="western"><surname>Zhang</surname><given-names initials="B">Bruce</given-names></name><contrib-id authenticated="true" contrib-id-type="orcid">http://orcid.org/0000-0003-0956-6142</contrib-id><xref rid="aff1" ref-type="aff"/><xref rid="conf1" ref-type="fn"/></contrib><contrib id="author-8830" contrib-type="author" corresp="yes"><name name-style="western"><surname>Gems</surname><given-names initials="D">David</given-names></name><contrib-id authenticated="true" contrib-id-type="orcid">https://orcid.org/0000-0002-6653-4676</contrib-id><email>david.gems@ucl.ac.uk</email><xref rid="aff1" ref-type="aff"/><xref rid="fund1" ref-type="other"/><xref rid="fund2" ref-type="other"/><xref rid="conf1" ref-type="fn"/></contrib><aff id="aff1">
+<institution>Institute of Healthy Ageing, and Research Department of Genetics, Evolution and Environment, University College London</institution>
+<addr-line>London</addr-line>
+<country>United Kingdom</country>
+</aff></contrib-group><contrib-group><contrib contrib-type="editor"><name name-style="western"><surname>Soldati-Favre</surname><given-names initials="D">Dominique</given-names></name><role>Reviewing Editor</role><aff>
+<institution>University of Geneva</institution>
+<country>Switzerland</country>
+</aff></contrib><contrib contrib-type="editor"><name name-style="western"><surname>Soldati-Favre</surname><given-names initials="D">Dominique</given-names></name><role>Senior Editor</role><aff>
+<institution>University of Geneva</institution>
+<country>Switzerland</country>
+</aff></contrib></contrib-group><pub-date date-type="pub" publication-format="electronic"><day>02</day><month>2</month><year>2021</year></pub-date><pub-date pub-type="collection"><year>2021</year></pub-date><volume>10</volume><issue-id pub-id-type="pmc-issue-id">371997</issue-id><elocation-id>e65180</elocation-id><history><date date-type="received" iso-8601-date="2020-11-26"><day>26</day><month>11</month><year>2020</year></date><date date-type="accepted" iso-8601-date="2021-01-05"><day>05</day><month>1</month><year>2021</year></date></history><pub-history><event event-type="pmc-release"><date><day>02</day><month>02</month><year>2021</year></date></event><event event-type="pmc-live"><date><day>04</day><month>02</month><year>2021</year></date></event><event event-type="pmc-last-change"><date iso-8601-date="2026-05-13 00:25:17.470"><day>13</day><month>05</month><year>2026</year></date></event></pub-history><permissions><copyright-statement>© 2021, Zhang and Gems</copyright-statement><copyright-year>2021</copyright-year><copyright-holder>Zhang and Gems</copyright-holder><ali:free_to_read xmlns:ali="http://www.niso.org/schemas/ali/1.0/"/><license><ali:license_ref xmlns:ali="http://www.niso.org/schemas/ali/1.0/" specific-use="textmining" content-type="ccbylicense">https://creativecommons.org/licenses/by/4.0/</ali:license_ref><license-p>This article is distributed under the terms of the <ext-link xmlns:xlink="http://www.w3.org/1999/xlink" ext-link-type="uri" xlink:href="https://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution License</ext-link>, which permits unrestricted use and redistribution provided that the original author and source are credited.</license-p></license></permissions><self-uri xmlns:xlink="http://www.w3.org/1999/xlink" content-type="pmc-pdf" xlink:href="elife-65180.pdf"/><self-uri xmlns:xlink="http://www.w3.org/1999/xlink" content-type="pdf" xlink:href="elife-65180.pdf"/><abstract><p>Evolutionary medicine argues that disease can arise because modern conditions do not match those in which we evolved. For example, a decline in exposure to commensal microbes and gastrointestinal helminths in developed countries has been linked to increased prevalence of allergic and autoimmune inflammatory disorders (the hygiene hypothesis). Accordingly, probiotic therapies that restore ‘old friend’ microbes and helminths have been explored as Darwinian treatments for these disorders. A further possibility is that loss of old friend commensals also increases the sterile, aging-associated inflammation known as inflammaging, which contributes to a range of age-related diseases, including cardiovascular disease, dementia, and cancer. Interestingly, Crowe et al., 2020 recently reported that treatment with a secreted glycoprotein from a parasitic nematode can protect against murine aging by induction of anti-inflammatory mechanisms. Here, we explore the hypothesis that restorative helminth therapy would have anti-inflammaging effects. Could worm infections provide broad-spectrum protection against age-related disease?</p></abstract><kwd-group kwd-group-type="author-keywords"><kwd>evolutionary medicine</kwd><kwd>aging</kwd><kwd>inflammaging</kwd><kwd>hygiene hypothesis</kwd><kwd>old friends</kwd><kwd>helminth therapy</kwd></kwd-group><funding-group><award-group id="fund1"><funding-source>
+<institution-wrap><institution-id institution-id-type="FundRef">http://dx.doi.org/10.13039/100004440</institution-id><institution>Wellcome Trust</institution></institution-wrap>
+</funding-source><award-id>098565/Z/12/Z</award-id><principal-award-recipient>
+<name name-style="western"><surname>Gems</surname><given-names>David</given-names></name>
+</principal-award-recipient></award-group><award-group id="fund2"><funding-source>
+<institution-wrap><institution-id institution-id-type="FundRef">http://dx.doi.org/10.13039/100004440</institution-id><institution>Wellcome Trust</institution></institution-wrap>
+</funding-source><award-id>215574/Z/19/Z</award-id><principal-award-recipient>
+<name name-style="western"><surname>Gems</surname><given-names>David</given-names></name>
+</principal-award-recipient></award-group><funding-statement>The funders had no role in study design, data collection and interpretation, or the decision to submit the work for publication.</funding-statement></funding-group><custom-meta-group><custom-meta><meta-name>pmc-status-qastatus</meta-name><meta-value>0</meta-value></custom-meta><custom-meta><meta-name>pmc-status-live</meta-name><meta-value>yes</meta-value></custom-meta><custom-meta><meta-name>pmc-status-embargo</meta-name><meta-value>no</meta-value></custom-meta><custom-meta><meta-name>pmc-status-released</meta-name><meta-value>yes</meta-value></custom-meta><custom-meta><meta-name>pmc-prop-open-access</meta-name><meta-value>yes</meta-value></custom-meta><custom-meta><meta-name>pmc-prop-olf</meta-name><meta-value>no</meta-value></custom-meta><custom-meta><meta-name>pmc-prop-manuscript</meta-name><meta-value>no</meta-value></custom-meta><custom-meta><meta-name>pmc-prop-legally-suppressed</meta-name><meta-value>no</meta-value></custom-meta><custom-meta><meta-name>pmc-prop-has-pdf</meta-name><meta-value>yes</meta-value></custom-meta><custom-meta><meta-name>pmc-prop-has-supplement</meta-name><meta-value>no</meta-value></custom-meta><custom-meta><meta-name>pmc-prop-pdf-only</meta-name><meta-value>no</meta-value></custom-meta><custom-meta><meta-name>pmc-prop-suppress-copyright</meta-name><meta-value>no</meta-value></custom-meta><custom-meta><meta-name>pmc-prop-is-real-version</meta-name><meta-value>no</meta-value></custom-meta><custom-meta><meta-name>pmc-prop-is-scanned-article</meta-name><meta-value>no</meta-value></custom-meta><custom-meta><meta-name>pmc-prop-preprint</meta-name><meta-value>no</meta-value></custom-meta><custom-meta><meta-name>pmc-prop-in-epmc</meta-name><meta-value>yes</meta-value></custom-meta><custom-meta><meta-name>pmc-license-ref</meta-name><meta-value>CC BY</meta-value></custom-meta><custom-meta specific-use="meta-only"><meta-name>Author impact statement</meta-name><meta-value>The absence of helminth parasites in developed countries may be exacerbating pathological, age-associated inflammation, known as inflammaging, suggesting that helminth therapies could provide protection against age-related disease.</meta-value></custom-meta></custom-meta-group></article-meta></front><body><sec sec-type="intro" id="s1"><title>Introduction</title><p>The aging process is the main cause of senescent multimorbidity, the co-occurrence of multiple chronic pathologies that includes the major diseases of late life. The geroscience approach views preventative intervention in the aging process as a means to simultaneously pre-empt the development of multiple age-related diseases (<xref rid="bib5" ref-type="bibr">Austad, 2016</xref>). How does aging cause senescent multimorbidity? While there are clearly multiple contributory factors, one determinant whose importance is becoming increasingly clear is inflammaging, the state of systemic, low-grade inflammation that increases with age, independent of attack by infectious pathogens (<xref rid="bib23" ref-type="bibr">Franceschi et al., 2000</xref>). Such inflammation is a contributory factor in diverse age-related pathologies, including cardiovascular disease, dementia, cancer, chronic obstructive pulmonary disease (COPD), osteoporosis, age-related macular degeneration (<xref rid="bib75" ref-type="bibr">Xia et al., 2016</xref>), and perhaps even symptom severity during SARS-CoV-2 (COVID-19) infections (<xref rid="bib1" ref-type="bibr">Akbar and Gilroy, 2020</xref>).</p><p>One cause of inflammaging is gut dysbiosis, an imbalance in the composition of the intestinal microbiome. Such imbalance can manifest as loss of immunomodulatory microbial species and is exacerbated by pro-dysbiotic aspects of the modern lifestyle, including antibiotic usage and the so-called Western diet (<xref rid="bib8" ref-type="bibr">Buford, 2017</xref>). One interpretation of the cause of such dysbiotic effects utilizes the ‘old friends’ hypothesis (derived from the hygiene hypothesis [<xref rid="bib62" ref-type="bibr">Strachan, 1989</xref>]). This argues that the human immune system evolved optimal function in a dirtier world, including the presence of various microbes and helminth parasites, whose removal leads to pathogenic immunological hyperactivity (<xref rid="bib56" ref-type="bibr">Rook et al., 2004</xref>). Gut dysbiosis certainly does contribute to allergic and autoimmune inflammation prior to aging (<xref rid="bib30" ref-type="bibr">Kamada et al., 2013</xref>). One corollary of the old friends hypothesis is that restoration of old friend species should attenuate such inflammatory hyperfunction and reduce disease. Indeed, fecal microbiota transfer from healthy donors has been suggested as a potential anti-inflammaging therapy (<xref rid="bib24" ref-type="bibr">Franceschi and Campisi, 2014</xref>). While the possible role of the microbiome in inflammaging has engaged the imagination of biogerontologists, little consideration has been given to a possible similar role in aging of the macrobiome – in particular, helminth parasites, which include flukes, tapeworms, and nematodes.</p><p>Parasitic helminths have infected humans throughout their evolutionary history. As a consequence, helminths have become master manipulators of our immune system in order to dodge host attack. Meanwhile, we have evolved some levels of tolerance of their presence. The wisdom of sometimes putting up with helminths is illustrated by the pathologies that can result from overly aggressive anti-helminth responses, as in elephantiasis that can result from infection with the filarial nematode <italic toggle="yes">Wuchereria bancrofti</italic> (<xref rid="fig1" ref-type="fig">Figure 1a</xref>). Through such coevolution, normal human immune development and function is likely to have become dependent upon the presence of immunomodulatory helminths, as well as that of their microbial counterparts (<xref rid="bib69" ref-type="bibr">Velasquez-Manoff, 2012</xref>). Indeed, like old friend microbes, reduced helminth infection in ultra-clean modern societies has been linked to increased rates of allergic and autoimmune inflammatory disease, while restorative helminth therapies can protect against these conditions (see next section). But does reduced helminth infection, like gut dysbiosis, also promote inflammaging in later life? And, consequently, could restorative therapy with helminths, given at low doses that do not cause illness, reduce inflammaging, and ameliorate the pathologies that it promotes (<xref rid="fig2" ref-type="fig">Figure 2a</xref>)?</p><fig position="float" id="fig1" orientation="portrait"><label>Figure 1.</label><caption><title>Helminth therapy to prevent Darwinian diseases of inflammatory hyperactivity.</title><p>(<bold>a</bold>) Resistance is futile: the filarial nematode <italic toggle="yes">Wuchereria bancrofti</italic> (top) that causes elephantiasis in individuals with a hyperactive response to the parasite (bottom). (<bold>b</bold>) The whipworm <italic toggle="yes">Trichuris suis</italic>, a candidate for use in helminth therapy. (<bold>c</bold>) The rodent filarial worm <italic toggle="yes">Acanthocheilonema viteae</italic> secretes a glycoprotein, ES-62, which is protective in murine models of asthma, rheumatoid arthritis, lupus, and atherosclerosis. In addition, in a mouse model of high-calorie diet-accelerated aging, ES-62 administration prevented age-associated increases in gut permeability and adiposity, and increased longevity (<xref rid="bib17" ref-type="bibr">Crowe et al., 2020</xref>).</p></caption><graphic xmlns:xlink="http://www.w3.org/1999/xlink" position="float" orientation="portrait" xlink:href="elife-65180-fig1.jpg"/><permissions><copyright-statement>© 2015, Pandey et al.</copyright-statement><copyright-year>2015</copyright-year><copyright-holder>Pandey et al</copyright-holder><license><ali:license_ref xmlns:ali="http://www.niso.org/schemas/ali/1.0/">https://creativecommons.org/licenses/by-nc/4.0/</ali:license_ref><license-p>Figure 1a (top) is reproduced from <xref rid="bib50" ref-type="bibr">Pandey et al., 2015</xref>. Published under a <ext-link xmlns:xlink="http://www.w3.org/1999/xlink" ext-link-type="uri" xlink:href="https://creativecommons.org/licenses/by-nc/4.0/">CC BY NC 4.0 license</ext-link>. </license-p></license></permissions><permissions><copyright-statement>© 2019, Cheena Kapoor</copyright-statement><copyright-year>2019</copyright-year><copyright-holder>Cheena Kapoor</copyright-holder><license><license-p>Figure 1a (bottom) reproduced with permission from the copyright holder, Cheena Kapoor. This image is not covered by the CC-BY 4.0 licence and further reproduction of this panel would require permission from the copyright holder.</license-p></license></permissions><permissions><copyright-statement>© 2013, Friederike Ebner</copyright-statement><copyright-year>2013</copyright-year><copyright-holder>Friederike Ebner</copyright-holder><license><license-p>Figure 1b was reproduced with permission from the copyright holder, Friederike Ebner, Institute of Immunology (Freie Universität Berlin). This image is not covered by the CC-BY 4.0 licence and further reproduction of this panel would require permission from the copyright holder.</license-p></license></permissions></fig><fig position="float" id="fig2" orientation="portrait"><label>Figure 2.</label><caption><title>Helminth therapy and inflammaging.</title><p>(<bold>a</bold>) Inflammatory disorders throughout the life course may be classed as early-, mid-, and late-onset disorders. Pre-aging inflammation (e.g. allergic and autoimmune inflammation) contributes to early- and some mid-onset disorders (all of which may persist into later life), while inflammaging appears later in life and contributes to late- and some mid-onset disorders. Helminth therapy has been demonstrated to protect against early- and mid-onset disorders by controlling pre-aging inflammation, but whether it can also protect against mid- and late-onset disorders through anti-inflammaging mechanisms remains uncertain. We note that MS (age of onset 20–50 years) and lupus (15–45 years) are sometimes described as inflammaging related (<xref rid="bib58" ref-type="bibr">Sanai et al., 2016</xref>; <xref rid="bib44" ref-type="bibr">Musella et al., 2018</xref>; <xref rid="bib67" ref-type="bibr">Tsai et al., 2019</xref>). (<bold>b</bold>) Hypothetical scheme of helminth-mediated attenuation of inflammaging acting at different pathophysiological stages. ‘Sources of inflammaging’ are the mechanisms by which new inflammation is introduced; ‘mediators of inflammaging’ are the components of existing inflammation itself; ‘targets of inflammaging’ are the tissues damaged by the inflammation. Helminth therapy could in principle target the inflammatory source and/or mediator and/or the damaged tissues.</p></caption><graphic xmlns:xlink="http://www.w3.org/1999/xlink" position="float" orientation="portrait" xlink:href="elife-65180-fig2.jpg"/></fig><p>Using a mouse model, <xref rid="bib17" ref-type="bibr">Crowe et al., 2020</xref> recently provided the first tantalizing evidence that helminth therapy can protect against aging through anti-inflammatory mechanisms. In the light of their study, we have taken a conceptual research approach (surveying and repurposing published findings) (<xref rid="bib6" ref-type="bibr">Blagosklonny and Pardee, 2002</xref>) to investigate the plausibility of anti-inflammaging helminth therapy. We will begin by describing the idea of helminth therapy in more detail.</p><sec id="s1-1"><title>Helminth therapy as a treatment for putative old friend loss disorders</title><p>A variety of inflammatory disorders that afflict people prior to aging have been linked to a loss of old friend helminths. These include asthma, atopic eczema, inflammatory bowel disease, multiple sclerosis (MS), rheumatoid arthritis, and type 1 diabetes (<xref rid="bib35" ref-type="bibr">Maizels, 2020</xref>). For example, a study from Argentina found that accidental acquisition of helminth infections not only caused a reduction in inflammatory cytokines, but also alleviated disease symptoms in MS patients, and that clearance of parasites reversed these effects (<xref rid="bib14" ref-type="bibr">Correale and Farez, 2007</xref>; <xref rid="bib15" ref-type="bibr">Correale and Farez, 2011</xref>). In a similar vein, studies from Uganda found that hookworm infections in pregnant women confer protection against infantile atopic eczema, protection that is abrogated by anthelmintic treatment during pregnancy (<xref rid="bib41" ref-type="bibr">Mpairwe et al., 2011</xref>; <xref rid="bib42" ref-type="bibr">Mpairwe et al., 2014</xref>).</p><p>More directly, a number of studies have documented beneficial effects of deliberate helminth infections, beginning with J.E. Turton's 1976 report in <italic toggle="yes">The Lancet</italic>, which describes how maintaining an infection with the intestinal hookworm <italic toggle="yes">Necator americanus</italic> alleviated his allergies (<xref rid="bib68" ref-type="bibr">Turton, 1976</xref>). Helminth therapy (including treatment with individual parasite antigens) has also been explored extensively in rodents. For example, to date, 20 studies of the autoimmune encephalomyelitis mouse model of MS have reported helminth-induced reductions in disease severity (<xref rid="bib11" ref-type="bibr">Charabati et al., 2020</xref>).</p><p>Unsurprisingly, the use of live helminths to treat old friend disorders remains controversial, and giving oneself worms seems unwholesome, to say the least. More seriously, there are obvious safety worries: live helminth therapy might cause a resurgence of harmful infections in de-wormed countries or induce harmful side effects. However, these concerns may be assuaged by controlling dose size and using helminths with different definitive hosts, such as the pig whipworm <italic toggle="yes">Trichuris suis</italic> which does not reproduce in humans (<xref rid="fig1" ref-type="fig">Figure 1b</xref>). However, although some initial clinical trials of <italic toggle="yes">T. suis</italic> ova therapy to treat patients with inflammatory bowel disease yielded promising results (<xref rid="bib21" ref-type="bibr">Elliott and Weinstock, 2017</xref>), follow-up trials have not thus far (<xref rid="bib29" ref-type="bibr">Huang et al., 2018</xref>). A possibility here is that only true old friends (i.e. anthropophilic helminths) will provide therapeutic benefits; notably, there is evidence that treatment with <italic toggle="yes">N. americanus</italic> hookworms is beneficial against celiac disease, an autoimmune disease affecting the bowel (<xref rid="bib16" ref-type="bibr">Croese et al., 2015</xref>).</p><p>Another strategy is to identify the mechanisms by which helminths manipulate host immunity and then apply those therapeutically. For example, administration of the glycoprotein ES-62 secreted by the rodent filarial nematode <italic toggle="yes">Acanthocheilonema viteae</italic> can recapitulate many of the immunomodulatory changes resulting from filarial infections and is protective in several pathological contexts (<xref rid="fig1" ref-type="fig">Figure 1c</xref>). Similarly, a variety of helminth-derived proteins are protective in rodent models of MS (<xref rid="bib19" ref-type="bibr">Dixit et al., 2017</xref>). Such approaches seem likely to yield safer and more precisely targeted therapeutics and are certainly more palatable. However, long-lasting, low-level helminth infections might still represent cheaper and more efficient forms of therapy, providing the full panoply of immunomodulatory agents and in a form that is easy to administer; c.f. ES-62 that was given in weekly injections (<xref rid="bib17" ref-type="bibr">Crowe et al., 2020</xref>).</p><p>Taken together, helminth therapy currently shows promise as a means to treat inflammatory conditions such as allergy and autoimmunity (<xref rid="fig2" ref-type="fig">Figure 2a</xref>). But could it also protect against inflammaging? Could maintaining half a dozen hookworms in your bowel help slow aging?</p></sec><sec id="s1-2"><title>Helminth therapy to counter inflammaging?</title><p>Inflammaging can be detected as a sterile, persistent elevation of pro-inflammatory molecules in the blood, including cytokines such as IL-6 and TNF-α and acute phase proteins such as C-reactive protein (CRP). Interestingly, reduced levels of circulating pro-inflammatory cytokines and CRP have been seen in people infected by strongylid and filarial helminths in a number of studies (<xref rid="bib3" ref-type="bibr">Aravindhan et al., 2010</xref>; <xref rid="bib27" ref-type="bibr">George et al., 2014</xref>; <xref rid="bib53" ref-type="bibr">Rajamanickam et al., 2019</xref>; <xref rid="bib54" ref-type="bibr">Rajamanickam et al., 2020</xref>) (though not all [<xref rid="bib4" ref-type="bibr">Aravindhan et al., 2012</xref>]), and experimental helminth infection similarly reduces pro-inflammatory cytokines in human serum (<xref rid="bib26" ref-type="bibr">Gaze et al., 2012</xref>). Furthermore, expulsion of helminths by anthelmintic medication induces elevated pro-inflammatory cytokine responsiveness in human blood (<xref rid="bib7" ref-type="bibr">Bourke et al., 2013</xref>; <xref rid="bib71" ref-type="bibr">Wammes et al., 2016</xref>). Thus, it is possible that helminth infections could attenuate the systemic inflammation that is inflammaging. But what about actual benefits in terms of improved health outcomes, such as reduced pathology and increased lifespan?</p><p>ES-62 is a 62 kDa glycoprotein found in the excretory secretory products of the filarial nematode parasite <italic toggle="yes">A. viteae</italic> with anti-inflammatory properties. In the first study of its kind, <xref rid="bib17" ref-type="bibr">Crowe et al., 2020</xref> reported that weekly administration of ES-62 improved late-life health and increased lifespan (+12%, median lifespan) in a C57BL/6J mouse model of high-calorie diet-accelerated aging. This suggests that the anti-inflammatory capacities of helminth therapy can exert protective effects even in later life.</p><p>Administration of ES-62 prevented the age-related decline in gut barrier integrity seen in high-calorie diet-accelerated aging (<xref rid="bib17" ref-type="bibr">Crowe et al., 2020</xref>). Of interest in the present context is that permeabilization of the gut lining can contribute to inflammaging, by allowing foreign antigens to leak into the blood and induce systemic immune activation (<xref rid="bib66" ref-type="bibr">Thevaranjan et al., 2017</xref>; <xref rid="bib22" ref-type="bibr">Ferrucci and Fabbri, 2018</xref>). But how could helminth therapy maintain gut barrier integrity? One way may be through the prevention of gut dysbiosis, a known contributor to inflammaging. Indeed, ES-62 prevented and, to some extent, even reversed age-related decreases in <italic toggle="yes">Bacteroidetes</italic>:<italic toggle="yes">Firmicutes</italic> ratio and increases in <italic toggle="yes">Proteobacteria</italic> in the gut (<xref rid="bib17" ref-type="bibr">Crowe et al., 2020</xref>), both of which are associated with inflammaging (<xref rid="bib25" ref-type="bibr">Fransen et al., 2017</xref>). Another possible mode of action is helminth-induced production of IL-22, an essential cytokine for maintaining gut barrier integrity (<xref rid="bib61" ref-type="bibr">Sonnenberg et al., 2011</xref>). Interestingly, the intestinal murine roundworm <italic toggle="yes">Heligmosomoides polygyrus</italic> can even induce fetal-like reversion in intestinal cells to effect tissue repair (<xref rid="bib46" ref-type="bibr">Nusse et al., 2018</xref>). Thus, it is plausible that the extended lifespan was due to suppression of intestinal changes that contribute to inflammaging.</p><p>Administration of ES-62 also prevented adipocyte hypertrophy in gonadal visceral fat (<xref rid="bib17" ref-type="bibr">Crowe et al., 2020</xref>). This, again, is notable given that adiposity is a major source of inflammaging. Adipose tissue, particularly visceral fat, is highly infiltrated by immune cells, such as monocytes, B and T lymphocytes, mast cells, and neutrophils, and is also a major site of senescent cell accumulation (<xref rid="bib64" ref-type="bibr">Tchkonia et al., 2010</xref>; <xref rid="bib43" ref-type="bibr">Mraz and Haluzik, 2014</xref>). Together, these adipocytes, immune cells, and senescent cells secrete a potent and destructive cocktail of pro-inflammatory molecules, including TNF-α, IL-6, IFN-γ, and leptin, which enter systemic circulation and contribute to the inflammaging phenotype. At the same time, anti-inflammatory mechanisms are reduced in adipose tissues, as shown by reduced numbers of eosinophils and of adiponectin secretion. In line with this, ES-62 administration reduced the decline in eosinophil number in visceral fat (<xref rid="bib17" ref-type="bibr">Crowe et al., 2020</xref>).</p><p>Thus, one potential mode of action of helminth therapy is suppression of adiposity. How could it achieve this? <italic toggle="yes">Nippostrongylus brasiliensis</italic>, a gastrointestinal roundworm of rodents, reduces adiposity apparently by reducing intestinal glucose absorption through altered STAT6 signaling (<xref rid="bib40" ref-type="bibr">Moyat et al., 2019</xref>). Whether humans show similar responses is unclear. One study of humans reported an inverse correlation between previous schistosome infection and central obesity, though adjustment for socio-economic status was not performed (<xref rid="bib59" ref-type="bibr">Shen et al., 2015</xref>). More generally, given the relationship between adiposity and inflammaging, helminth therapy might be of particular benefit to people who are overweight or obese.</p><p>The findings by <xref rid="bib17" ref-type="bibr">Crowe et al., 2020</xref> provide new support for the possibility that helminth therapy could protect against inflammaging. It would be interesting to know how ES-62 affects systemic markers of inflammation during inflammaging, which were not measured in the study, and also to examine effects on specific diseases linked to inflammaging. A number of earlier studies suggest that helminths can protect against such diseases, including rheumatoid arthritis (<xref rid="bib22" ref-type="bibr">Ferrucci and Fabbri, 2018</xref>; <xref rid="bib55" ref-type="bibr">Rea et al., 2018</xref>), type 2 diabetes (<xref rid="bib18" ref-type="bibr">de Candia et al., 2019</xref>; <xref rid="bib78" ref-type="bibr">Zuo et al., 2019</xref>), atherosclerosis (<xref rid="bib77" ref-type="bibr">Zhuang and Lyga, 2014</xref>), and cancer (<xref rid="bib33" ref-type="bibr">Leonardi et al., 2018</xref>; <xref rid="bib78" ref-type="bibr">Zuo et al., 2019</xref>; <xref rid="fig2" ref-type="fig">Figure 2a</xref>). We will consider the evidence for each of these in turn.</p><p>A prediction of the ‘anti-inflammaging helminth hypothesis’ is that in areas endemic for helminth infection, there should be lower rates of inflammaging-related disease, and there is some evidence for this. For example, in a region of Eastern India endemic for lymphatic filariasis infection, it was found that not one of 207 rheumatoid arthritis patients tested positive for circulating filarial nematode antigens; by contrast, 40% of 222 healthy controls were antigen positive (<xref rid="bib49" ref-type="bibr">Panda et al., 2013</xref>). This is consistent with a protective role of helminth infection against rheumatoid arthritis. Indeed, experimental helminth infection or treatment with helminth antigens can protect against pathology in the collagen-induced arthritis (CIA) and MRL/<italic toggle="yes">lpr</italic> mouse models of rheumatoid arthritis (<xref rid="bib60" ref-type="bibr">Smallwood et al., 2017</xref>; <xref rid="bib31" ref-type="bibr">Langdon et al., 2019</xref>). Notably, ES-62-mediated protection against CIA was accompanied by reduced serum levels of the pro-inflammatory cytokine IL-17 (<xref rid="bib52" ref-type="bibr">Pineda et al., 2012</xref>), consistent with protection against systemic inflammation.</p><p>Broadly similar findings have been reported for type 2 diabetes and atherosclerosis. Several (but not all [<xref rid="bib38" ref-type="bibr">Mendonça et al., 2006</xref>]) epidemiological studies have reported an inverse relationship between the incidence of helminth infection and type 2 diabetes (<xref rid="bib3" ref-type="bibr">Aravindhan et al., 2010</xref>; <xref rid="bib12" ref-type="bibr">Chen et al., 2013</xref>; <xref rid="bib28" ref-type="bibr">Hays et al., 2015</xref>), and also serum levels of the pro-inflammatory cytokines IL-6 and GM-CSF (<xref rid="bib3" ref-type="bibr">Aravindhan et al., 2010</xref>); these studies controlled for age and body mass index (and/or income). And again, experimental helminth infections protected mice from type 2 diabetes-associated states such as hyperglycemia and insulin resistance (<xref rid="bib73" ref-type="bibr">Wu et al., 2011</xref>; <xref rid="bib39" ref-type="bibr">Morimoto et al., 2016</xref>; <xref rid="bib48" ref-type="bibr">Pace et al., 2018</xref>), while anthelmintic treatment elevated blood glucagon and insulin resistance, and several circulating pro-inflammatory cytokines (<xref rid="bib63" ref-type="bibr">Tahapary et al., 2017</xref>; <xref rid="bib53" ref-type="bibr">Rajamanickam et al., 2019</xref>; <xref rid="bib54" ref-type="bibr">Rajamanickam et al., 2020</xref>). Regarding atherosclerosis, the burden of <italic toggle="yes">Opisthorchis felineus</italic> (cat liver fluke) in cadavers was found to be negatively correlated with the severity of aortic atherosclerosis (<xref rid="bib34" ref-type="bibr">Magen et al., 2013</xref>). In atherosclerotic mouse models, infection with the blood fluke <italic toggle="yes">Schistosoma mansoni</italic> reduced atherosclerotic lesions by 50% (<xref rid="bib20" ref-type="bibr">Doenhoff et al., 2002</xref>); similarly, administration of <italic toggle="yes">Schistosoma</italic> egg antigens reduced atherosclerotic plaque size (<xref rid="bib76" ref-type="bibr">Zhang et al., 2012</xref>; <xref rid="bib72" ref-type="bibr">Wolfs et al., 2014</xref>), and ES-62 reduced atherosclerotic lesion area by 60% in the <italic toggle="yes">gld</italic>.apoE<sup>−/−</sup> mouse model of lupus-accelerated atherosclerosis (<xref rid="bib2" ref-type="bibr">Aprahamian et al., 2015</xref>).</p><p>There is also some very limited evidence that helminth therapy might promote resistance to some forms of cancer. The tapeworm <italic toggle="yes">Taenia crassiceps</italic> and its antigens have been found to attenuate and prevent colon tumorigenesis in mice through anti-inflammatory mechanisms (<xref rid="bib32" ref-type="bibr">León-Cabrera et al., 2014</xref>; <xref rid="bib10" ref-type="bibr">Callejas et al., 2019</xref>). However, in the same mouse model, the nematode <italic toggle="yes">H. polygyrus</italic> was found to promote tumorigenesis (<xref rid="bib51" ref-type="bibr">Pastille et al., 2017</xref>). Moreover, certain parasitic helminths are well known to increase cancer rates, for example the trematode parasite <italic toggle="yes">Schistosoma haematobium</italic> causes bladder cancer (<xref rid="bib70" ref-type="bibr">Vennervald and Polman, 2009</xref>).</p><p>There is also some evidence linking helminth loss to other inflammaging-linked conditions. This includes COPD, given that some helminths are known to suppress lung inflammation and to reduce levels of the pro-inflammatory cytokine IL-33, a driver of COPD pathology (<xref rid="bib47" ref-type="bibr">Osbourn et al., 2017</xref>). It should be noted however that other helminths such as <italic toggle="yes">N. brasiliensis</italic> can promote COPD pathology (<xref rid="bib36" ref-type="bibr">Marsland et al., 2008</xref>). Meanwhile, IL-33 also promotes age-related macular degeneration (<xref rid="bib74" ref-type="bibr">Xi et al., 2016</xref>), another late-life inflammaging-linked disease. Anecdotal evidence from home-users of live helminth therapy suggests that old friend helminths may also provide protection against Parkinson’s disease and depression, although whether the latter includes geriatric depression is not known (<xref rid="bib13" ref-type="bibr">Cheng et al., 2015</xref>). Both Parkinson’s disease and geriatric depression are considered to be inflammaging-linked conditions (<xref rid="bib65" ref-type="bibr">Teixeira et al., 2012</xref>; <xref rid="bib9" ref-type="bibr">Calabrese et al., 2018</xref>).</p></sec><sec id="s1-3"><title>Perspectives</title><p>There is clear evidence that an absence of helminth infection leads to increased incidence of inflammatory disorders, including some inflammaging-linked conditions, such as rheumatoid arthritis. Furthermore, experimental and clinical work has demonstrated the protective benefits of restorative helminth therapy against some inflammaging-linked diseases. Whether this reflects the ability of helminth therapy to reduce inflammaging remains uncertain, but this possibility clearly warrants further investigation.</p><p>Given the role of inflammaging in numerous diseases of aging, further studies examining the effect of helminth therapy on multimorbidity would be especially useful. For example, it would be helpful to extend ongoing helminth therapy trials aimed at individual diseases to look at a broader range of conditions. The anti-inflammaging potential of helminth therapy could also be assessed by monitoring pro-inflammatory cytokine levels following administration of helminth therapy in patients with detectable inflammaging. Where live helminth therapy is used, infections can be easily terminated by anthelmintics should the need arise; conveniently, this would also provide additional data on the therapy’s efficacy (i.e. does inflammaging then worsen?). Regarding ES-62 in particular, it would be worthwhile to test its effects on aging in mice maintained on a normal diet rather than on a life-shortening high-calorie diet.</p><p>The possibility of anti-aging helminth therapy raises various questions. How do responses to such therapy change with age? Would higher or lower parasite (or antigen) levels be needed to take account of immunosenescence? To what extent do risks of helminth therapy increase in old age? What are optimal ages to apply such therapy to reduce inflammaging? Would helminth therapy act only in a preventative fashion (typical of anti-aging treatments), delaying the genesis or worsening of inflammaging-linked pathologies, or could it reverse existing disease symptoms? At least for murine rheumatoid arthritis, there is some evidence that helminth therapy could be both prophylactic and therapeutic (<xref rid="bib37" ref-type="bibr">McInnes et al., 2003</xref>; <xref rid="bib57" ref-type="bibr">Rzepecka et al., 2015</xref>). Thus, it is possible that helminth therapy could, to some extent, reverse symptoms of aging as well as decelerate them. Would responses to helminth therapy differ between the sexes? Here it is notable that ES-62 extended lifespan in male, but not female obese mice (<xref rid="bib17" ref-type="bibr">Crowe et al., 2020</xref>). A further possibility is that helminths might inhibit tissue aging in their hosts in order to protect their local niche; notably, the pro-aging mTOR pathway was found to be inhibited in human dendritic cells by <italic toggle="yes">Brugia malayi</italic> microfilariae (<xref rid="bib45" ref-type="bibr">Narasimhan et al., 2016</xref>).</p><p>Effective application of helminth therapy would also require a clear understanding of its specific anti-inflammaging mechanisms. Theoretically, helminths could counter inflammaging in several ways. For example, they could inhibit sources of inflammaging by preventing gut barrier permeabilization and obesity, neutralize existing inflammaging by increasing the proportion of anti-inflammatory to pro-inflammatory cytokines, or repair inflammaging-afflicted tissue damage, for example through promotion of IL-22 secretion (<xref rid="fig2" ref-type="fig">Figure 2b</xref>).</p></sec><sec id="s1-4"><title>Conclusions</title><p>It goes without saying that improvements in hygiene and elimination of helminth parasites have been of incalculable benefit to humanity. But a cost coupled with this benefit is abnormalities of immune function, specifically inflammatory hyperfunction. Available evidence suggests that restorative helminth therapies are effective against not only allergic and autoimmune inflammatory disorders, but also age-associated inflammation in later life, at least to some extent. Should this be confirmed, helminth therapy could provide protection against the wide spectrum of age-related diseases promoted by inflammaging. In the wake of successes during the last century in eliminating the evils of helminth infections, the time now seems propitious to explore further their possible benefits, particularly for our aging population – strange though this may sound.</p></sec></sec></body><back><sec sec-type="funding-information"><title>Funding Information</title><p>This paper was supported by the following grants:</p><list list-type="bullet"><list-item><p><funding-source>
+<institution-wrap><institution-id institution-id-type="FundRef">http://dx.doi.org/10.13039/100004440</institution-id><institution>Wellcome Trust</institution></institution-wrap>
+</funding-source>
+<award-id>098565/Z/12/Z</award-id> to David Gems.</p></list-item><list-item><p><funding-source>
+<institution-wrap><institution-id institution-id-type="FundRef">http://dx.doi.org/10.13039/100004440</institution-id><institution>Wellcome Trust</institution></institution-wrap>
+</funding-source>
+<award-id>215574/Z/19/Z</award-id> to David Gems.</p></list-item></list></sec><ack id="ack"><title>Acknowledgements</title><p>We would like to thank J Crowe, JM Leeb, FE Lumb, and M Blaxter for useful discussion. <xref rid="fig1" ref-type="fig">Figure 1a</xref> image (top, <italic toggle="yes">Wuchereria bancrofti</italic>) was reproduced from <xref rid="bib50" ref-type="bibr">Pandey et al., 2015</xref>. We thank Cheena Kapoor for permission to reproduce the <xref rid="fig1" ref-type="fig">Figure 1a</xref> image of elephantiasis, and Friederike Ebner (Institute for Immunology, Freie Universität Berlin) for the <xref rid="fig1" ref-type="fig">Figure 1b</xref> image of <italic toggle="yes">Trichuris suis</italic>. This work was supported by a Wellcome Trust Strategic Award (098565/Z/12/Z) and a Wellcome Trust Investigator Award (215574/Z/19/Z) to D Gems.</p></ack><sec sec-type="additional-information" id="s2"><title>Additional information</title><fn-group content-type="competing-interest"><title>Competing interests</title><fn fn-type="COI-statement" id="conf1"><p>No competing interests declared.</p></fn></fn-group></sec><ref-list><title>References</title><ref id="bib1"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Akbar</surname><given-names>AN</given-names></name>
+<name name-style="western"><surname>Gilroy</surname><given-names>DW</given-names></name>
+</person-group><year iso-8601-date="2020">2020</year><article-title>‘Aging immunity may exacerbate COVID-19’</article-title><source>Science</source><volume>369</volume><fpage>256</fpage><lpage>257</lpage><pub-id pub-id-type="doi">10.1126/science.abb0762</pub-id><pub-id pub-id-type="pmid">32675364</pub-id></element-citation></ref><ref id="bib2"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Aprahamian</surname><given-names>TR</given-names></name>
+<name name-style="western"><surname>Zhong</surname><given-names>X</given-names></name>
+<name name-style="western"><surname>Amir</surname><given-names>S</given-names></name>
+<name name-style="western"><surname>Binder</surname><given-names>CJ</given-names></name>
+<name name-style="western"><surname>Chiang</surname><given-names>LK</given-names></name>
+<name name-style="western"><surname>Al-Riyami</surname><given-names>L</given-names></name>
+<name name-style="western"><surname>Gharakhanian</surname><given-names>R</given-names></name>
+<name name-style="western"><surname>Harnett</surname><given-names>MM</given-names></name>
+<name name-style="western"><surname>Harnett</surname><given-names>W</given-names></name>
+<name name-style="western"><surname>Rifkin</surname><given-names>IR</given-names></name>
+</person-group><year iso-8601-date="2015">2015</year><article-title>The immunomodulatory parasitic worm product ES-62 reduces lupus-associated accelerated atherosclerosis in a mouse model</article-title><source>International Journal for Parasitology</source><volume>45</volume><fpage>203</fpage><lpage>207</lpage><pub-id pub-id-type="doi">10.1016/j.ijpara.2014.12.006</pub-id><pub-id pub-id-type="pmid">25666929</pub-id><pub-id pub-id-type="pmcid">PMC4355381</pub-id></element-citation></ref><ref id="bib3"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Aravindhan</surname><given-names>V</given-names></name>
+<name name-style="western"><surname>Mohan</surname><given-names>V</given-names></name>
+<name name-style="western"><surname>Surendar</surname><given-names>J</given-names></name>
+<name name-style="western"><surname>Muralidhara Rao</surname><given-names>M</given-names></name>
+<name name-style="western"><surname>Pavankumar</surname><given-names>N</given-names></name>
+<name name-style="western"><surname>Deepa</surname><given-names>M</given-names></name>
+<name name-style="western"><surname>Rajagopalan</surname><given-names>R</given-names></name>
+<name name-style="western"><surname>Kumaraswami</surname><given-names>V</given-names></name>
+<name name-style="western"><surname>Nutman</surname><given-names>TB</given-names></name>
+<name name-style="western"><surname>Babu</surname><given-names>S</given-names></name>
+</person-group><year iso-8601-date="2010">2010</year><article-title>Decreased prevalence of lymphatic filariasis among diabetic subjects associated with a diminished pro-inflammatory cytokine response (CURES 83)</article-title><source>PLOS Neglected Tropical Diseases</source><volume>4</volume><elocation-id>e707</elocation-id><pub-id pub-id-type="doi">10.1371/journal.pntd.0000707</pub-id><pub-id pub-id-type="pmid">20559443</pub-id><pub-id pub-id-type="pmcid">PMC2886036</pub-id></element-citation></ref><ref id="bib4"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Aravindhan</surname><given-names>V</given-names></name>
+<name name-style="western"><surname>Surendar</surname><given-names>J</given-names></name>
+<name name-style="western"><surname>Mohan</surname><given-names>V</given-names></name>
+<name name-style="western"><surname>Rao</surname><given-names>MM</given-names></name>
+<name name-style="western"><surname>Deepa</surname><given-names>M</given-names></name>
+<name name-style="western"><surname>Anuradha</surname><given-names>R</given-names></name>
+<name name-style="western"><surname>Babu</surname><given-names>S</given-names></name>
+</person-group><year iso-8601-date="2012">2012</year><article-title>Effect of filarial infection on serum inflammatory and atherogenic biomarkers in coronary artery disease (CURES-121)</article-title><source>The American Journal of Tropical Medicine and Hygiene</source><volume>86</volume><fpage>828</fpage><lpage>833</lpage><pub-id pub-id-type="doi">10.4269/ajtmh.2012.11-0773</pub-id><pub-id pub-id-type="pmid">22556082</pub-id><pub-id pub-id-type="pmcid">PMC3335688</pub-id></element-citation></ref><ref id="bib5"><element-citation publication-type="book"><person-group person-group-type="author">
+<name name-style="western"><surname>Austad</surname><given-names>SN</given-names></name>
+</person-group><year iso-8601-date="2016">2016</year><part-title>The geroscience hypothesis: Is it possible to change the rate of aging?</part-title><person-group person-group-type="editor">
+<name name-style="western"><surname>Sierra</surname><given-names>F</given-names></name>
+<name name-style="western"><surname>Kohanski</surname><given-names>R</given-names></name>
+</person-group><source>Advances in Geroscience</source><publisher-loc>Cham</publisher-loc><publisher-name>Springer</publisher-name><fpage>1</fpage><lpage>36</lpage><pub-id pub-id-type="doi">10.1007/978-3-319-23246-1_1</pub-id></element-citation></ref><ref id="bib6"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Blagosklonny</surname><given-names>MV</given-names></name>
+<name name-style="western"><surname>Pardee</surname><given-names>AB</given-names></name>
+</person-group><year iso-8601-date="2002">2002</year><article-title>Conceptual biology: unearthing the gems</article-title><source>Nature</source><volume>416</volume><elocation-id>373</elocation-id><pub-id pub-id-type="doi">10.1038/416373a</pub-id><pub-id pub-id-type="pmid">11919607</pub-id></element-citation></ref><ref id="bib7"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Bourke</surname><given-names>CD</given-names></name>
+<name name-style="western"><surname>Nausch</surname><given-names>N</given-names></name>
+<name name-style="western"><surname>Rujeni</surname><given-names>N</given-names></name>
+<name name-style="western"><surname>Appleby</surname><given-names>LJ</given-names></name>
+<name name-style="western"><surname>Mitchell</surname><given-names>KM</given-names></name>
+<name name-style="western"><surname>Midzi</surname><given-names>N</given-names></name>
+<name name-style="western"><surname>Mduluza</surname><given-names>T</given-names></name>
+<name name-style="western"><surname>Mutapi</surname><given-names>F</given-names></name>
+</person-group><year iso-8601-date="2013">2013</year><article-title>Integrated analysis of innate, Th1, Th2, Th17, and regulatory cytokines identifies changes in immune polarisation following treatment of human schistosomiasis</article-title><source>The Journal of Infectious Diseases</source><volume>208</volume><fpage>159</fpage><lpage>169</lpage><pub-id pub-id-type="doi">10.1093/infdis/jis524</pub-id><pub-id pub-id-type="pmid">23045617</pub-id><pub-id pub-id-type="pmcid">PMC3666130</pub-id></element-citation></ref><ref id="bib8"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Buford</surname><given-names>TW</given-names></name>
+</person-group><year iso-8601-date="2017">2017</year><article-title>(Dis)Trust your gut: the gut microbiome in age-related inflammation, health, and disease</article-title><source>Microbiome</source><volume>5</volume><elocation-id>80</elocation-id><pub-id pub-id-type="doi">10.1186/s40168-017-0296-0</pub-id><pub-id pub-id-type="pmid">28709450</pub-id><pub-id pub-id-type="pmcid">PMC5512975</pub-id></element-citation></ref><ref id="bib9"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Calabrese</surname><given-names>V</given-names></name>
+<name name-style="western"><surname>Santoro</surname><given-names>A</given-names></name>
+<name name-style="western"><surname>Monti</surname><given-names>D</given-names></name>
+<name name-style="western"><surname>Crupi</surname><given-names>R</given-names></name>
+<name name-style="western"><surname>Di Paola</surname><given-names>R</given-names></name>
+<name name-style="western"><surname>Latteri</surname><given-names>S</given-names></name>
+<name name-style="western"><surname>Cuzzocrea</surname><given-names>S</given-names></name>
+<name name-style="western"><surname>Zappia</surname><given-names>M</given-names></name>
+<name name-style="western"><surname>Giordano</surname><given-names>J</given-names></name>
+<name name-style="western"><surname>Calabrese</surname><given-names>EJ</given-names></name>
+<name name-style="western"><surname>Franceschi</surname><given-names>C</given-names></name>
+</person-group><year iso-8601-date="2018">2018</year><article-title>Aging and Parkinson's Disease: Inflammaging, neuroinflammation and biological remodeling as key factors in pathogenesis</article-title><source>Free Radical Biology and Medicine</source><volume>115</volume><fpage>80</fpage><lpage>91</lpage><pub-id pub-id-type="doi">10.1016/j.freeradbiomed.2017.10.379</pub-id><pub-id pub-id-type="pmid">29080843</pub-id></element-citation></ref><ref id="bib10"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Callejas</surname><given-names>BE</given-names></name>
+<name name-style="western"><surname>Mendoza-Rodríguez</surname><given-names>MG</given-names></name>
+<name name-style="western"><surname>Villamar-Cruz</surname><given-names>O</given-names></name>
+<name name-style="western"><surname>Reyes-Martínez</surname><given-names>S</given-names></name>
+<name name-style="western"><surname>Sánchez-Barrera</surname><given-names>CA</given-names></name>
+<name name-style="western"><surname>Rodríguez-Sosa</surname><given-names>M</given-names></name>
+<name name-style="western"><surname>Delgado-Buenrostro</surname><given-names>NL</given-names></name>
+<name name-style="western"><surname>Martínez-Saucedo</surname><given-names>D</given-names></name>
+<name name-style="western"><surname>Chirino</surname><given-names>YI</given-names></name>
+<name name-style="western"><surname>León-Cabrera</surname><given-names>SA</given-names></name>
+<name name-style="western"><surname>Pérez-Plasencia</surname><given-names>C</given-names></name>
+<name name-style="western"><surname>Vaca-Paniagua</surname><given-names>F</given-names></name>
+<name name-style="western"><surname>Arias-Romero</surname><given-names>LE</given-names></name>
+<name name-style="western"><surname>Terrazas</surname><given-names>LI</given-names></name>
+</person-group><year iso-8601-date="2019">2019</year><article-title>Helminth-derived molecules inhibit colitis-associated Colon cancer development through NF-κB and STAT3 regulation</article-title><source>International Journal of Cancer</source><volume>145</volume><fpage>3126</fpage><lpage>3139</lpage><pub-id pub-id-type="doi">10.1002/ijc.32626</pub-id><pub-id pub-id-type="pmid">31407335</pub-id></element-citation></ref><ref id="bib11"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Charabati</surname><given-names>M</given-names></name>
+<name name-style="western"><surname>Donkers</surname><given-names>SJ</given-names></name>
+<name name-style="western"><surname>Kirkland</surname><given-names>MC</given-names></name>
+<name name-style="western"><surname>Osborne</surname><given-names>LC</given-names></name>
+</person-group><year iso-8601-date="2020">2020</year><article-title>A critical analysis of helminth immunotherapy in multiple sclerosis</article-title><source>Multiple Sclerosis Journal</source><volume>26</volume><fpage>1448</fpage><lpage>1458</lpage><pub-id pub-id-type="doi">10.1177/1352458519899040</pub-id><pub-id pub-id-type="pmid">31971074</pub-id></element-citation></ref><ref id="bib12"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Chen</surname><given-names>Y</given-names></name>
+<name name-style="western"><surname>Lu</surname><given-names>J</given-names></name>
+<name name-style="western"><surname>Huang</surname><given-names>Y</given-names></name>
+<name name-style="western"><surname>Wang</surname><given-names>T</given-names></name>
+<name name-style="western"><surname>Xu</surname><given-names>Y</given-names></name>
+<name name-style="western"><surname>Xu</surname><given-names>M</given-names></name>
+<name name-style="western"><surname>Li</surname><given-names>M</given-names></name>
+<name name-style="western"><surname>Wang</surname><given-names>W</given-names></name>
+<name name-style="western"><surname>Li</surname><given-names>D</given-names></name>
+<name name-style="western"><surname>Bi</surname><given-names>Y</given-names></name>
+<name name-style="western"><surname>Ning</surname><given-names>G</given-names></name>
+</person-group><year iso-8601-date="2013">2013</year><article-title>Association of previous schistosome infection with diabetes and metabolic syndrome: a cross-sectional study in rural china</article-title><source>The Journal of Clinical Endocrinology &amp; Metabolism</source><volume>98</volume><fpage>E283</fpage><lpage>E287</lpage><pub-id pub-id-type="doi">10.1210/jc.2012-2517</pub-id><pub-id pub-id-type="pmid">23275524</pub-id></element-citation></ref><ref id="bib13"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Cheng</surname><given-names>AM</given-names></name>
+<name name-style="western"><surname>Jaint</surname><given-names>D</given-names></name>
+<name name-style="western"><surname>Thomas</surname><given-names>S</given-names></name>
+<name name-style="western"><surname>Wilson</surname><given-names>JK</given-names></name>
+<name name-style="western"><surname>Parker</surname><given-names>W</given-names></name>
+</person-group><year iso-8601-date="2015">2015</year><article-title>Overcoming evolutionary mismatch by Self-Treatment with helminths: current practices and experience</article-title><source>Journal of Evolutionary Medicine</source><volume>3</volume><fpage>1</fpage><lpage>22</lpage><pub-id pub-id-type="doi">10.4303/jem/235910</pub-id></element-citation></ref><ref id="bib14"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Correale</surname><given-names>J</given-names></name>
+<name name-style="western"><surname>Farez</surname><given-names>M</given-names></name>
+</person-group><year iso-8601-date="2007">2007</year><article-title>Association between parasite infection and immune responses in multiple sclerosis</article-title><source>Annals of Neurology</source><volume>61</volume><fpage>97</fpage><lpage>108</lpage><pub-id pub-id-type="doi">10.1002/ana.21067</pub-id><pub-id pub-id-type="pmid">17230481</pub-id></element-citation></ref><ref id="bib15"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Correale</surname><given-names>J</given-names></name>
+<name name-style="western"><surname>Farez</surname><given-names>MF</given-names></name>
+</person-group><year iso-8601-date="2011">2011</year><article-title>The impact of parasite infections on the course of multiple sclerosis</article-title><source>Journal of Neuroimmunology</source><volume>233</volume><fpage>6</fpage><lpage>11</lpage><pub-id pub-id-type="doi">10.1016/j.jneuroim.2011.01.002</pub-id><pub-id pub-id-type="pmid">21277637</pub-id></element-citation></ref><ref id="bib16"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Croese</surname><given-names>J</given-names></name>
+<name name-style="western"><surname>Giacomin</surname><given-names>P</given-names></name>
+<name name-style="western"><surname>Navarro</surname><given-names>S</given-names></name>
+<name name-style="western"><surname>Clouston</surname><given-names>A</given-names></name>
+<name name-style="western"><surname>McCann</surname><given-names>L</given-names></name>
+<name name-style="western"><surname>Dougall</surname><given-names>A</given-names></name>
+<name name-style="western"><surname>Ferreira</surname><given-names>I</given-names></name>
+<name name-style="western"><surname>Susianto</surname><given-names>A</given-names></name>
+<name name-style="western"><surname>O'Rourke</surname><given-names>P</given-names></name>
+<name name-style="western"><surname>Howlett</surname><given-names>M</given-names></name>
+<name name-style="western"><surname>McCarthy</surname><given-names>J</given-names></name>
+<name name-style="western"><surname>Engwerda</surname><given-names>C</given-names></name>
+<name name-style="western"><surname>Jones</surname><given-names>D</given-names></name>
+<name name-style="western"><surname>Loukas</surname><given-names>A</given-names></name>
+</person-group><year iso-8601-date="2015">2015</year><article-title>Experimental hookworm infection and gluten microchallenge promote tolerance in celiac disease</article-title><source>Journal of Allergy and Clinical Immunology</source><volume>135</volume><fpage>508</fpage><lpage>516</lpage><pub-id pub-id-type="doi">10.1016/j.jaci.2014.07.022</pub-id><pub-id pub-id-type="pmid">25248819</pub-id></element-citation></ref><ref id="bib17"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Crowe</surname><given-names>J</given-names></name>
+<name name-style="western"><surname>Lumb</surname><given-names>FE</given-names></name>
+<name name-style="western"><surname>Doonan</surname><given-names>J</given-names></name>
+<name name-style="western"><surname>Broussard</surname><given-names>M</given-names></name>
+<name name-style="western"><surname>Tarafdar</surname><given-names>A</given-names></name>
+<name name-style="western"><surname>Pineda</surname><given-names>MA</given-names></name>
+<name name-style="western"><surname>Landabaso</surname><given-names>C</given-names></name>
+<name name-style="western"><surname>Mulvey</surname><given-names>L</given-names></name>
+<name name-style="western"><surname>Hoskisson</surname><given-names>PA</given-names></name>
+<name name-style="western"><surname>Babayan</surname><given-names>SA</given-names></name>
+<name name-style="western"><surname>Selman</surname><given-names>C</given-names></name>
+<name name-style="western"><surname>Harnett</surname><given-names>W</given-names></name>
+<name name-style="western"><surname>Harnett</surname><given-names>MM</given-names></name>
+</person-group><year iso-8601-date="2020">2020</year><article-title>The parasitic worm product ES-62 promotes health- and life-span in a high calorie diet-accelerated mouse model of ageing</article-title><source>PLOS Pathogens</source><volume>16</volume><elocation-id>e1008391</elocation-id><pub-id pub-id-type="doi">10.1371/journal.ppat.1008391</pub-id><pub-id pub-id-type="pmid">32163524</pub-id><pub-id pub-id-type="pmcid">PMC7108737</pub-id></element-citation></ref><ref id="bib18"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>de Candia</surname><given-names>P</given-names></name>
+<name name-style="western"><surname>Prattichizzo</surname><given-names>F</given-names></name>
+<name name-style="western"><surname>Garavelli</surname><given-names>S</given-names></name>
+<name name-style="western"><surname>De Rosa</surname><given-names>V</given-names></name>
+<name name-style="western"><surname>Galgani</surname><given-names>M</given-names></name>
+<name name-style="western"><surname>Di Rella</surname><given-names>F</given-names></name>
+<name name-style="western"><surname>Spagnuolo</surname><given-names>MI</given-names></name>
+<name name-style="western"><surname>Colamatteo</surname><given-names>A</given-names></name>
+<name name-style="western"><surname>Fusco</surname><given-names>C</given-names></name>
+<name name-style="western"><surname>Micillo</surname><given-names>T</given-names></name>
+<name name-style="western"><surname>Bruzzaniti</surname><given-names>S</given-names></name>
+<name name-style="western"><surname>Ceriello</surname><given-names>A</given-names></name>
+<name name-style="western"><surname>Puca</surname><given-names>AA</given-names></name>
+<name name-style="western"><surname>Matarese</surname><given-names>G</given-names></name>
+</person-group><year iso-8601-date="2019">2019</year><article-title>Type 2 diabetes: how much of an autoimmune disease?</article-title><source>Frontiers in Endocrinology</source><volume>10</volume><elocation-id>451</elocation-id><pub-id pub-id-type="doi">10.3389/fendo.2019.00451</pub-id><pub-id pub-id-type="pmid">31333589</pub-id><pub-id pub-id-type="pmcid">PMC6620611</pub-id></element-citation></ref><ref id="bib19"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Dixit</surname><given-names>A</given-names></name>
+<name name-style="western"><surname>Tanaka</surname><given-names>A</given-names></name>
+<name name-style="western"><surname>Greer</surname><given-names>JM</given-names></name>
+<name name-style="western"><surname>Donnelly</surname><given-names>S</given-names></name>
+</person-group><year iso-8601-date="2017">2017</year><article-title>Novel therapeutics for multiple sclerosis designed by parasitic worms</article-title><source>International Journal of Molecular Sciences</source><volume>18</volume><elocation-id>2141</elocation-id><pub-id pub-id-type="doi">10.3390/ijms18102141</pub-id><pub-id pub-id-type="pmid">29027962</pub-id><pub-id pub-id-type="pmcid">PMC5666823</pub-id></element-citation></ref><ref id="bib20"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Doenhoff</surname><given-names>MJ</given-names></name>
+<name name-style="western"><surname>Stanley</surname><given-names>RG</given-names></name>
+<name name-style="western"><surname>Griffiths</surname><given-names>K</given-names></name>
+<name name-style="western"><surname>Jackson</surname><given-names>CL</given-names></name>
+</person-group><year iso-8601-date="2002">2002</year><article-title>An anti-atherogenic effect of Schistosoma mansoni infections in mice associated with a parasite-induced lowering of blood total cholesterol</article-title><source>Parasitology</source><volume>125</volume><fpage>415</fpage><lpage>421</lpage><pub-id pub-id-type="doi">10.1017/S0031182002002275</pub-id><pub-id pub-id-type="pmid">12458825</pub-id></element-citation></ref><ref id="bib21"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Elliott</surname><given-names>DE</given-names></name>
+<name name-style="western"><surname>Weinstock</surname><given-names>JV</given-names></name>
+</person-group><year iso-8601-date="2017">2017</year><article-title>Nematodes and human therapeutic trials for inflammatory disease</article-title><source>Parasite Immunology</source><volume>39</volume><elocation-id>e12407</elocation-id><pub-id pub-id-type="doi">10.1111/pim.12407</pub-id><pub-id pub-id-type="pmcid">PMC5580940</pub-id><pub-id pub-id-type="pmid">27977856</pub-id></element-citation></ref><ref id="bib22"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Ferrucci</surname><given-names>L</given-names></name>
+<name name-style="western"><surname>Fabbri</surname><given-names>E</given-names></name>
+</person-group><year iso-8601-date="2018">2018</year><article-title>Inflammageing: chronic inflammation in ageing, cardiovascular disease, and frailty</article-title><source>Nature Reviews Cardiology</source><volume>15</volume><fpage>505</fpage><lpage>522</lpage><pub-id pub-id-type="doi">10.1038/s41569-018-0064-2</pub-id><pub-id pub-id-type="pmid">30065258</pub-id><pub-id pub-id-type="pmcid">PMC6146930</pub-id></element-citation></ref><ref id="bib23"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Franceschi</surname><given-names>C</given-names></name>
+<name name-style="western"><surname>Bonafè</surname><given-names>M</given-names></name>
+<name name-style="western"><surname>Valensin</surname><given-names>S</given-names></name>
+<name name-style="western"><surname>Olivieri</surname><given-names>F</given-names></name>
+<name name-style="western"><surname>De Luca</surname><given-names>M</given-names></name>
+<name name-style="western"><surname>Ottaviani</surname><given-names>E</given-names></name>
+<name name-style="western"><surname>De Benedictis</surname><given-names>G</given-names></name>
+</person-group><year iso-8601-date="2000">2000</year><article-title>Inflamm-aging. an evolutionary perspective on immunosenescence</article-title><source>Annals of the New York Academy of Sciences</source><volume>908</volume><fpage>244</fpage><lpage>254</lpage><pub-id pub-id-type="doi">10.1111/j.1749-6632.2000.tb06651.x</pub-id><pub-id pub-id-type="pmid">10911963</pub-id></element-citation></ref><ref id="bib24"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Franceschi</surname><given-names>C</given-names></name>
+<name name-style="western"><surname>Campisi</surname><given-names>J</given-names></name>
+</person-group><year iso-8601-date="2014">2014</year><article-title>Chronic inflammation (Inflammaging) and its potential contribution to Age-Associated diseases</article-title><source>The Journals of Gerontology Series A: Biological Sciences and Medical Sciences</source><volume>69</volume><fpage>S4</fpage><lpage>S9</lpage><pub-id pub-id-type="doi">10.1093/gerona/glu057</pub-id><pub-id pub-id-type="pmid">24833586</pub-id></element-citation></ref><ref id="bib25"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Fransen</surname><given-names>F</given-names></name>
+<name name-style="western"><surname>van Beek</surname><given-names>AA</given-names></name>
+<name name-style="western"><surname>Borghuis</surname><given-names>T</given-names></name>
+<name name-style="western"><surname>Aidy</surname><given-names>SE</given-names></name>
+<name name-style="western"><surname>Hugenholtz</surname><given-names>F</given-names></name>
+<name name-style="western"><surname>van der Gaast-de Jongh</surname><given-names>C</given-names></name>
+<name name-style="western"><surname>Savelkoul</surname><given-names>HFJ</given-names></name>
+<name name-style="western"><surname>De Jonge</surname><given-names>MI</given-names></name>
+<name name-style="western"><surname>Boekschoten</surname><given-names>MV</given-names></name>
+<name name-style="western"><surname>Smidt</surname><given-names>H</given-names></name>
+<name name-style="western"><surname>Faas</surname><given-names>MM</given-names></name>
+<name name-style="western"><surname>de Vos</surname><given-names>P</given-names></name>
+</person-group><year iso-8601-date="2017">2017</year><article-title>Aged gut Microbiota contributes to systemical inflammaging after transfer to Germ-Free mice</article-title><source>Frontiers in Immunology</source><volume>8</volume><elocation-id>1385</elocation-id><pub-id pub-id-type="doi">10.3389/fimmu.2017.01385</pub-id><pub-id pub-id-type="pmid">29163474</pub-id><pub-id pub-id-type="pmcid">PMC5674680</pub-id></element-citation></ref><ref id="bib26"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Gaze</surname><given-names>S</given-names></name>
+<name name-style="western"><surname>McSorley</surname><given-names>HJ</given-names></name>
+<name name-style="western"><surname>Daveson</surname><given-names>J</given-names></name>
+<name name-style="western"><surname>Jones</surname><given-names>D</given-names></name>
+<name name-style="western"><surname>Bethony</surname><given-names>JM</given-names></name>
+<name name-style="western"><surname>Oliveira</surname><given-names>LM</given-names></name>
+<name name-style="western"><surname>Speare</surname><given-names>R</given-names></name>
+<name name-style="western"><surname>McCarthy</surname><given-names>JS</given-names></name>
+<name name-style="western"><surname>Engwerda</surname><given-names>CR</given-names></name>
+<name name-style="western"><surname>Croese</surname><given-names>J</given-names></name>
+<name name-style="western"><surname>Loukas</surname><given-names>A</given-names></name>
+</person-group><year iso-8601-date="2012">2012</year><article-title>Characterising the mucosal and systemic immune responses to experimental human hookworm infection</article-title><source>PLOS Pathogens</source><volume>8</volume><elocation-id>e1002520</elocation-id><pub-id pub-id-type="doi">10.1371/journal.ppat.1002520</pub-id><pub-id pub-id-type="pmid">22346753</pub-id><pub-id pub-id-type="pmcid">PMC3276555</pub-id></element-citation></ref><ref id="bib27"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>George</surname><given-names>PJ</given-names></name>
+<name name-style="western"><surname>Kumar</surname><given-names>NP</given-names></name>
+<name name-style="western"><surname>Sridhar</surname><given-names>R</given-names></name>
+<name name-style="western"><surname>Hanna</surname><given-names>LE</given-names></name>
+<name name-style="western"><surname>Nair</surname><given-names>D</given-names></name>
+<name name-style="western"><surname>Banurekha</surname><given-names>VV</given-names></name>
+<name name-style="western"><surname>Nutman</surname><given-names>TB</given-names></name>
+<name name-style="western"><surname>Babu</surname><given-names>S</given-names></name>
+</person-group><year iso-8601-date="2014">2014</year><article-title>Coincident helminth infection modulates systemic inflammation and immune activation in active pulmonary tuberculosis</article-title><source>PLOS Neglected Tropical Diseases</source><volume>8</volume><elocation-id>e3289</elocation-id><pub-id pub-id-type="doi">10.1371/journal.pntd.0003289</pub-id><pub-id pub-id-type="pmid">25375117</pub-id><pub-id pub-id-type="pmcid">PMC4222842</pub-id></element-citation></ref><ref id="bib28"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Hays</surname><given-names>R</given-names></name>
+<name name-style="western"><surname>Esterman</surname><given-names>A</given-names></name>
+<name name-style="western"><surname>Giacomin</surname><given-names>P</given-names></name>
+<name name-style="western"><surname>Loukas</surname><given-names>A</given-names></name>
+<name name-style="western"><surname>McDermott</surname><given-names>R</given-names></name>
+</person-group><year iso-8601-date="2015">2015</year><article-title>Does Strongyloides stercoralis infection protect against type 2 diabetes in humans? evidence from australian aboriginal adults</article-title><source>Diabetes Research and Clinical Practice</source><volume>107</volume><fpage>355</fpage><lpage>361</lpage><pub-id pub-id-type="doi">10.1016/j.diabres.2015.01.012</pub-id><pub-id pub-id-type="pmid">25656764</pub-id></element-citation></ref><ref id="bib29"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Huang</surname><given-names>X</given-names></name>
+<name name-style="western"><surname>Zeng</surname><given-names>LR</given-names></name>
+<name name-style="western"><surname>Chen</surname><given-names>FS</given-names></name>
+<name name-style="western"><surname>Zhu</surname><given-names>JP</given-names></name>
+<name name-style="western"><surname>Zhu</surname><given-names>MH</given-names></name>
+</person-group><year iso-8601-date="2018">2018</year><article-title>Trichuris suis ova therapy in inflammatory bowel disease: a meta-analysis</article-title><source>Medicine</source><volume>97</volume><elocation-id>e12087</elocation-id><pub-id pub-id-type="doi">10.1097/MD.0000000000012087</pub-id><pub-id pub-id-type="pmid">30142867</pub-id><pub-id pub-id-type="pmcid">PMC6113037</pub-id></element-citation></ref><ref id="bib30"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Kamada</surname><given-names>N</given-names></name>
+<name name-style="western"><surname>Seo</surname><given-names>SU</given-names></name>
+<name name-style="western"><surname>Chen</surname><given-names>GY</given-names></name>
+<name name-style="western"><surname>Núñez</surname><given-names>G</given-names></name>
+</person-group><year iso-8601-date="2013">2013</year><article-title>Role of the gut Microbiota in immunity and inflammatory disease</article-title><source>Nature Reviews Immunology</source><volume>13</volume><fpage>321</fpage><lpage>335</lpage><pub-id pub-id-type="doi">10.1038/nri3430</pub-id><pub-id pub-id-type="pmid">23618829</pub-id></element-citation></ref><ref id="bib31"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Langdon</surname><given-names>K</given-names></name>
+<name name-style="western"><surname>Phie</surname><given-names>J</given-names></name>
+<name name-style="western"><surname>Thapa</surname><given-names>CB</given-names></name>
+<name name-style="western"><surname>Biros</surname><given-names>E</given-names></name>
+<name name-style="western"><surname>Loukas</surname><given-names>A</given-names></name>
+<name name-style="western"><surname>Haleagrahara</surname><given-names>N</given-names></name>
+</person-group><year iso-8601-date="2019">2019</year><article-title>Helminth-based therapies for rheumatoid arthritis: a systematic review and meta-analysis</article-title><source>International Immunopharmacology</source><volume>66</volume><fpage>366</fpage><lpage>372</lpage><pub-id pub-id-type="doi">10.1016/j.intimp.2018.11.034</pub-id><pub-id pub-id-type="pmid">30529501</pub-id></element-citation></ref><ref id="bib32"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>León-Cabrera</surname><given-names>S</given-names></name>
+<name name-style="western"><surname>Callejas</surname><given-names>BE</given-names></name>
+<name name-style="western"><surname>Ledesma-Soto</surname><given-names>Y</given-names></name>
+<name name-style="western"><surname>Coronel</surname><given-names>J</given-names></name>
+<name name-style="western"><surname>Pérez-Plasencia</surname><given-names>C</given-names></name>
+<name name-style="western"><surname>Gutiérrez-Cirlos</surname><given-names>EB</given-names></name>
+<name name-style="western"><surname>Ávila-Moreno</surname><given-names>F</given-names></name>
+<name name-style="western"><surname>Rodríguez-Sosa</surname><given-names>M</given-names></name>
+<name name-style="western"><surname>Hernández-Pando</surname><given-names>R</given-names></name>
+<name name-style="western"><surname>Marquina-Castillo</surname><given-names>B</given-names></name>
+<name name-style="western"><surname>Chirino</surname><given-names>YI</given-names></name>
+<name name-style="western"><surname>Terrazas</surname><given-names>LI</given-names></name>
+</person-group><year iso-8601-date="2014">2014</year><article-title>Extraintestinal helminth infection reduces the development of colitis-associated tumorigenesis</article-title><source>International Journal of Biological Sciences</source><volume>10</volume><fpage>948</fpage><lpage>956</lpage><pub-id pub-id-type="doi">10.7150/ijbs.9033</pub-id><pub-id pub-id-type="pmid">25210492</pub-id><pub-id pub-id-type="pmcid">PMC4159685</pub-id></element-citation></ref><ref id="bib33"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Leonardi</surname><given-names>GC</given-names></name>
+<name name-style="western"><surname>Accardi</surname><given-names>G</given-names></name>
+<name name-style="western"><surname>Monastero</surname><given-names>R</given-names></name>
+<name name-style="western"><surname>Nicoletti</surname><given-names>F</given-names></name>
+<name name-style="western"><surname>Libra</surname><given-names>M</given-names></name>
+</person-group><year iso-8601-date="2018">2018</year><article-title>Ageing: from inflammation to Cancer</article-title><source>Immunity &amp; Ageing</source><volume>15</volume><pub-id pub-id-type="doi">10.1186/s12979-017-0112-5</pub-id><pub-id pub-id-type="pmid">29387133</pub-id><pub-id pub-id-type="pmcid">PMC5775596</pub-id></element-citation></ref><ref id="bib34"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Magen</surname><given-names>E</given-names></name>
+<name name-style="western"><surname>Bychkov</surname><given-names>V</given-names></name>
+<name name-style="western"><surname>Ginovker</surname><given-names>A</given-names></name>
+<name name-style="western"><surname>Kashuba</surname><given-names>E</given-names></name>
+</person-group><year iso-8601-date="2013">2013</year><article-title>Chronic Opisthorchis felineus infection attenuates atherosclerosis--an autopsy study</article-title><source>International Journal for Parasitology</source><volume>43</volume><fpage>819</fpage><lpage>824</lpage><pub-id pub-id-type="doi">10.1016/j.ijpara.2013.04.008</pub-id><pub-id pub-id-type="pmid">23792298</pub-id></element-citation></ref><ref id="bib35"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Maizels</surname><given-names>RM</given-names></name>
+</person-group><year iso-8601-date="2020">2020</year><article-title>Regulation of immunity and allergy by helminth parasites</article-title><source>Allergy</source><volume>75</volume><fpage>524</fpage><lpage>534</lpage><pub-id pub-id-type="doi">10.1111/all.13944</pub-id><pub-id pub-id-type="pmid">31187881</pub-id></element-citation></ref><ref id="bib36"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Marsland</surname><given-names>BJ</given-names></name>
+<name name-style="western"><surname>Kurrer</surname><given-names>M</given-names></name>
+<name name-style="western"><surname>Reissmann</surname><given-names>R</given-names></name>
+<name name-style="western"><surname>Harris</surname><given-names>NL</given-names></name>
+<name name-style="western"><surname>Kopf</surname><given-names>M</given-names></name>
+</person-group><year iso-8601-date="2008">2008</year><article-title>Nippostrongylus brasiliensis infection leads to the development of emphysema associated with the induction of alternatively activated macrophages</article-title><source>European Journal of Immunology</source><volume>38</volume><fpage>479</fpage><lpage>488</lpage><pub-id pub-id-type="doi">10.1002/eji.200737827</pub-id><pub-id pub-id-type="pmid">18203142</pub-id></element-citation></ref><ref id="bib37"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>McInnes</surname><given-names>IB</given-names></name>
+<name name-style="western"><surname>Leung</surname><given-names>BP</given-names></name>
+<name name-style="western"><surname>Harnett</surname><given-names>M</given-names></name>
+<name name-style="western"><surname>Gracie</surname><given-names>JA</given-names></name>
+<name name-style="western"><surname>Liew</surname><given-names>FY</given-names></name>
+<name name-style="western"><surname>Harnett</surname><given-names>W</given-names></name>
+</person-group><year iso-8601-date="2003">2003</year><article-title>A novel therapeutic approach targeting articular inflammation using the filarial nematode-derived phosphorylcholine-containing glycoprotein ES-62</article-title><source>The Journal of Immunology</source><volume>171</volume><fpage>2127</fpage><lpage>2133</lpage><pub-id pub-id-type="doi">10.4049/jimmunol.171.4.2127</pub-id><pub-id pub-id-type="pmid">12902519</pub-id></element-citation></ref><ref id="bib38"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Mendonça</surname><given-names>SC</given-names></name>
+<name name-style="western"><surname>Gonçalves-Pires</surname><given-names>MR</given-names></name>
+<name name-style="western"><surname>Rodrigues</surname><given-names>RM</given-names></name>
+<name name-style="western"><surname>Ferreira</surname><given-names>A</given-names></name>
+<name name-style="western"><surname>Costa-Cruz</surname><given-names>JM</given-names></name>
+</person-group><year iso-8601-date="2006">2006</year><article-title>Is there an association between positive Strongyloides stercoralis serology and diabetes mellitus?</article-title><source>Acta Tropica</source><volume>99</volume><fpage>102</fpage><lpage>105</lpage><pub-id pub-id-type="doi">10.1016/j.actatropica.2006.06.006</pub-id><pub-id pub-id-type="pmid">16872576</pub-id></element-citation></ref><ref id="bib39"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Morimoto</surname><given-names>M</given-names></name>
+<name name-style="western"><surname>Azuma</surname><given-names>N</given-names></name>
+<name name-style="western"><surname>Kadowaki</surname><given-names>H</given-names></name>
+<name name-style="western"><surname>Abe</surname><given-names>T</given-names></name>
+<name name-style="western"><surname>Suto</surname><given-names>Y</given-names></name>
+</person-group><year iso-8601-date="2016">2016</year><article-title>Regulation of type 2 diabetes by helminth-induced Th2 immune response</article-title><source>Journal of Veterinary Medical Science</source><volume>78</volume><fpage>1855</fpage><lpage>1864</lpage><pub-id pub-id-type="doi">10.1292/jvms.16-0183</pub-id><pub-id pub-id-type="pmid">27665994</pub-id><pub-id pub-id-type="pmcid">PMC5240765</pub-id></element-citation></ref><ref id="bib40"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Moyat</surname><given-names>M</given-names></name>
+<name name-style="western"><surname>Coakley</surname><given-names>G</given-names></name>
+<name name-style="western"><surname>Harris</surname><given-names>NL</given-names></name>
+</person-group><year iso-8601-date="2019">2019</year><article-title>The interplay of type 2 immunity, helminth infection and the Microbiota in regulating metabolism</article-title><source>Clinical &amp; Translational Immunology</source><volume>8</volume><elocation-id>e01089</elocation-id><pub-id pub-id-type="doi">10.1002/cti2.1089</pub-id><pub-id pub-id-type="pmid">31719981</pub-id><pub-id pub-id-type="pmcid">PMC6837856</pub-id></element-citation></ref><ref id="bib41"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Mpairwe</surname><given-names>H</given-names></name>
+<name name-style="western"><surname>Webb</surname><given-names>EL</given-names></name>
+<name name-style="western"><surname>Muhangi</surname><given-names>L</given-names></name>
+<name name-style="western"><surname>Ndibazza</surname><given-names>J</given-names></name>
+<name name-style="western"><surname>Akishule</surname><given-names>D</given-names></name>
+<name name-style="western"><surname>Nampijja</surname><given-names>M</given-names></name>
+<name name-style="western"><surname>Ngom-wegi</surname><given-names>S</given-names></name>
+<name name-style="western"><surname>Tumusime</surname><given-names>J</given-names></name>
+<name name-style="western"><surname>Jones</surname><given-names>FM</given-names></name>
+<name name-style="western"><surname>Fitzsimmons</surname><given-names>C</given-names></name>
+<name name-style="western"><surname>Dunne</surname><given-names>DW</given-names></name>
+<name name-style="western"><surname>Muwanga</surname><given-names>M</given-names></name>
+<name name-style="western"><surname>Rodrigues</surname><given-names>LC</given-names></name>
+<name name-style="western"><surname>Elliott</surname><given-names>AM</given-names></name>
+</person-group><year iso-8601-date="2011">2011</year><article-title>Anthelminthic treatment during pregnancy is associated with increased risk of infantile eczema: randomised-controlled trial results</article-title><source>Pediatric Allergy and Immunology</source><volume>22</volume><fpage>305</fpage><lpage>312</lpage><pub-id pub-id-type="doi">10.1111/j.1399-3038.2010.01122.x</pub-id><pub-id pub-id-type="pmid">21255083</pub-id><pub-id pub-id-type="pmcid">PMC3130136</pub-id></element-citation></ref><ref id="bib42"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Mpairwe</surname><given-names>H</given-names></name>
+<name name-style="western"><surname>Ndibazza</surname><given-names>J</given-names></name>
+<name name-style="western"><surname>Webb</surname><given-names>EL</given-names></name>
+<name name-style="western"><surname>Nampijja</surname><given-names>M</given-names></name>
+<name name-style="western"><surname>Muhangi</surname><given-names>L</given-names></name>
+<name name-style="western"><surname>Apule</surname><given-names>B</given-names></name>
+<name name-style="western"><surname>Lule</surname><given-names>S</given-names></name>
+<name name-style="western"><surname>Akurut</surname><given-names>H</given-names></name>
+<name name-style="western"><surname>Kizito</surname><given-names>D</given-names></name>
+<name name-style="western"><surname>Kakande</surname><given-names>M</given-names></name>
+<name name-style="western"><surname>Jones</surname><given-names>FM</given-names></name>
+<name name-style="western"><surname>Fitzsimmons</surname><given-names>CM</given-names></name>
+<name name-style="western"><surname>Muwanga</surname><given-names>M</given-names></name>
+<name name-style="western"><surname>Rodrigues</surname><given-names>LC</given-names></name>
+<name name-style="western"><surname>Dunne</surname><given-names>DW</given-names></name>
+<name name-style="western"><surname>Elliott</surname><given-names>AM</given-names></name>
+</person-group><year iso-8601-date="2014">2014</year><article-title>Maternal hookworm modifies risk factors for childhood eczema: results from a birth cohort in Uganda</article-title><source>Pediatric Allergy and Immunology</source><volume>25</volume><fpage>481</fpage><lpage>488</lpage><pub-id pub-id-type="doi">10.1111/pai.12251</pub-id><pub-id pub-id-type="pmid">25171741</pub-id><pub-id pub-id-type="pmcid">PMC4312885</pub-id></element-citation></ref><ref id="bib43"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Mraz</surname><given-names>M</given-names></name>
+<name name-style="western"><surname>Haluzik</surname><given-names>M</given-names></name>
+</person-group><year iso-8601-date="2014">2014</year><article-title>The role of adipose tissue immune cells in obesity and low-grade inflammation</article-title><source>Journal of Endocrinology</source><volume>222</volume><fpage>R113</fpage><lpage>R127</lpage><pub-id pub-id-type="doi">10.1530/JOE-14-0283</pub-id><pub-id pub-id-type="pmid">25006217</pub-id></element-citation></ref><ref id="bib44"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Musella</surname><given-names>A</given-names></name>
+<name name-style="western"><surname>Gentile</surname><given-names>A</given-names></name>
+<name name-style="western"><surname>Rizzo</surname><given-names>FR</given-names></name>
+<name name-style="western"><surname>De Vito</surname><given-names>F</given-names></name>
+<name name-style="western"><surname>Fresegna</surname><given-names>D</given-names></name>
+<name name-style="western"><surname>Bullitta</surname><given-names>S</given-names></name>
+<name name-style="western"><surname>Vanni</surname><given-names>V</given-names></name>
+<name name-style="western"><surname>Guadalupi</surname><given-names>L</given-names></name>
+<name name-style="western"><surname>Stampanoni Bassi</surname><given-names>M</given-names></name>
+<name name-style="western"><surname>Buttari</surname><given-names>F</given-names></name>
+<name name-style="western"><surname>Centonze</surname><given-names>D</given-names></name>
+<name name-style="western"><surname>Mandolesi</surname><given-names>G</given-names></name>
+</person-group><year iso-8601-date="2018">2018</year><article-title>Interplay between age and neuroinflammation in multiple sclerosis: effects on motor and cognitive functions</article-title><source>Frontiers in Aging Neuroscience</source><volume>10</volume><elocation-id>238</elocation-id><pub-id pub-id-type="doi">10.3389/fnagi.2018.00238</pub-id><pub-id pub-id-type="pmid">30135651</pub-id><pub-id pub-id-type="pmcid">PMC6092506</pub-id></element-citation></ref><ref id="bib45"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Narasimhan</surname><given-names>PB</given-names></name>
+<name name-style="western"><surname>Bennuru</surname><given-names>S</given-names></name>
+<name name-style="western"><surname>Meng</surname><given-names>Z</given-names></name>
+<name name-style="western"><surname>Cotton</surname><given-names>RN</given-names></name>
+<name name-style="western"><surname>Elliott</surname><given-names>KR</given-names></name>
+<name name-style="western"><surname>Ganesan</surname><given-names>S</given-names></name>
+<name name-style="western"><surname>McDonald-Fleming</surname><given-names>R</given-names></name>
+<name name-style="western"><surname>Veenstra</surname><given-names>TD</given-names></name>
+<name name-style="western"><surname>Nutman</surname><given-names>TB</given-names></name>
+<name name-style="western"><surname>Tolouei Semnani</surname><given-names>R</given-names></name>
+</person-group><year iso-8601-date="2016">2016</year><article-title>Microfilariae of Brugia malayi inhibit the mTOR pathway and induce autophagy in human dendritic cells</article-title><source>Infection and Immunity</source><volume>84</volume><fpage>2463</fpage><lpage>2472</lpage><pub-id pub-id-type="doi">10.1128/IAI.00174-16</pub-id><pub-id pub-id-type="pmid">27297394</pub-id><pub-id pub-id-type="pmcid">PMC4995918</pub-id></element-citation></ref><ref id="bib46"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Nusse</surname><given-names>YM</given-names></name>
+<name name-style="western"><surname>Savage</surname><given-names>AK</given-names></name>
+<name name-style="western"><surname>Marangoni</surname><given-names>P</given-names></name>
+<name name-style="western"><surname>Rosendahl-Huber</surname><given-names>AKM</given-names></name>
+<name name-style="western"><surname>Landman</surname><given-names>TA</given-names></name>
+<name name-style="western"><surname>de Sauvage</surname><given-names>FJ</given-names></name>
+<name name-style="western"><surname>Locksley</surname><given-names>RM</given-names></name>
+<name name-style="western"><surname>Klein</surname><given-names>OD</given-names></name>
+</person-group><year iso-8601-date="2018">2018</year><article-title>Parasitic helminths induce fetal-like reversion in the intestinal stem cell niche</article-title><source>Nature</source><volume>559</volume><fpage>109</fpage><lpage>113</lpage><pub-id pub-id-type="doi">10.1038/s41586-018-0257-1</pub-id><pub-id pub-id-type="pmid">29950724</pub-id><pub-id pub-id-type="pmcid">PMC6042247</pub-id></element-citation></ref><ref id="bib47"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Osbourn</surname><given-names>M</given-names></name>
+<name name-style="western"><surname>Soares</surname><given-names>DC</given-names></name>
+<name name-style="western"><surname>Vacca</surname><given-names>F</given-names></name>
+<name name-style="western"><surname>Cohen</surname><given-names>ES</given-names></name>
+<name name-style="western"><surname>Scott</surname><given-names>IC</given-names></name>
+<name name-style="western"><surname>Gregory</surname><given-names>WF</given-names></name>
+<name name-style="western"><surname>Smyth</surname><given-names>DJ</given-names></name>
+<name name-style="western"><surname>Toivakka</surname><given-names>M</given-names></name>
+<name name-style="western"><surname>Kemter</surname><given-names>AM</given-names></name>
+<name name-style="western"><surname>le Bihan</surname><given-names>T</given-names></name>
+<name name-style="western"><surname>Wear</surname><given-names>M</given-names></name>
+<name name-style="western"><surname>Hoving</surname><given-names>D</given-names></name>
+<name name-style="western"><surname>Filbey</surname><given-names>KJ</given-names></name>
+<name name-style="western"><surname>Hewitson</surname><given-names>JP</given-names></name>
+<name name-style="western"><surname>Henderson</surname><given-names>H</given-names></name>
+<name name-style="western"><surname>Gonzàlez-Cìscar</surname><given-names>A</given-names></name>
+<name name-style="western"><surname>Errington</surname><given-names>C</given-names></name>
+<name name-style="western"><surname>Vermeren</surname><given-names>S</given-names></name>
+<name name-style="western"><surname>Astier</surname><given-names>AL</given-names></name>
+<name name-style="western"><surname>Wallace</surname><given-names>WA</given-names></name>
+<name name-style="western"><surname>Schwarze</surname><given-names>J</given-names></name>
+<name name-style="western"><surname>Ivens</surname><given-names>AC</given-names></name>
+<name name-style="western"><surname>Maizels</surname><given-names>RM</given-names></name>
+<name name-style="western"><surname>McSorley</surname><given-names>HJ</given-names></name>
+</person-group><year iso-8601-date="2017">2017</year><article-title>HpARI protein secreted by a helminth parasite suppresses Interleukin-33</article-title><source>Immunity</source><volume>47</volume><fpage>739</fpage><lpage>751</lpage><pub-id pub-id-type="doi">10.1016/j.immuni.2017.09.015</pub-id><pub-id pub-id-type="pmid">29045903</pub-id><pub-id pub-id-type="pmcid">PMC5655542</pub-id></element-citation></ref><ref id="bib48"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Pace</surname><given-names>F</given-names></name>
+<name name-style="western"><surname>Carvalho</surname><given-names>BM</given-names></name>
+<name name-style="western"><surname>Zanotto</surname><given-names>TM</given-names></name>
+<name name-style="western"><surname>Santos</surname><given-names>A</given-names></name>
+<name name-style="western"><surname>Guadagnini</surname><given-names>D</given-names></name>
+<name name-style="western"><surname>Silva</surname><given-names>KLC</given-names></name>
+<name name-style="western"><surname>Mendes</surname><given-names>MCS</given-names></name>
+<name name-style="western"><surname>Rocha</surname><given-names>GZ</given-names></name>
+<name name-style="western"><surname>Alegretti</surname><given-names>SM</given-names></name>
+<name name-style="western"><surname>Santos</surname><given-names>GA</given-names></name>
+<name name-style="western"><surname>Catharino</surname><given-names>RR</given-names></name>
+<name name-style="western"><surname>Paroni</surname><given-names>R</given-names></name>
+<name name-style="western"><surname>Folli</surname><given-names>F</given-names></name>
+<name name-style="western"><surname>Saad</surname><given-names>MJA</given-names></name>
+</person-group><year iso-8601-date="2018">2018</year><article-title>Helminth infection in mice improves insulin sensitivity via modulation of gut Microbiota and fatty acid metabolism</article-title><source>Pharmacological Research</source><volume>132</volume><fpage>33</fpage><lpage>46</lpage><pub-id pub-id-type="doi">10.1016/j.phrs.2018.04.008</pub-id><pub-id pub-id-type="pmid">29653264</pub-id></element-citation></ref><ref id="bib49"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Panda</surname><given-names>AK</given-names></name>
+<name name-style="western"><surname>Ravindran</surname><given-names>B</given-names></name>
+<name name-style="western"><surname>Das</surname><given-names>BK</given-names></name>
+</person-group><year iso-8601-date="2013">2013</year><article-title>Rheumatoid arthritis patients are free of filarial infection in an area where filariasis is endemic: comment on the article by Pineda et al</article-title><source>Arthritis &amp; Rheumatism</source><volume>65</volume><fpage>1402</fpage><lpage>1403</lpage><pub-id pub-id-type="doi">10.1002/art.37883</pub-id><pub-id pub-id-type="pmid">23400937</pub-id></element-citation></ref><ref id="bib50"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Pandey</surname><given-names>P</given-names></name>
+<name name-style="western"><surname>Dixit</surname><given-names>A</given-names></name>
+<name name-style="western"><surname>Chandra</surname><given-names>S</given-names></name>
+<name name-style="western"><surname>Tanwar</surname><given-names>A</given-names></name>
+</person-group><year iso-8601-date="2015">2015</year><article-title>Cytological diagnosis of bancroftian filariasis presented as a subcutaneous swelling in the cubital Fossa: an unusual presentation</article-title><source>Oxford Medical Case Reports</source><volume>2015</volume><fpage>251</fpage><lpage>253</lpage><pub-id pub-id-type="doi">10.1093/omcr/omv027</pub-id><pub-id pub-id-type="pmid">26634138</pub-id><pub-id pub-id-type="pmcid">PMC4664843</pub-id></element-citation></ref><ref id="bib51"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Pastille</surname><given-names>E</given-names></name>
+<name name-style="western"><surname>Frede</surname><given-names>A</given-names></name>
+<name name-style="western"><surname>McSorley</surname><given-names>HJ</given-names></name>
+<name name-style="western"><surname>Gräb</surname><given-names>J</given-names></name>
+<name name-style="western"><surname>Adamczyk</surname><given-names>A</given-names></name>
+<name name-style="western"><surname>Kollenda</surname><given-names>S</given-names></name>
+<name name-style="western"><surname>Hansen</surname><given-names>W</given-names></name>
+<name name-style="western"><surname>Epple</surname><given-names>M</given-names></name>
+<name name-style="western"><surname>Buer</surname><given-names>J</given-names></name>
+<name name-style="western"><surname>Maizels</surname><given-names>RM</given-names></name>
+<name name-style="western"><surname>Klopfleisch</surname><given-names>R</given-names></name>
+<name name-style="western"><surname>Westendorf</surname><given-names>AM</given-names></name>
+</person-group><year iso-8601-date="2017">2017</year><article-title>Intestinal helminth infection drives carcinogenesis in colitis-associated Colon cancer</article-title><source>PLOS Pathogens</source><volume>13</volume><elocation-id>e1006649</elocation-id><pub-id pub-id-type="doi">10.1371/journal.ppat.1006649</pub-id><pub-id pub-id-type="pmid">28938014</pub-id><pub-id pub-id-type="pmcid">PMC5627963</pub-id></element-citation></ref><ref id="bib52"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Pineda</surname><given-names>MA</given-names></name>
+<name name-style="western"><surname>McGrath</surname><given-names>MA</given-names></name>
+<name name-style="western"><surname>Smith</surname><given-names>PC</given-names></name>
+<name name-style="western"><surname>Al-Riyami</surname><given-names>L</given-names></name>
+<name name-style="western"><surname>Rzepecka</surname><given-names>J</given-names></name>
+<name name-style="western"><surname>Gracie</surname><given-names>JA</given-names></name>
+<name name-style="western"><surname>Harnett</surname><given-names>W</given-names></name>
+<name name-style="western"><surname>Harnett</surname><given-names>MM</given-names></name>
+</person-group><year iso-8601-date="2012">2012</year><article-title>The parasitic helminth product ES-62 suppresses pathogenesis in collagen-induced arthritis by targeting the interleukin-17-producing cellular network at multiple sites</article-title><source>Arthritis &amp; Rheumatism</source><volume>64</volume><fpage>3168</fpage><lpage>3178</lpage><pub-id pub-id-type="doi">10.1002/art.34581</pub-id><pub-id pub-id-type="pmid">22729944</pub-id></element-citation></ref><ref id="bib53"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Rajamanickam</surname><given-names>A</given-names></name>
+<name name-style="western"><surname>Munisankar</surname><given-names>S</given-names></name>
+<name name-style="western"><surname>Bhootra</surname><given-names>Y</given-names></name>
+<name name-style="western"><surname>Dolla</surname><given-names>C</given-names></name>
+<name name-style="western"><surname>Thiruvengadam</surname><given-names>K</given-names></name>
+<name name-style="western"><surname>Nutman</surname><given-names>TB</given-names></name>
+<name name-style="western"><surname>Babu</surname><given-names>S</given-names></name>
+</person-group><year iso-8601-date="2019">2019</year><article-title>Metabolic consequences of concomitant Strongyloides stercoralis infection in patients with type 2 diabetes mellitus</article-title><source>Clinical Infectious Diseases</source><volume>69</volume><fpage>697</fpage><lpage>704</lpage><pub-id pub-id-type="doi">10.1093/cid/ciy935</pub-id><pub-id pub-id-type="pmid">30407548</pub-id><pub-id pub-id-type="pmcid">PMC6669314</pub-id></element-citation></ref><ref id="bib54"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Rajamanickam</surname><given-names>A</given-names></name>
+<name name-style="western"><surname>Munisankar</surname><given-names>S</given-names></name>
+<name name-style="western"><surname>Dolla</surname><given-names>C</given-names></name>
+<name name-style="western"><surname>Menon</surname><given-names>PA</given-names></name>
+<name name-style="western"><surname>Thiruvengadam</surname><given-names>K</given-names></name>
+<name name-style="western"><surname>Nutman</surname><given-names>TB</given-names></name>
+<name name-style="western"><surname>Babu</surname><given-names>S</given-names></name>
+</person-group><year iso-8601-date="2020">2020</year><article-title>Helminth infection modulates systemic pro-inflammatory cytokines and chemokines implicated in type 2 diabetes mellitus pathogenesis</article-title><source>PLOS Neglected Tropical Diseases</source><volume>14</volume><elocation-id>e0008101</elocation-id><pub-id pub-id-type="doi">10.1371/journal.pntd.0008101</pub-id><pub-id pub-id-type="pmid">32126084</pub-id><pub-id pub-id-type="pmcid">PMC7069638</pub-id></element-citation></ref><ref id="bib55"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Rea</surname><given-names>IM</given-names></name>
+<name name-style="western"><surname>Gibson</surname><given-names>DS</given-names></name>
+<name name-style="western"><surname>McGilligan</surname><given-names>V</given-names></name>
+<name name-style="western"><surname>McNerlan</surname><given-names>SE</given-names></name>
+<name name-style="western"><surname>Alexander</surname><given-names>HD</given-names></name>
+<name name-style="western"><surname>Ross</surname><given-names>OA</given-names></name>
+</person-group><year iso-8601-date="2018">2018</year><article-title>Age and Age-Related diseases: role of inflammation triggers and cytokines</article-title><source>Frontiers in Immunology</source><volume>9</volume><elocation-id>586</elocation-id><pub-id pub-id-type="doi">10.3389/fimmu.2018.00586</pub-id><pub-id pub-id-type="pmid">29686666</pub-id><pub-id pub-id-type="pmcid">PMC5900450</pub-id></element-citation></ref><ref id="bib56"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Rook</surname><given-names>GA</given-names></name>
+<name name-style="western"><surname>Adams</surname><given-names>V</given-names></name>
+<name name-style="western"><surname>Hunt</surname><given-names>J</given-names></name>
+<name name-style="western"><surname>Palmer</surname><given-names>R</given-names></name>
+<name name-style="western"><surname>Martinelli</surname><given-names>R</given-names></name>
+<name name-style="western"><surname>Brunet</surname><given-names>LR</given-names></name>
+</person-group><year iso-8601-date="2004">2004</year><article-title>Mycobacteria and other environmental organisms as immunomodulators for immunoregulatory disorders</article-title><source>Springer Seminars in Immunopathology</source><volume>25</volume><fpage>237</fpage><lpage>255</lpage><pub-id pub-id-type="doi">10.1007/s00281-003-0148-9</pub-id><pub-id pub-id-type="pmid">15007629</pub-id></element-citation></ref><ref id="bib57"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Rzepecka</surname><given-names>J</given-names></name>
+<name name-style="western"><surname>Pineda</surname><given-names>MA</given-names></name>
+<name name-style="western"><surname>Al-Riyami</surname><given-names>L</given-names></name>
+<name name-style="western"><surname>Rodgers</surname><given-names>DT</given-names></name>
+<name name-style="western"><surname>Huggan</surname><given-names>JK</given-names></name>
+<name name-style="western"><surname>Lumb</surname><given-names>FE</given-names></name>
+<name name-style="western"><surname>Khalaf</surname><given-names>AI</given-names></name>
+<name name-style="western"><surname>Meakin</surname><given-names>PJ</given-names></name>
+<name name-style="western"><surname>Corbet</surname><given-names>M</given-names></name>
+<name name-style="western"><surname>Ashford</surname><given-names>ML</given-names></name>
+<name name-style="western"><surname>Suckling</surname><given-names>CJ</given-names></name>
+<name name-style="western"><surname>Harnett</surname><given-names>MM</given-names></name>
+<name name-style="western"><surname>Harnett</surname><given-names>W</given-names></name>
+</person-group><year iso-8601-date="2015">2015</year><article-title>Prophylactic and therapeutic treatment with a synthetic analogue of a parasitic worm product prevents experimental arthritis and inhibits IL-1β production via NRF2-mediated counter-regulation of the inflammasome</article-title><source>Journal of Autoimmunity</source><volume>60</volume><fpage>59</fpage><lpage>73</lpage><pub-id pub-id-type="doi">10.1016/j.jaut.2015.04.005</pub-id><pub-id pub-id-type="pmid">25975491</pub-id><pub-id pub-id-type="pmcid">PMC4459730</pub-id></element-citation></ref><ref id="bib58"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Sanai</surname><given-names>SA</given-names></name>
+<name name-style="western"><surname>Saini</surname><given-names>V</given-names></name>
+<name name-style="western"><surname>Benedict</surname><given-names>RH</given-names></name>
+<name name-style="western"><surname>Zivadinov</surname><given-names>R</given-names></name>
+<name name-style="western"><surname>Teter</surname><given-names>BE</given-names></name>
+<name name-style="western"><surname>Ramanathan</surname><given-names>M</given-names></name>
+<name name-style="western"><surname>Weinstock-Guttman</surname><given-names>B</given-names></name>
+</person-group><year iso-8601-date="2016">2016</year><article-title>Aging and multiple sclerosis</article-title><source>Multiple Sclerosis Journal</source><volume>22</volume><fpage>717</fpage><lpage>725</lpage><pub-id pub-id-type="doi">10.1177/1352458516634871</pub-id><pub-id pub-id-type="pmid">26895718</pub-id></element-citation></ref><ref id="bib59"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Shen</surname><given-names>SW</given-names></name>
+<name name-style="western"><surname>Lu</surname><given-names>Y</given-names></name>
+<name name-style="western"><surname>Li</surname><given-names>F</given-names></name>
+<name name-style="western"><surname>Shen</surname><given-names>ZH</given-names></name>
+<name name-style="western"><surname>Xu</surname><given-names>M</given-names></name>
+<name name-style="western"><surname>Yao</surname><given-names>WF</given-names></name>
+<name name-style="western"><surname>Feng</surname><given-names>YB</given-names></name>
+<name name-style="western"><surname>Yun</surname><given-names>JT</given-names></name>
+<name name-style="western"><surname>Wang</surname><given-names>YP</given-names></name>
+<name name-style="western"><surname>Ling</surname><given-names>W</given-names></name>
+<name name-style="western"><surname>Qi</surname><given-names>HJ</given-names></name>
+<name name-style="western"><surname>Tong</surname><given-names>DX</given-names></name>
+</person-group><year iso-8601-date="2015">2015</year><article-title>The potential long-term effect of previous schistosome infection reduces the risk of metabolic syndrome among chinese men</article-title><source>Parasite Immunology</source><volume>37</volume><fpage>333</fpage><lpage>339</lpage><pub-id pub-id-type="doi">10.1111/pim.12187</pub-id><pub-id pub-id-type="pmid">25809087</pub-id></element-citation></ref><ref id="bib60"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Smallwood</surname><given-names>TB</given-names></name>
+<name name-style="western"><surname>Giacomin</surname><given-names>PR</given-names></name>
+<name name-style="western"><surname>Loukas</surname><given-names>A</given-names></name>
+<name name-style="western"><surname>Mulvenna</surname><given-names>JP</given-names></name>
+<name name-style="western"><surname>Clark</surname><given-names>RJ</given-names></name>
+<name name-style="western"><surname>Miles</surname><given-names>JJ</given-names></name>
+</person-group><year iso-8601-date="2017">2017</year><article-title>Helminth immunomodulation in autoimmune disease</article-title><source>Frontiers in Immunology</source><volume>8</volume><elocation-id>453</elocation-id><pub-id pub-id-type="doi">10.3389/fimmu.2017.00453</pub-id><pub-id pub-id-type="pmid">28484453</pub-id><pub-id pub-id-type="pmcid">PMC5401880</pub-id></element-citation></ref><ref id="bib61"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Sonnenberg</surname><given-names>GF</given-names></name>
+<name name-style="western"><surname>Fouser</surname><given-names>LA</given-names></name>
+<name name-style="western"><surname>Artis</surname><given-names>D</given-names></name>
+</person-group><year iso-8601-date="2011">2011</year><article-title>Border patrol: regulation of immunity, inflammation and tissue homeostasis at barrier surfaces by IL-22</article-title><source>Nature Immunology</source><volume>12</volume><fpage>383</fpage><lpage>390</lpage><pub-id pub-id-type="doi">10.1038/ni.2025</pub-id><pub-id pub-id-type="pmid">21502992</pub-id></element-citation></ref><ref id="bib62"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Strachan</surname><given-names>DP</given-names></name>
+</person-group><year iso-8601-date="1989">1989</year><article-title>Hay fever, hygiene, and household size</article-title><source>BMJ</source><volume>299</volume><fpage>1259</fpage><lpage>1260</lpage><pub-id pub-id-type="doi">10.1136/bmj.299.6710.1259</pub-id><pub-id pub-id-type="pmid">2513902</pub-id><pub-id pub-id-type="pmcid">PMC1838109</pub-id></element-citation></ref><ref id="bib63"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Tahapary</surname><given-names>DL</given-names></name>
+<name name-style="western"><surname>de Ruiter</surname><given-names>K</given-names></name>
+<name name-style="western"><surname>Martin</surname><given-names>I</given-names></name>
+<name name-style="western"><surname>Brienen</surname><given-names>EAT</given-names></name>
+<name name-style="western"><surname>van Lieshout</surname><given-names>L</given-names></name>
+<name name-style="western"><surname>Cobbaert</surname><given-names>CM</given-names></name>
+<name name-style="western"><surname>Soewondo</surname><given-names>P</given-names></name>
+<name name-style="western"><surname>Djuardi</surname><given-names>Y</given-names></name>
+<name name-style="western"><surname>Wiria</surname><given-names>AE</given-names></name>
+<name name-style="western"><surname>Houwing-Duistermaat</surname><given-names>JJ</given-names></name>
+<name name-style="western"><surname>Sartono</surname><given-names>E</given-names></name>
+<name name-style="western"><surname>Smit</surname><given-names>JWA</given-names></name>
+<name name-style="western"><surname>Yazdanbakhsh</surname><given-names>M</given-names></name>
+<name name-style="western"><surname>Supali</surname><given-names>T</given-names></name>
+</person-group><year iso-8601-date="2017">2017</year><article-title>Effect of anthelmintic treatment on insulin resistance: a Cluster-Randomized, Placebo-Controlled trial in Indonesia</article-title><source>Clinical Infectious Diseases</source><volume>65</volume><fpage>764</fpage><lpage>771</lpage><pub-id pub-id-type="doi">10.1093/cid/cix416</pub-id><pub-id pub-id-type="pmid">28472383</pub-id></element-citation></ref><ref id="bib64"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Tchkonia</surname><given-names>T</given-names></name>
+<name name-style="western"><surname>Morbeck</surname><given-names>DE</given-names></name>
+<name name-style="western"><surname>Von Zglinicki</surname><given-names>T</given-names></name>
+<name name-style="western"><surname>Van Deursen</surname><given-names>J</given-names></name>
+<name name-style="western"><surname>Lustgarten</surname><given-names>J</given-names></name>
+<name name-style="western"><surname>Scrable</surname><given-names>H</given-names></name>
+<name name-style="western"><surname>Khosla</surname><given-names>S</given-names></name>
+<name name-style="western"><surname>Jensen</surname><given-names>MD</given-names></name>
+<name name-style="western"><surname>Kirkland</surname><given-names>JL</given-names></name>
+</person-group><year iso-8601-date="2010">2010</year><article-title>Fat tissue, aging, and cellular senescence</article-title><source>Aging Cell</source><volume>9</volume><fpage>667</fpage><lpage>684</lpage><pub-id pub-id-type="doi">10.1111/j.1474-9726.2010.00608.x</pub-id><pub-id pub-id-type="pmid">20701600</pub-id><pub-id pub-id-type="pmcid">PMC2941545</pub-id></element-citation></ref><ref id="bib65"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Teixeira</surname><given-names>AL</given-names></name>
+<name name-style="western"><surname>Wieck</surname><given-names>A</given-names></name>
+<name name-style="western"><surname>Diniz</surname><given-names>BS</given-names></name>
+<name name-style="western"><surname>Bauer</surname><given-names>ME</given-names></name>
+</person-group><year iso-8601-date="2012">2012</year><article-title>Biomarkers in mood disorders among the elderly: can they contribute to diagnosis and prognosis?</article-title><source>Current Translational Geriatrics and Experimental Gerontology Reports</source><volume>1</volume><fpage>111</fpage><lpage>120</lpage><pub-id pub-id-type="doi">10.1007/s13670-012-0010-9</pub-id></element-citation></ref><ref id="bib66"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Thevaranjan</surname><given-names>N</given-names></name>
+<name name-style="western"><surname>Puchta</surname><given-names>A</given-names></name>
+<name name-style="western"><surname>Schulz</surname><given-names>C</given-names></name>
+<name name-style="western"><surname>Naidoo</surname><given-names>A</given-names></name>
+<name name-style="western"><surname>Szamosi</surname><given-names>JC</given-names></name>
+<name name-style="western"><surname>Verschoor</surname><given-names>CP</given-names></name>
+<name name-style="western"><surname>Loukov</surname><given-names>D</given-names></name>
+<name name-style="western"><surname>Schenck</surname><given-names>LP</given-names></name>
+<name name-style="western"><surname>Jury</surname><given-names>J</given-names></name>
+<name name-style="western"><surname>Foley</surname><given-names>KP</given-names></name>
+<name name-style="western"><surname>Schertzer</surname><given-names>JD</given-names></name>
+<name name-style="western"><surname>Larché</surname><given-names>MJ</given-names></name>
+<name name-style="western"><surname>Davidson</surname><given-names>DJ</given-names></name>
+<name name-style="western"><surname>Verdú</surname><given-names>EF</given-names></name>
+<name name-style="western"><surname>Surette</surname><given-names>MG</given-names></name>
+<name name-style="western"><surname>Bowdish</surname><given-names>DME</given-names></name>
+</person-group><year iso-8601-date="2017">2017</year><article-title>Age-Associated microbial dysbiosis promotes intestinal permeability, systemic inflammation, and macrophage dysfunction</article-title><source>Cell Host &amp; Microbe</source><volume>21</volume><fpage>455</fpage><lpage>466</lpage><pub-id pub-id-type="doi">10.1016/j.chom.2017.03.002</pub-id><pub-id pub-id-type="pmid">28407483</pub-id><pub-id pub-id-type="pmcid">PMC5392495</pub-id></element-citation></ref><ref id="bib67"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Tsai</surname><given-names>C-Y</given-names></name>
+<name name-style="western"><surname>Shen</surname><given-names>C-Y</given-names></name>
+<name name-style="western"><surname>Liao</surname><given-names>H-T</given-names></name>
+<name name-style="western"><surname>Li</surname><given-names>K-J</given-names></name>
+<name name-style="western"><surname>Lee</surname><given-names>H-T</given-names></name>
+<name name-style="western"><surname>Lu</surname><given-names>C-S</given-names></name>
+<name name-style="western"><surname>Wu</surname><given-names>C-H</given-names></name>
+<name name-style="western"><surname>Kuo</surname><given-names>Y-M</given-names></name>
+<name name-style="western"><surname>Hsieh</surname><given-names>S-C</given-names></name>
+<name name-style="western"><surname>Yu</surname><given-names>C-L</given-names></name>
+</person-group><year iso-8601-date="2019">2019</year><article-title>Molecular and cellular bases of immunosenescence, inflammation, and cardiovascular complications mimicking “Inflammaging” in Patients with Systemic Lupus Erythematosus</article-title><source>International Journal of Molecular Sciences</source><volume>20</volume><elocation-id>3878</elocation-id><pub-id pub-id-type="doi">10.3390/ijms20163878</pub-id><pub-id pub-id-type="pmid">31395799</pub-id><pub-id pub-id-type="pmcid">PMC6721773</pub-id></element-citation></ref><ref id="bib68"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Turton</surname><given-names>JA</given-names></name>
+</person-group><year iso-8601-date="1976">1976</year><article-title>Letter: ige, parasites, and allergy</article-title><source>The Lancet</source><volume>2</volume><elocation-id>686</elocation-id><pub-id pub-id-type="doi">10.1016/s0140-6736(76)92492-2</pub-id><pub-id pub-id-type="pmid">60540</pub-id></element-citation></ref><ref id="bib69"><element-citation publication-type="book"><person-group person-group-type="author">
+<name name-style="western"><surname>Velasquez-Manoff</surname><given-names>M</given-names></name>
+</person-group><year iso-8601-date="2012">2012</year><source>An Epidemic of Absence: A New Way of Understanding Allergies and Autoimmune Diseases</source><publisher-name>Scribner</publisher-name></element-citation></ref><ref id="bib70"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Vennervald</surname><given-names>BJ</given-names></name>
+<name name-style="western"><surname>Polman</surname><given-names>K</given-names></name>
+</person-group><year iso-8601-date="2009">2009</year><article-title>Helminths and malignancy</article-title><source>Parasite Immunology</source><volume>31</volume><fpage>686</fpage><lpage>696</lpage><pub-id pub-id-type="doi">10.1111/j.1365-3024.2009.01163.x</pub-id><pub-id pub-id-type="pmid">19825108</pub-id></element-citation></ref><ref id="bib71"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Wammes</surname><given-names>LJ</given-names></name>
+<name name-style="western"><surname>Hamid</surname><given-names>F</given-names></name>
+<name name-style="western"><surname>Wiria</surname><given-names>AE</given-names></name>
+<name name-style="western"><surname>May</surname><given-names>L</given-names></name>
+<name name-style="western"><surname>Kaisar</surname><given-names>MM</given-names></name>
+<name name-style="western"><surname>Prasetyani-Gieseler</surname><given-names>MA</given-names></name>
+<name name-style="western"><surname>Djuardi</surname><given-names>Y</given-names></name>
+<name name-style="western"><surname>Wibowo</surname><given-names>H</given-names></name>
+<name name-style="western"><surname>Kruize</surname><given-names>YC</given-names></name>
+<name name-style="western"><surname>Verweij</surname><given-names>JJ</given-names></name>
+<name name-style="western"><surname>de Jong</surname><given-names>SE</given-names></name>
+<name name-style="western"><surname>Tsonaka</surname><given-names>R</given-names></name>
+<name name-style="western"><surname>Houwing-Duistermaat</surname><given-names>JJ</given-names></name>
+<name name-style="western"><surname>Sartono</surname><given-names>E</given-names></name>
+<name name-style="western"><surname>Luty</surname><given-names>AJ</given-names></name>
+<name name-style="western"><surname>Supali</surname><given-names>T</given-names></name>
+<name name-style="western"><surname>Yazdanbakhsh</surname><given-names>M</given-names></name>
+</person-group><year iso-8601-date="2016">2016</year><article-title>Community deworming alleviates geohelminth-induced immune hyporesponsiveness</article-title><source>PNAS</source><volume>113</volume><fpage>12526</fpage><lpage>12531</lpage><pub-id pub-id-type="doi">10.1073/pnas.1604570113</pub-id><pub-id pub-id-type="pmid">27791067</pub-id><pub-id pub-id-type="pmcid">PMC5098677</pub-id></element-citation></ref><ref id="bib72"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Wolfs</surname><given-names>IM</given-names></name>
+<name name-style="western"><surname>Stöger</surname><given-names>JL</given-names></name>
+<name name-style="western"><surname>Goossens</surname><given-names>P</given-names></name>
+<name name-style="western"><surname>Pöttgens</surname><given-names>C</given-names></name>
+<name name-style="western"><surname>Gijbels</surname><given-names>MJ</given-names></name>
+<name name-style="western"><surname>Wijnands</surname><given-names>E</given-names></name>
+<name name-style="western"><surname>van der Vorst</surname><given-names>EP</given-names></name>
+<name name-style="western"><surname>van Gorp</surname><given-names>P</given-names></name>
+<name name-style="western"><surname>Beckers</surname><given-names>L</given-names></name>
+<name name-style="western"><surname>Engel</surname><given-names>D</given-names></name>
+<name name-style="western"><surname>Biessen</surname><given-names>EA</given-names></name>
+<name name-style="western"><surname>Kraal</surname><given-names>G</given-names></name>
+<name name-style="western"><surname>van Die</surname><given-names>I</given-names></name>
+<name name-style="western"><surname>Donners</surname><given-names>MM</given-names></name>
+<name name-style="western"><surname>de Winther</surname><given-names>MP</given-names></name>
+</person-group><year iso-8601-date="2014">2014</year><article-title>Reprogramming macrophages to an anti-inflammatory phenotype by helminth antigens reduces murine atherosclerosis</article-title><source>The FASEB Journal</source><volume>28</volume><fpage>288</fpage><lpage>299</lpage><pub-id pub-id-type="doi">10.1096/fj.13-235911</pub-id><pub-id pub-id-type="pmid">24043262</pub-id></element-citation></ref><ref id="bib73"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Wu</surname><given-names>D</given-names></name>
+<name name-style="western"><surname>Molofsky</surname><given-names>AB</given-names></name>
+<name name-style="western"><surname>Liang</surname><given-names>HE</given-names></name>
+<name name-style="western"><surname>Ricardo-Gonzalez</surname><given-names>RR</given-names></name>
+<name name-style="western"><surname>Jouihan</surname><given-names>HA</given-names></name>
+<name name-style="western"><surname>Bando</surname><given-names>JK</given-names></name>
+<name name-style="western"><surname>Chawla</surname><given-names>A</given-names></name>
+<name name-style="western"><surname>Locksley</surname><given-names>RM</given-names></name>
+</person-group><year iso-8601-date="2011">2011</year><article-title>Eosinophils sustain adipose alternatively activated macrophages associated with glucose homeostasis</article-title><source>Science</source><volume>332</volume><fpage>243</fpage><lpage>247</lpage><pub-id pub-id-type="doi">10.1126/science.1201475</pub-id><pub-id pub-id-type="pmid">21436399</pub-id><pub-id pub-id-type="pmcid">PMC3144160</pub-id></element-citation></ref><ref id="bib74"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Xi</surname><given-names>H</given-names></name>
+<name name-style="western"><surname>Katschke</surname><given-names>KJ</given-names></name>
+<name name-style="western"><surname>Li</surname><given-names>Y</given-names></name>
+<name name-style="western"><surname>Truong</surname><given-names>T</given-names></name>
+<name name-style="western"><surname>Lee</surname><given-names>WP</given-names></name>
+<name name-style="western"><surname>Diehl</surname><given-names>L</given-names></name>
+<name name-style="western"><surname>Rangell</surname><given-names>L</given-names></name>
+<name name-style="western"><surname>Tao</surname><given-names>J</given-names></name>
+<name name-style="western"><surname>Arceo</surname><given-names>R</given-names></name>
+<name name-style="western"><surname>Eastham-Anderson</surname><given-names>J</given-names></name>
+<name name-style="western"><surname>Hackney</surname><given-names>JA</given-names></name>
+<name name-style="western"><surname>Iglesias</surname><given-names>A</given-names></name>
+<name name-style="western"><surname>Cote-Sierra</surname><given-names>J</given-names></name>
+<name name-style="western"><surname>Elstrott</surname><given-names>J</given-names></name>
+<name name-style="western"><surname>Weimer</surname><given-names>RM</given-names></name>
+<name name-style="western"><surname>van Lookeren Campagne</surname><given-names>M</given-names></name>
+</person-group><year iso-8601-date="2016">2016</year><article-title>IL-33 amplifies an innate immune response in the degenerating retina</article-title><source>Journal of Experimental Medicine</source><volume>213</volume><fpage>189</fpage><lpage>207</lpage><pub-id pub-id-type="doi">10.1084/jem.20150894</pub-id><pub-id pub-id-type="pmid">26755704</pub-id><pub-id pub-id-type="pmcid">PMC4749925</pub-id></element-citation></ref><ref id="bib75"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Xia</surname><given-names>S</given-names></name>
+<name name-style="western"><surname>Zhang</surname><given-names>X</given-names></name>
+<name name-style="western"><surname>Zheng</surname><given-names>S</given-names></name>
+<name name-style="western"><surname>Khanabdali</surname><given-names>R</given-names></name>
+<name name-style="western"><surname>Kalionis</surname><given-names>B</given-names></name>
+<name name-style="western"><surname>Wu</surname><given-names>J</given-names></name>
+<name name-style="western"><surname>Wan</surname><given-names>W</given-names></name>
+<name name-style="western"><surname>Tai</surname><given-names>X</given-names></name>
+</person-group><year iso-8601-date="2016">2016</year><article-title>An update on Inflamm-Aging: mechanisms, prevention, and treatment</article-title><source>Journal of Immunology Research</source><volume>2016</volume><fpage>1</fpage><lpage>12</lpage><pub-id pub-id-type="doi">10.1155/2016/8426874</pub-id><pub-id pub-id-type="pmcid">PMC4963991</pub-id><pub-id pub-id-type="pmid">27493973</pub-id></element-citation></ref><ref id="bib76"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Zhang</surname><given-names>H</given-names></name>
+<name name-style="western"><surname>Xing</surname><given-names>Y</given-names></name>
+<name name-style="western"><surname>Kong</surname><given-names>H</given-names></name>
+<name name-style="western"><surname>Dai</surname><given-names>Y</given-names></name>
+<name name-style="western"><surname>He</surname><given-names>W</given-names></name>
+<name name-style="western"><surname>Ge</surname><given-names>S</given-names></name>
+<name name-style="western"><surname>Zhu</surname><given-names>YC</given-names></name>
+</person-group><year iso-8601-date="2012">2012</year><article-title>Anti-atherogenic effect and its mechanisms of soluble egg antigen of <italic toggle="yes">schistosomia japonicum</italic> in ApoE-/- mice</article-title><source>Zhongguo Xue Xi Chong Bing Fang Zhi Za Zhi = Chinese Journal of Schistosomiasis Control</source><volume>24</volume><fpage>654</fpage><lpage>658</lpage><pub-id pub-id-type="pmid">23593834</pub-id></element-citation></ref><ref id="bib77"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Zhuang</surname><given-names>Y</given-names></name>
+<name name-style="western"><surname>Lyga</surname><given-names>J</given-names></name>
+</person-group><year iso-8601-date="2014">2014</year><article-title>Inflammaging in skin and other tissues - the roles of complement system and macrophage</article-title><source>Inflammation &amp; Allergy Drug Targets</source><volume>13</volume><fpage>153</fpage><lpage>161</lpage><pub-id pub-id-type="doi">10.2174/1871528113666140522112003</pub-id><pub-id pub-id-type="pmid">24853681</pub-id><pub-id pub-id-type="pmcid">PMC4082166</pub-id></element-citation></ref><ref id="bib78"><element-citation publication-type="journal"><person-group person-group-type="author">
+<name name-style="western"><surname>Zuo</surname><given-names>L</given-names></name>
+<name name-style="western"><surname>Prather</surname><given-names>ER</given-names></name>
+<name name-style="western"><surname>Stetskiv</surname><given-names>M</given-names></name>
+<name name-style="western"><surname>Garrison</surname><given-names>DE</given-names></name>
+<name name-style="western"><surname>Meade</surname><given-names>JR</given-names></name>
+<name name-style="western"><surname>Peace</surname><given-names>TI</given-names></name>
+<name name-style="western"><surname>Zhou</surname><given-names>T</given-names></name>
+</person-group><year iso-8601-date="2019">2019</year><article-title>Inflammaging and oxidative stress in human diseases: from molecular mechanisms to novel treatments</article-title><source>International Journal of Molecular Sciences</source><volume>20</volume><elocation-id>4472</elocation-id><pub-id pub-id-type="doi">10.3390/ijms20184472</pub-id><pub-id pub-id-type="pmid">31510091</pub-id><pub-id pub-id-type="pmcid">PMC6769561</pub-id></element-citation></ref></ref-list></back></article>

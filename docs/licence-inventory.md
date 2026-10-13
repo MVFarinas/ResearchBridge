@@ -31,6 +31,10 @@ run as a container), `planned` (not used yet), `reference only` (read for ideas,
 | actions/checkout, actions/setup-python, actions/setup-node | MIT | — | v7.0.1 `3d3c42e`, v7.0.0 `5fda3b9`, v7.0.0 `8207627` (SHA-pinned) | service (CI) | `.github/workflows/ci.yml`. |
 
 Transitive Python dependencies are pinned in [requirements/dev.txt](../requirements/dev.txt).
+Transitive dependencies under weak, file-level copyleft (MPL-2.0, e.g. certifi 2026.7.22 via
+httpx and pathspec 1.1.1 via mypy) are acceptable when installed and used unmodified; never copy
+or modify their source. The permissive-only rule above still applies to every direct dependency
+and to all copied code.
 
 ### Evaluated and not used
 

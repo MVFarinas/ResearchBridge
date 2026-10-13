@@ -1,5 +1,5 @@
 {
-  "_comment": "Verbatim real-world JATS fixtures. See README.md for attribution. Checked by tests/test_fixtures_manifest.py.",
+  "_comment": "Verbatim real-world JATS fixtures. See README.md for attribution. Checked by tests/test_jats_fixtures.py (test_fixtures_match_manifest_checksums).",
   "retrieved": "2026-10-13",
   "fixtures": [
     {

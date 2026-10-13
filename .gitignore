@@ -36,3 +36,8 @@ out/
 
 # Local agent worktrees
 .worktrees/
+
+# Next.js generated type declarations
+web/next-env.d.ts
+web/test-results/
+web/playwright-report/

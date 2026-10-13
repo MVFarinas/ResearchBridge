@@ -318,7 +318,7 @@ def _screen(
     abstract = article.abstract.text if article.abstract else ""
     phrase = design_evidence(slot.study_type, abstract)
     if phrase is None:
-        raise _RejectedError(f"abstract does not name a {slot.study_type.value} design")
+        raise _RejectedError(f"abstract does not name the design ({slot.study_type.value})")
     summaries = lay_summaries(article)
     if slot.require_lay_summary and not summaries:
         raise _RejectedError("no expert lay summary (eLife digest / PLOS author summary)")

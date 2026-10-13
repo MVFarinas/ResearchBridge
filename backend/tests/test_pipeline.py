@@ -316,10 +316,13 @@ def test_jats_rejection_removes_text_and_does_not_refetch_it(
     assert not Paragraph.objects.exists()
 
 
-def test_reviewer_rejection_removes_text_and_approval_brings_it_back(
+def test_reviewer_rejection_removes_text_and_new_evidence_brings_it_back(
     bucket: PmcBucket, recorded: RecordedBucket
 ) -> None:
-    """Text removed after a review rejection is fetched again once a reviewer approves."""
+    """Text removed after a review rejection is fetched again once new evidence approves it.
+
+    A reviewer approving a removed version instead is covered in test_receivers.py.
+    """
     # The code and the JATS disagree (synthetic CC BY-ND code), so the version is reviewed.
     recorded.add_metadata({**recorded_metadata("PMC10718527.1"), "license_code": "CC BY-ND"})
     ingest("PMC10718527", bucket)

@@ -108,6 +108,28 @@ def get_list(env: Mapping[str, str], name: str, default: list[str] | None = None
     return [item.strip() for item in raw.split(",") if item.strip()]
 
 
+def proxy_ssl_header(env: Mapping[str, str]) -> tuple[str, str] | None:
+    """Return Django's ``SECURE_PROXY_SSL_HEADER``, if a trusted proxy sets it.
+
+    ``X-Forwarded-Proto`` may only be believed when a proxy the platform runs
+    (Render, Railway) always sets or overwrites it. If the app is reachable
+    directly, any client could send the header and claim HTTPS, so it is
+    trusted only when ``DJANGO_TRUST_PROXY_SSL_HEADER`` is true.
+
+    Args:
+        env: The environment.
+
+    Returns:
+        ``("HTTP_X_FORWARDED_PROTO", "https")`` when trusted, else None.
+
+    Raises:
+        ImproperlyConfigured: If the flag is not a boolean.
+    """
+    if get_bool(env, "DJANGO_TRUST_PROXY_SSL_HEADER", default=False):
+        return ("HTTP_X_FORWARDED_PROTO", "https")
+    return None
+
+
 def database_from_env(env: Mapping[str, str]) -> dict[str, Any]:
     """Build Django's ``DATABASES["default"]`` entry from the environment.
 

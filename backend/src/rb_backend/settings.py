@@ -7,8 +7,15 @@ Every value that differs between machines comes from an environment variable
   ``DJANGO_SECRET_KEY``, a fixed, clearly insecure development key is used;
   with debug off the key is required.
 * ``DJANGO_ALLOWED_HOSTS`` and ``DJANGO_CSRF_TRUSTED_ORIGINS``: comma lists.
+* ``DJANGO_SECURE_SSL_REDIRECT`` (default false) and
+  ``DJANGO_TRUST_PROXY_SSL_HEADER`` (default false; set it only behind a
+  platform proxy that sets ``X-Forwarded-Proto``).
+* ``DJANGO_STATIC_ROOT``: where ``collectstatic`` writes (default
+  ``backend/staticfiles``).
+* ``RB_LOG_LEVEL``: root log level (default ``INFO``).
 * ``DATABASE_URL``, or ``RB_DB_HOST``/``RB_DB_PORT``/``RB_DB_NAME``/
-  ``RB_DB_USER``/``RB_DB_PASSWORD`` (see :mod:`rb_backend.envconfig`).
+  ``RB_DB_USER``/``RB_DB_PASSWORD``, and ``RB_DB_CONN_MAX_AGE`` (see
+  :mod:`rb_backend.envconfig`).
 * ``RB_DATA_DIR``: where downloads and the HTTP cache live (gitignored).
 * ``RB_RECHECK_MAX_AGE_DAYS`` and ``RB_RECHECK_BATCH_SIZE``: how often the
   worker's periodic task re-checks stored PMC articles, and how many per run.
@@ -21,7 +28,14 @@ from pathlib import Path
 
 from django.core.exceptions import ImproperlyConfigured
 
-from rb_backend.envconfig import database_from_env, get_bool, get_int, get_list, get_str
+from rb_backend.envconfig import (
+    database_from_env,
+    get_bool,
+    get_int,
+    get_list,
+    get_str,
+    proxy_ssl_header,
+)
 
 _ENV = os.environ
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -109,7 +123,8 @@ STORAGES = {
 # --- Security (cookies are HTTPS-only outside development) --------------------
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
-SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+# Believe X-Forwarded-Proto only behind a platform proxy that sets it (see envconfig).
+SECURE_PROXY_SSL_HEADER = proxy_ssl_header(_ENV)
 SECURE_SSL_REDIRECT = get_bool(_ENV, "DJANGO_SECURE_SSL_REDIRECT", default=False)
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = "DENY"

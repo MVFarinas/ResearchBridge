@@ -5,7 +5,14 @@ from __future__ import annotations
 import pytest
 from django.core.exceptions import ImproperlyConfigured
 
-from rb_backend.envconfig import database_from_env, get_bool, get_int, get_list, get_str
+from rb_backend.envconfig import (
+    database_from_env,
+    get_bool,
+    get_int,
+    get_list,
+    get_str,
+    proxy_ssl_header,
+)
 
 
 def test_get_str_treats_blank_as_unset() -> None:
@@ -79,3 +86,13 @@ def test_database_url_rejects_bad_values(url: str) -> None:
     """Non-PostgreSQL URLs, missing names and bad ports are configuration errors."""
     with pytest.raises(ImproperlyConfigured):
         database_from_env({"DATABASE_URL": url})
+
+
+def test_forwarded_proto_is_trusted_only_when_enabled() -> None:
+    """X-Forwarded-Proto is ignored unless a platform proxy is declared to set it."""
+    assert proxy_ssl_header({}) is None
+    assert proxy_ssl_header({"DJANGO_TRUST_PROXY_SSL_HEADER": "false"}) is None
+    assert proxy_ssl_header({"DJANGO_TRUST_PROXY_SSL_HEADER": "true"}) == (
+        "HTTP_X_FORWARDED_PROTO",
+        "https",
+    )

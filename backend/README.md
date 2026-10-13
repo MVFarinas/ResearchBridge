@@ -50,6 +50,11 @@ docker run --rm -p 8000:8000 -e DATABASE_URL=... -e DJANGO_SECRET_KEY=... -e DJA
 docker run --rm -e DATABASE_URL=... -e DJANGO_SECRET_KEY=... researchbridge-backend django-admin procrastinate worker
 ```
 
+Behind a hosting platform's HTTPS proxy (Render, Railway), also set
+`DJANGO_TRUST_PROXY_SSL_HEADER=true` and `DJANGO_SECURE_SSL_REDIRECT=true`. Leave the first one
+off when the container is reachable directly, as above: any client could then claim HTTPS by
+sending `X-Forwarded-Proto`. Every setting is listed in `.env.example`.
+
 ## Data acknowledgement
 
 Full text and metadata come from the NIH National Library of Medicine (NLM) PubMed Central Article

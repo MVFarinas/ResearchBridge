@@ -27,6 +27,9 @@ run as a container), `planned` (not used yet), `reference only` (read for ideas,
 | mypy | MIT | — | 2.4.0 | dependency (dev) | Type checking. |
 | pytest | MIT | — | 9.1.1 | dependency (dev) | Tests. |
 | types-lxml | Apache-2.0 | — | 2026.2.16 | dependency (dev) | lxml type stubs for mypy. |
+| PyYAML | MIT | — | 6.0.3 | dependency (rbbench) | Rubric, selection and matrix configs; always `yaml.safe_load`. Added Phase 1. |
+| jsonschema | MIT | — | 4.26.0 | dependency (rbbench) | Validates comprehension question sets against `benchmark/comprehension/schema_v1.json`. Transitive: attrs 26.1.0 (MIT), referencing 0.37.0 (MIT), jsonschema-specifications 2025.9.1 (MIT), rpds-py 2026.9.1 (MIT). Added Phase 1. |
+| types-PyYAML, types-jsonschema | Apache-2.0 | — | 6.0.12.20260906, 4.26.0.20261006 | dependency (dev) | Type stubs for mypy. Added Phase 1. |
 | pgvector/pgvector Docker image | PostgreSQL Licence (PostgreSQL and pgvector); image build files MIT | — | `0.8.7-pg16` | service (local dev database) | `docker-compose.yml`. |
 | actions/checkout, actions/setup-python, actions/setup-node | MIT | — | v7.0.1 `3d3c42e`, v7.0.0 `5fda3b9`, v7.0.0 `8207627` (SHA-pinned) | service (CI) | `.github/workflows/ci.yml`. |
 
@@ -40,6 +43,10 @@ and to all copied code.
 
 | Project | Code licence | Version reviewed | Decision |
 |---|---|---|---|
+| krippendorff (fast-krippendorff) | **GPL-3.0-or-later** | 0.9.0 (PyPI) | **Not used** (Phase 1): copyleft. `rbbench.agreement.stats` implements nominal alpha from Krippendorff (2011) and is tested against that paper's worked examples. |
+| pysbd | MIT | 0.3.4 (PyPI) | **Not used** (Phase 1): its regexes contain invalid escape sequences, which are syntax warnings on Python 3.12 and fail this repo's warnings-as-errors tests; last release 2021. `rbbench.sentences` is a small rule-based splitter instead. |
+| statsmodels / scipy / scikit-learn (kappa, tau) | BSD-3-Clause | 0.15.0 / — / — | **Not used** (Phase 1): pulling numpy/scipy/pandas in for four short formulas was not worth it. Cohen's and Fleiss' kappa, Krippendorff's alpha and Kendall's tau-b are implemented in pure Python and tested against published worked examples (and FactPICO's published tau values). |
+| FactPICO code (lilywchen/FactPICO) | MIT (LICENSE at `2e16993`) | commit `2e16993` | **Not copied**: only its data is used (below). Its LLM-evaluation scripts were not needed. |
 | pubmed_parser | MIT | 0.5.1 (PyPI sdist) | **Not used** for `rbcore.jats` (Phase 0). It parses with lxml's default parser (no hardening against entities or network), uses bare `except` and `print`, flattens only one level of inline markup, returns flat paragraphs with no stable IDs or nested sections, and does not record which field a licence came from. Its approach to matching COI footnotes by attribute value informed ours; no code was copied. |
 
 ## 2. Planned: permissive, attribution only
@@ -64,11 +71,11 @@ and to all copied code.
 | Remark42 | Comments | MIT | — | — | planned option (Phase 7) | |
 | Coral (talk) | Comments | Apache-2.0 | — | — | planned option (Phase 7) | |
 | Isso | Comments | MIT | — | — | planned option | |
-| AlignScore | Faithfulness metric | MIT | check checkpoint licence before use | — | planned (Phase 1 baseline) | |
+| AlignScore | Faithfulness metric | MIT (`yuh-zha/AlignScore`, head `a0936d5` checked 2026-10-13) | MIT (HF `yzha/AlignScore`, checked 2026-10-13) | — | optional adapter, not installed (`rbbench.baselines`) | Install instructions in benchmark/README.md. |
 | SummaC | Faithfulness metric | Apache-2.0 | check checkpoint licence | — | planned (Phase 1 baseline) | |
-| QAFactEval | Faithfulness metric | BSD-3-Clause | check checkpoint licence | — | planned (Phase 1 baseline) | |
+| QAFactEval | Faithfulness metric | BSD-3-Clause (`salesforce/QAFactEval`, head `01177f1` checked 2026-10-13) | models from `download_models.sh`: **licence not verified** | — | optional adapter, not installed (`rbbench.baselines`) | Verify the model licences before enabling. |
 | FActScore | Faithfulness metric | MIT | — | — | reference | |
-| MiniCheck | Faithfulness metric | Apache-2.0 | RoBERTa / DeBERTa / Flan-T5 checkpoints MIT | — | planned (Phase 1 baseline) | **Not** Bespoke-MiniCheck-7B (CC BY-NC). |
+| MiniCheck | Faithfulness metric | Apache-2.0 (`Liyan06/MiniCheck`, head `b58b9fa` checked 2026-10-13) | `lytang/MiniCheck-{RoBERTa,DeBERTa-v3,Flan-T5}-Large` MIT (HF, checked 2026-10-13) | — | optional adapter, not installed (`rbbench.baselines`) | **Not** Bespoke-MiniCheck-7B (CC BY-NC): the adapter refuses it. |
 | Vectara HHEM | Hallucination model | — | Apache-2.0 | — | planned option | |
 | pszemraj/long-t5-tglobal-base-sci-simplify | Simplifier baseline | — | Apache-2.0 | — | planned (baseline only) | |
 | scrutiny | GRIM/DEBIT checks | MIT | — | — | planned (internal triage only, §2.3) | |
@@ -90,20 +97,20 @@ and to all copied code.
 
 | Source | Terms | How used | Obligations |
 |---|---|---|---|
-| PMC Cloud Service (`s3://pmc-oa-opendata`) | Per-article licence (`license_code`); bucket terms | planned (Phase 2); fixtures (Phase 0) | Acknowledge NLM; no PMC logo or implied endorsement; redistribute only licensed data; keep it current or say it is not; honour `is_retracted`. `TDM` = never ingest. |
+| PMC Cloud Service (`s3://pmc-oa-opendata`) | Per-article licence (`license_code`); bucket terms | in use (Phase 1: licence evidence and JATS for the candidate shortlist, cached in `data/`); planned (Phase 2); fixtures (Phase 0) | Acknowledge NLM; no PMC logo or implied endorsement; redistribute only licensed data; keep it current or say it is not; honour `is_retracted`. `TDM` = never ingest. |
 | Europe PMC REST | Per-article licence; free API | fixtures (Phase 0); planned | Its `fullTextXML` copy can lack the machine-readable licence that PMC's copy has (see fixtures); prefer the PMC copy. |
 | PLOS (journals.plos.org, allofplos) | CC BY 4.0 (some CC0) | fixture (Phase 0); planned | Attribution. |
 | arXiv OAI-PMH and API | Metadata CC0; per-paper licence; API ToU | planned (after MVP) | At most 1 request per 3 s. Non-exclusive licence = no display. |
 | bioRxiv / medRxiv API | Per-preprint licence | planned | `cc_no` = never ingest. |
-| NCBI E-utilities | NLM terms | planned | At most 3 requests/s without a key (10 with `NCBI_API_KEY`). |
+| NCBI E-utilities | NLM terms | in use (Phase 1: esearch/esummary for candidate selection, cached) | At most 3 requests/s without a key (10 with `NCBI_API_KEY`). |
 | OpenAlex | CC0 | planned (Phases 4-5) | Usage-based pricing since Feb 2026; cache; show "as of" dates. |
 | OpenCitations | CC0 | planned | |
 | NIH iCite | Public domain | planned | |
 | Crossref (incl. Retraction Watch data) | Metadata open; Retraction Watch citation requested | planned | Cite Retraction Watch. Licence fields are secondary signals only. |
 | DOAJ | CC0 metadata | planned (discovery only) | Licence is journal-level, never the gate. |
-| PLOS and eLife lay-summary datasets (HF `tomasg25/scientific_lay_summarisation`) | CC BY 4.0 (card) | planned (Phase 1) | Re-check each paper's licence at its primary source. |
+| PLOS and eLife lay-summary datasets (HF `tomasg25/scientific_lay_summarisation`) | CC BY 4.0 (card) | reference only (Phase 1): **not downloaded** (a ~1.6 GB Google Drive release behind a loading script; the HF viewer does not serve it). Candidates come from the same journals and must carry an expert lay summary in their JATS | Re-check each paper's licence at its primary source (done per candidate). |
 | PLABA | CC0 | planned (Phase 1) | |
-| FactPICO annotations | CC BY 4.0 | planned (Phase 1, judge calibration) | |
+| FactPICO annotations | CC BY 4.0 (verified 2026-10-13 in the paper's Appendix B, arXiv:2402.11456v2; repository MIT) | in use (Phase 1, judge calibration): `FactPICO.zip` from the Box link in the repo's `data/README.md`, SHA-256 `ec260d7c…d4f4`, extracted into `data/benchmark/factpico/`, **never committed** | Attribute Joseph et al. (ACL 2024). The source abstracts inside keep their own PMC OA licences. |
 | Claude API | Anthropic commercial terms | planned (key not yet provisioned) | No-training / minimal retention settings for §1.2 uploads. |
 
 ## 4. Pending licence reviews

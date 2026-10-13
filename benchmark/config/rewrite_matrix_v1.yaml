@@ -7,10 +7,15 @@
 # The two arms test the reported effect of temperature on overgeneralisation
 # (Peters & Chin-Yee 2025: temperature 0 cut the odds by about 76%).
 #
-# Caveat recorded in docs/phase-notes/phase-0.md: some current Claude models
-# reject non-default sampling parameters (HTTP 400). If the chosen model does,
-# the temperature-0 arm fails with a recorded error rather than silently
-# running at the default; pick a model that accepts it, or replace this arm.
+# Caveat (Claude API reference bundled with Claude Code, model table cached
+# 2026-10-06; not verified against the live API, no key): a non-default
+# temperature returns HTTP 400 on every current-generation Claude model
+# (Fable 5/5.1, Opus 5.5/5/4.8/4.7, Sonnet 5.5/5, Haiku 5.5). Only Opus 4.6,
+# Sonnet 4.6, Haiku 4.5 and older accept it. On a current model the
+# temperature-0 arm therefore fails, and the harness records each failure as
+# an invalid cell instead of silently running at the default. To test the
+# temperature effect, run this arm on a 4.6-generation model, or replace it
+# (for example with an effort-level arm in rewrite_matrix_v2).
 
 version: rewrite_matrix_v1
 prompt: rewrite_v1

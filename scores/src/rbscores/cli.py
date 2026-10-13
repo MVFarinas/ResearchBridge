@@ -25,8 +25,10 @@ from pathlib import Path
 from typing import Any, TextIO
 
 from rbcore.config import Settings
+from rbcore.jats import JatsParseError
 from rbscores.human_data import marks, pairwise
 from rbscores.human_data.common import HumanDataError
+from rbscores.nlp import ModelNotInstalledError
 from rbscores.scoring import (
     ScoreReport,
     UnitScore,
@@ -104,17 +106,76 @@ def main(argv: Sequence[str] | None = None, *, out: TextIO | None = None) -> int
         out: Where to write output (defaults to ``sys.stdout``).
 
     Returns:
-        The exit status: 0 on success, 1 for invalid input data.
+        The exit status: 0 on success, 1 for invalid or missing input (with a
+        one-line message on standard error) or invalid human study data.
     """
     args = build_parser().parse_args(argv)
     stream = out or sys.stdout
+    try:
+        return _dispatch(args, stream)
+    except (FileNotFoundError, UnicodeDecodeError, ValueError, ModelNotInstalledError) as exc:
+        sys.stderr.write(f"rbscores: {_error_message(args, exc)}\n")
+        return 1
+
+
+def _dispatch(args: argparse.Namespace, out: TextIO) -> int:
+    """Run the chosen command.
+
+    Args:
+        args: Parsed arguments.
+        out: Output stream.
+
+    Returns:
+        The command's exit status.
+    """
     if args.command == "score":
-        return _score(args, stream)
+        return _score(args, out)
     if args.command == "terms":
-        return _terms(args, stream)
+        return _terms(args, out)
     if args.command == "validation1":
-        return _validation1(args, stream)
-    return _human(args, stream)
+        return _validation1(args, out)
+    return _human(args, out)
+
+
+def _error_message(args: argparse.Namespace, exc: Exception) -> str:
+    """Describe an expected user error in one line.
+
+    Args:
+        args: Parsed arguments (to name the input and give a hint).
+        exc: The error.
+
+    Returns:
+        The message, without a trailing newline.
+    """
+    # A missing file under validation 1's data directory means the download
+    # step has not been run there.
+    if isinstance(exc, FileNotFoundError):
+        missing = str(exc.filename or _input_path(args))
+        if args.command == "validation1":
+            data_dir = workflow.validation_dir(args.data_dir or Settings.from_env().data_dir)
+            if Path(missing).resolve().is_relative_to(data_dir.resolve()):
+                return f"{missing} not found; run `rbscores validation1 download` first"
+        return f"{missing}: no such file"
+
+    # Input that exists but cannot be used as given.
+    if isinstance(exc, UnicodeDecodeError):
+        return f"{_input_path(args)} is not UTF-8 text ({exc.reason} at byte {exc.start})"
+    if isinstance(exc, JatsParseError):
+        return f"{_input_path(args)} is not usable JATS XML: {exc}"
+    return str(exc)
+
+
+def _input_path(args: argparse.Namespace) -> str:
+    """Return the input path named on the command line, if any.
+
+    Args:
+        args: Parsed arguments.
+
+    Returns:
+        The ``path`` argument, or "input" when the command has none.
+    """
+    path = getattr(args, "path", None)
+    return str(path) if path is not None else "input"
 
 
 def _score(args: argparse.Namespace, out: TextIO) -> int:

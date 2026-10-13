@@ -152,3 +152,61 @@ def test_validation1_steps_call_the_workflow(
     assert json.loads(results.read_text())["pairs"] == {"elife": 1, "all": 1}
     assert tables.read_text() == output
     assert "**Composite readability**" in output
+
+
+def test_non_utf8_text_file_is_a_one_line_error(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A text file that is not UTF-8 exits 1 with a message, not a traceback."""
+    path = tmp_path / "latin1.txt"
+    path.write_bytes("Café au lait.".encode("latin-1"))
+    status, output = _run("score", str(path))
+    assert (status, output) == (1, "")
+    message = capsys.readouterr().err
+    assert message.startswith(f"rbscores: {path} is not UTF-8 text")
+    assert message.count("\n") == 1
+
+
+def test_missing_input_file_is_reported(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    """A missing input path exits 1 and names the file."""
+    missing = tmp_path / "absent.txt"
+    status, _ = _run("terms", str(missing))
+    assert status == 1
+    assert capsys.readouterr().err == f"rbscores: {missing}: no such file\n"
+
+
+def test_malformed_jats_is_reported(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    """Broken XML exits 1 with the parser's reason."""
+    path = tmp_path / "broken.xml"
+    path.write_text("<article><body>", encoding="utf-8")
+    status, _ = _run("score", str(path))
+    assert status == 1
+    assert capsys.readouterr().err.startswith(f"rbscores: {path} is not usable JATS XML")
+
+
+@pytest.mark.parametrize("step", ["run", "calibrate"])
+def test_validation1_without_download_says_what_to_do(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], step: str
+) -> None:
+    """Running or calibrating before downloading points at the download step."""
+    extra = (
+        ["--output", str(tmp_path / "ref.json"), "--version", "v"] if step == "calibrate" else []
+    )
+    status, _ = _run("validation1", step, "--data-dir", str(tmp_path / "empty"), *extra)
+    assert status == 1
+    message = capsys.readouterr().err
+    assert str(tmp_path / "empty" / "validation1") in message
+    assert message.endswith("not found; run `rbscores validation1 download` first\n")
+
+
+def test_malformed_reference_file_is_reported(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A reference JSON without the required fields exits 1 with the reason."""
+    reference = tmp_path / "reference.json"
+    reference.write_text(json.dumps({"version": "x"}), encoding="utf-8")
+    status, _ = _run(
+        "validation1", "run", "--data-dir", str(tmp_path), "--reference", str(reference)
+    )
+    assert status == 1
+    assert capsys.readouterr().err.startswith("rbscores: malformed reference statistics")

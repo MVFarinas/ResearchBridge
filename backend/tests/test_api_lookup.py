@@ -2,11 +2,16 @@
 
 from __future__ import annotations
 
+import threading
+import time as time_module
 import uuid
+from datetime import datetime, timedelta
 from typing import Any
 
+import httpx
 import pytest
 from django.db import connection
+from django.db.transaction import TransactionManagementError
 from django.test import override_settings
 from metadata_support import LANCET_DOI, PLOS_DOI, RecordedMetadata
 from reader_support import ingest
@@ -15,10 +20,13 @@ from rest_framework.throttling import ScopedRateThrottle
 from support import RecordedBucket
 
 from rb_backend.api import views
+from rb_backend.discovery import lookup as lookup_module
+from rb_backend.discovery.lookup import MESSAGES, PREPARING_TIMEOUT, lookup, request_status
 from rb_backend.discovery.models import LookupRequest
 from rb_backend.ingestion.pmc import PmcBucket
-from rb_backend.ingestion.tasks import job_status
-from rbcore.http import FetchError
+from rb_backend.ingestion.tasks import job_status, lock_on_demand_budget
+from rb_backend.metadata.services import MetadataClients, convert_id
+from rbcore.http import FetchError, PoliteFetcher, RateLimiter
 
 pytestmark = pytest.mark.django_db
 
@@ -244,3 +252,124 @@ def test_bucket_listing_without_versions_is_not_in_pmc(
     data = post(api, PLOS_DOI).json()
     assert data["outcome"] == "not_available"
     assert "not in PubMed Central" in data["message"]
+
+
+def set_gate_status(status: str) -> None:
+    """Move every stored version to an undisplayable gate status (SQL, as a reviewer would)."""
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "UPDATE corpus_paperversion SET gate_status = %s, can_display = false, "
+            "can_rewrite = false, output_licence_family = '', output_licence_version = ''",
+            [status],
+        )
+
+
+def test_lookup_of_a_paper_in_review_says_a_person_is_checking(
+    api: APIClient, bucket: PmcBucket
+) -> None:
+    """A stored version awaiting licence review is "held", and nothing is queued."""
+    ingest(PLOS_PMCID, bucket)
+    set_gate_status("review")
+    data = post(api, PLOS_DOI).json()
+    assert data["outcome"] == "not_available"
+    assert data["message"] == MESSAGES["held"]
+    assert LookupRequest.objects.count() == 0
+
+
+def test_lookup_of_a_pending_version_is_prepared_not_held(
+    api: APIClient, bucket: PmcBucket
+) -> None:
+    """A version a bulk ingest has not decided yet is queued as "being prepared"."""
+    ingest(PLOS_PMCID, bucket)
+    set_gate_status("pending")
+    response = post(api, PLOS_DOI)
+    data = response.json()
+    assert response.status_code == 202
+    assert data["outcome"] == "queued"
+    assert data["request"]["status"] == "preparing"
+    assert "checked by a person" not in data["request"]["message"]
+    assert LookupRequest.objects.count() == 1
+
+
+def test_request_whose_job_vanished_fails_after_the_timeout(api: APIClient) -> None:
+    """With the job row pruned and nothing stored, "preparing" lasts at most an hour."""
+    request_id = post(api, PLOS_DOI).json()["request"]["id"]
+    with connection.cursor() as cursor:
+        cursor.execute("DELETE FROM procrastinate_jobs")
+    assert status_of(api, request_id).json()["status"] == "preparing"
+
+    # Past the timeout the reader is told it failed, instead of waiting forever.
+    stored = LookupRequest.objects.get()
+    later = stored.created_at + PREPARING_TIMEOUT + timedelta(minutes=1)
+    late = request_status(stored, now=later)
+    assert (late["status"], late["message"]) == ("failed", MESSAGES["failed"])
+
+
+def test_pending_version_after_a_finished_job_fails_after_the_timeout(
+    api: APIClient, bucket: PmcBucket
+) -> None:
+    """A job that finished with the version still undecided is not "preparing" forever."""
+    request_id = post(api, PLOS_DOI).json()["request"]["id"]
+    stored = LookupRequest.objects.get()
+    assert stored.job_id is not None
+    ingest(PLOS_PMCID, bucket)
+    set_gate_status("pending")
+    set_job_status(stored.job_id, "succeeded")
+    assert status_of(api, request_id).json()["status"] == "preparing"
+    later = stored.created_at + PREPARING_TIMEOUT + timedelta(minutes=1)
+    assert request_status(stored, now=later)["status"] == "failed"
+
+
+@pytest.mark.django_db(transaction=True)
+@override_settings(RB_LOOKUP_DAILY_INGEST_LIMIT=1)
+def test_concurrent_lookups_cannot_overrun_the_daily_budget(
+    clients: MetadataClients,
+    recorded: RecordedBucket,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Two simultaneous lookups with one slot left queue exactly one request."""
+    # Warm the ID converter cache so both threads only race for the budget.
+    convert_id(clients, PLOS_DOI, "doi")
+
+    # Widen the window between counting and creating, where an unguarded race lands.
+    count_requests = lookup_module._requests_today
+
+    def slow_count(now: datetime) -> int:
+        """Count, then pause so the other thread would count the same number."""
+        found = count_requests(now)
+        time_module.sleep(0.3)
+        return found
+
+    monkeypatch.setattr(lookup_module, "_requests_today", slow_count)
+    outcomes: list[str] = []
+
+    def look_up(query: str) -> None:
+        """Run one lookup on a fresh bucket client and its own database connection."""
+        fetcher = PoliteFetcher(
+            cache_dir=None,
+            transport=httpx.MockTransport(recorded.handler),
+            rate_limiter=RateLimiter({}, default_interval=0.0),
+            max_retries=0,
+        )
+        try:
+            outcomes.append(
+                lookup(query, clients, bucket_factory=lambda: PmcBucket(fetcher))["outcome"]
+            )
+        finally:
+            fetcher.close()
+            connection.close()
+
+    threads = [threading.Thread(target=look_up, args=(query,)) for query in (PLOS_DOI, PLOS_DOI)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+    assert sorted(outcomes) == ["budget_exhausted", "queued"]
+    assert LookupRequest.objects.count() == 1
+
+
+@pytest.mark.django_db(transaction=True)
+def test_budget_lock_refuses_to_run_outside_a_transaction() -> None:
+    """Outside ``transaction.atomic()`` the lock would be released at once, so it refuses."""
+    with pytest.raises(TransactionManagementError):
+        lock_on_demand_budget()

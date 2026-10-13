@@ -33,6 +33,8 @@ from rb_backend.ingestion.runtime import INGEST_LOCK, get_bucket
 logger = logging.getLogger(__name__)
 
 INGESTION_QUEUE = "ingestion"
+# Key of the Postgres advisory lock that serialises spending the on-demand budget.
+ON_DEMAND_BUDGET_LOCK = "rb_backend.ingestion.on_demand_budget"
 
 
 def close_stale_connections() -> None:
@@ -124,6 +126,25 @@ def queue_ingest(pmcid: str) -> int | None:
             .values_list("id", flat=True)
             .first()
         )
+
+
+def lock_on_demand_budget() -> None:
+    """Take the advisory lock that guards the daily on-demand ingestion budget.
+
+    Callers count today's on-demand requests and record a new one while
+    holding it, so concurrent lookups cannot both take the last slot. The lock
+    is transaction-scoped: call it inside ``transaction.atomic()``; it is
+    released when that transaction ends, and concurrent callers wait.
+
+    Raises:
+        django.db.transaction.TransactionManagementError: Outside a transaction.
+    """
+    if not transaction.get_connection().in_atomic_block:
+        raise transaction.TransactionManagementError(
+            "lock_on_demand_budget() must be called inside transaction.atomic()"
+        )
+    with transaction.get_connection().cursor() as cursor:
+        cursor.execute("SELECT pg_advisory_xact_lock(hashtext(%s))", [ON_DEMAND_BUDGET_LOCK])
 
 
 def job_status(job_id: int) -> str | None:

@@ -16,16 +16,21 @@ Outcomes:
 Eligibility is checked at the primary source only. OpenAlex licence fields
 never decide anything (decisions.md §1.1 addendum), and the licence gate runs
 again on the full record when the worker ingests the article.
+
+The daily budget (``RB_LOOKUP_DAILY_INGEST_LIMIT``) is the cost control for
+on-demand ingestion, so it is counted and spent under a Postgres advisory
+lock: concurrent lookups queue one after another and cannot overrun it.
 """
 
 from __future__ import annotations
 
 from collections.abc import Callable
-from datetime import UTC, datetime, time
+from datetime import UTC, datetime, time, timedelta
 from enum import StrEnum
 from typing import Any
 
 from django.conf import settings
+from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
 
@@ -39,7 +44,7 @@ from rb_backend.discovery.search import SearchParams, run_search
 from rb_backend.identifiers import ParsedIdentifier, normalise_doi, parse_identifier
 from rb_backend.ingestion.pmc import PmcBucket, PmcError
 from rb_backend.ingestion.runtime import get_bucket
-from rb_backend.ingestion.tasks import job_status, queue_ingest
+from rb_backend.ingestion.tasks import job_status, lock_on_demand_budget, queue_ingest
 from rb_backend.metadata.errors import UpstreamError
 from rb_backend.metadata.idconv import IdRecord, IdType, parse_record
 from rb_backend.metadata.services import MetadataClients, convert_id
@@ -71,6 +76,10 @@ class RequestStatus(StrEnum):
 _ACTIVE_JOB_STATUSES = frozenset({"todo", "doing"})
 _IDTYPES: dict[str, IdType] = {"doi": "doi", "pmcid": "pmcid", "pmid": "pmid"}
 _FAILED_JOB_STATUSES = frozenset({"failed", "cancelled", "aborted"})
+# A request whose job has vanished (pruned) or finished without a gate
+# decision is reported as failed after this long, rather than "preparing"
+# forever. Ingesting one article takes seconds; the job retries for minutes.
+PREPARING_TIMEOUT = timedelta(hours=1)
 
 MESSAGES = {
     "in_corpus": "This paper is in ResearchBridge.",
@@ -89,6 +98,7 @@ MESSAGES = {
         "at the publisher."
     ),
     "held": "This paper's licence is being checked by a person before it can be shown.",
+    "failed": "Preparing this paper failed. Please try again later.",
     "budget": (
         "ResearchBridge has prepared as many new papers as it can today. Please try again tomorrow."
     ),
@@ -182,15 +192,22 @@ def _check_and_queue(
     """
     pmcid = ids.pmcid or ""
 
-    # Stored but not displayable: the gate has already spoken (or a person is checking).
+    # Stored but not displayable: a gate decision (rejected, or a person is
+    # checking) is final here. A version still pending (a bulk ingest is
+    # downloading or has not evaluated it) is checked and queued like a new one.
     state = access.ingestion_state(pmcid)
     if state.stored and state.gate_status == GateStatus.REJECTED:
         return {**_result(LookupOutcome.NOT_AVAILABLE, "not_permitted"), "links": links}
     pending = _open_request(pmcid)
     if pending is not None:
-        return {**_result(LookupOutcome.QUEUED, "queued"), "request": request_status(pending)}
-    if state.stored:
+        return {
+            **_result(LookupOutcome.QUEUED, "queued"),
+            "request": request_status(pending, now=now),
+        }
+    if state.stored and state.gate_status == GateStatus.REVIEW:
         return {**_result(LookupOutcome.NOT_AVAILABLE, "held"), "links": links}
+    if state.stored and state.gate_status != GateStatus.PENDING:
+        return {**_result(LookupOutcome.NOT_AVAILABLE, "not_permitted"), "links": links}
 
     # Eligibility at the primary source: the PMC licence code of the latest version.
     try:
@@ -207,29 +224,39 @@ def _check_and_queue(
             "licence_code": licence_code,
         }
 
-    # Eligible: queue it, within the daily budget.
-    if _requests_today(now) >= settings.RB_LOOKUP_DAILY_INGEST_LIMIT:
-        return {**_result(LookupOutcome.BUDGET_EXHAUSTED, "budget"), "links": links}
-    request = LookupRequest.objects.create(
-        query=parsed.value,
-        pmcid=pmcid,
-        doi=ids.doi or "",
-        licence_code=licence_code,
-        job_id=queue_ingest(pmcid),
-    )
-    return {**_result(LookupOutcome.QUEUED, "queued"), "request": request_status(request)}
+    # Eligible: count and spend the daily budget atomically, so concurrent
+    # lookups cannot both see the last free slot. The job is queued in the same
+    # transaction, so the worker only sees it once the request is recorded.
+    with transaction.atomic():
+        lock_on_demand_budget()
+        if _requests_today(now) >= settings.RB_LOOKUP_DAILY_INGEST_LIMIT:
+            return {**_result(LookupOutcome.BUDGET_EXHAUSTED, "budget"), "links": links}
+        request = LookupRequest.objects.create(
+            query=parsed.value,
+            pmcid=pmcid,
+            doi=ids.doi or "",
+            licence_code=licence_code,
+            job_id=queue_ingest(pmcid),
+        )
+    return {
+        **_result(LookupOutcome.QUEUED, "queued"),
+        "request": request_status(request, now=now),
+    }
 
 
-def request_status(request: LookupRequest) -> dict[str, Any]:
+def request_status(request: LookupRequest, *, now: datetime | None = None) -> dict[str, Any]:
     """The status of a queued lookup request.
 
     Args:
         request: The request.
+        now: Current time (decides when a request with no live job has
+            waited too long).
 
     Returns:
         ``{"id", "status", "message", "paper"}``; ``paper`` is set once the
         article is displayable.
     """
+    now = now or timezone.now()
     state = access.ingestion_state(request.pmcid)
     job = job_status(request.job_id) if request.job_id is not None else None
     paper = (
@@ -237,22 +264,29 @@ def request_status(request: LookupRequest) -> dict[str, Any]:
         if state.displayable
         else None
     )
+    undecided = not state.stored or state.gate_status == GateStatus.PENDING
 
-    # Ready beats everything; a running job beats a stored but undecided version.
+    # Ready beats everything; a waiting or running job beats any stored state.
     if paper is not None:
         status, message = RequestStatus.READY, MESSAGES["in_corpus"]
-    elif job in _ACTIVE_JOB_STATUSES or (job is None and not state.stored):
+    elif job in _ACTIVE_JOB_STATUSES:
         status, message = RequestStatus.PREPARING, MESSAGES["queued"]
-    elif state.stored and state.gate_status == GateStatus.REJECTED:
-        status, message = RequestStatus.NOT_AVAILABLE, MESSAGES["not_permitted"]
-    elif state.stored:
+    # Then the gate's decision on a stored version.
+    elif state.gate_status == GateStatus.REVIEW:
         status, message = RequestStatus.HELD, MESSAGES["held"]
+    elif not undecided:
+        status, message = RequestStatus.NOT_AVAILABLE, MESSAGES["not_permitted"]
+    # No decision yet: the job failed, vanished or finished without one.
     elif job in _FAILED_JOB_STATUSES:
-        status, message = (
-            RequestStatus.FAILED,
-            "Preparing this paper failed. Please try again later.",
-        )
+        status, message = RequestStatus.FAILED, MESSAGES["failed"]
+    elif job is None or state.stored:
+        # A pruned job, or a version a bulk ingest is still preparing: wait, but not forever.
+        if now - request.created_at < PREPARING_TIMEOUT:
+            status, message = RequestStatus.PREPARING, MESSAGES["queued"]
+        else:
+            status, message = RequestStatus.FAILED, MESSAGES["failed"]
     else:
+        # The job succeeded but stored nothing: the bucket no longer lists the article.
         status, message = RequestStatus.NOT_AVAILABLE, MESSAGES["not_in_pmc"]
     return {
         "id": str(request.id),

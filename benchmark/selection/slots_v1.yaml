@@ -1,0 +1,64 @@
+# Candidate selection for the faithfulness benchmark (decisions.md §1.4).
+#
+# STATUS: PROPOSED. The script `rbbench select` turns this file into
+# candidates.csv: two candidates per slot, for the owner to approve one per
+# slot (12 papers). Nothing here is final until the owner says so.
+#
+# Reproducibility: PubMed queries are bounded by publication date, candidates
+# are screened in an order fixed by `seed` (SHA-256 of seed and PMID, so the
+# order does not depend on PubMed's relevance ranking), and every response is
+# cached under data/benchmark/cache. Re-running against the cache reproduces
+# candidates.csv exactly; re-running against a fresh cache reproduces it unless
+# PubMed or PMC changed the underlying records (new versions, retractions).
+
+version: slots_v1
+status: PROPOSED
+seed: rbbench-selection-v1
+# Publication years. The PLOS/eLife lay-summary datasets (Goldsack et al.,
+# EMNLP 2022) were built in 2022, and eLife digests became rare after the
+# 2023 reviewed-preprint model, so this window matches the reference source.
+date_range: "2015:2022"
+candidates_per_slot: 2
+# Stop screening a slot after this many PMIDs, so one hard slot cannot run up
+# hundreds of requests.
+max_screen_per_slot: 40
+# Body length bounds: long enough for a discussion passage, short enough to
+# rate. Counted on JATS body paragraphs.
+min_body_words: 2500
+max_body_words: 12000
+# Every candidate must carry an expert lay summary (eLife digest or PLOS author
+# summary), which is what puts it in the PLOS/eLife lay-summary dataset family
+# and gives a human-written reference. A slot may override this.
+require_lay_summary: true
+
+# The journals of the PLOS and eLife lay-summary datasets.
+journals:
+  elife: {query: '"eLife"[ta]', label: eLife}
+  plos_ntd: {query: '"PLoS Negl Trop Dis"[ta]', label: PLOS Neglected Tropical Diseases}
+  plos_pathogens: {query: '"PLoS Pathog"[ta]', label: PLOS Pathogens}
+  plos_biology: {query: '"PLoS Biol"[ta]', label: PLOS Biology}
+  plos_genetics: {query: '"PLoS Genet"[ta]', label: PLOS Genetics}
+  plos_compbiol: {query: '"PLoS Comput Biol"[ta]', label: PLOS Computational Biology}
+
+# PubMed filters per study type. The lab/mechanistic filter is a MeSH search
+# for animal or cell studies without human subjects; see classify.py.
+study_types:
+  randomised_trial: '"Randomized Controlled Trial"[pt]'
+  observational: '"Observational Study"[pt]'
+  lab_mechanistic: '"Journal Article"[pt] AND ("Animals"[mh] OR "Cells, Cultured"[mh]) NOT "Humans"[mh]'
+  review: '("Review"[pt] OR "Systematic Review"[pt] OR "Meta-Analysis"[pt])'
+
+# Twelve slots: three per study type, spread across eLife and PLOS journals.
+slots:
+  - {id: S01, study_type: randomised_trial, journals: [elife]}
+  - {id: S02, study_type: randomised_trial, journals: [plos_ntd]}
+  - {id: S03, study_type: randomised_trial, journals: [plos_pathogens, plos_biology, plos_genetics, plos_compbiol]}
+  - {id: S04, study_type: observational, journals: [elife]}
+  - {id: S05, study_type: observational, journals: [plos_ntd]}
+  - {id: S06, study_type: observational, journals: [plos_pathogens, plos_biology, plos_genetics, plos_compbiol]}
+  - {id: S07, study_type: lab_mechanistic, journals: [elife]}
+  - {id: S08, study_type: lab_mechanistic, journals: [plos_biology, plos_genetics]}
+  - {id: S09, study_type: lab_mechanistic, journals: [plos_pathogens, plos_compbiol]}
+  - {id: S10, study_type: review, journals: [elife]}
+  - {id: S11, study_type: review, journals: [plos_ntd]}
+  - {id: S12, study_type: review, journals: [plos_pathogens, plos_biology, plos_genetics, plos_compbiol]}

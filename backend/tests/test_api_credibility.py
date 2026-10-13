@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import date, timedelta
 from typing import Any
+from urllib.parse import urlsplit
 
 import pytest
 from django.utils import timezone
@@ -15,7 +16,8 @@ from rb_backend.corpus import access
 from rb_backend.corpus.models import Paper
 from rb_backend.corpus.retractions import record_external_retraction
 from rb_backend.ingestion.pmc import PmcBucket
-from rb_backend.metadata.credibility import paper_credibility
+from rb_backend.metadata.credibility import _notice_dict, paper_credibility
+from rb_backend.metadata.crossref import EditorialNotice
 from rb_backend.metadata.models import CachedResponse
 from rb_backend.metadata.services import MetadataClients
 
@@ -173,3 +175,31 @@ def test_first_retraction_source_is_kept() -> None:
 def test_unknown_paper_is_404(api: APIClient) -> None:
     """Credibility is only served for displayable corpus papers."""
     assert credibility(api, "PMC999999999").status_code == 404
+
+
+def test_notice_links_are_percent_encoded() -> None:
+    """A notice DOI with "#", "?" or a space still gives one whole doi.org link (synthetic DOI)."""
+    notice = EditorialNotice(
+        kind="retraction",
+        label="Retraction",
+        source="publisher",
+        notice_doi="10.5555/synthetic notice#1?v=2",
+        notice_date=None,
+        record_id=None,
+    )
+    url = _notice_dict(notice)["notice_url"]
+    assert url == "https://doi.org/10.5555/synthetic%20notice%231%3Fv%3D2"
+    assert urlsplit(url).fragment == urlsplit(url).query == ""
+
+
+def test_notice_without_a_doi_has_no_link() -> None:
+    """No notice DOI, no link."""
+    notice = EditorialNotice(
+        kind="correction",
+        label="Correction",
+        source="publisher",
+        notice_doi=None,
+        notice_date=None,
+        record_id=None,
+    )
+    assert _notice_dict(notice)["notice_url"] is None

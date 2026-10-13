@@ -31,6 +31,7 @@ from rb_backend.corpus.retractions import (
     RETRACTION_SOURCE_OPENALEX,
     record_external_retraction,
 )
+from rb_backend.discovery.links import doi_url
 from rb_backend.metadata.cache import CacheResult
 from rb_backend.metadata.crossref import EditorialNotice, parse_notices
 from rb_backend.metadata.errors import UpstreamError
@@ -216,7 +217,8 @@ def _notice_dict(notice: EditorialNotice) -> dict[str, Any]:
         "label": notice.label,
         "source": notice.source,
         "notice_doi": notice.notice_doi,
-        "notice_url": f"https://doi.org/{notice.notice_doi}" if notice.notice_doi else None,
+        # Percent-encoded like every other DOI link, so "#", "?" or spaces cannot break it.
+        "notice_url": doi_url(notice.notice_doi),
         "date": notice.notice_date.isoformat() if notice.notice_date else None,
         "retraction_watch_record": notice.record_id,
     }

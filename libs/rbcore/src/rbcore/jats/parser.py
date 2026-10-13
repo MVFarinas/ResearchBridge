@@ -300,6 +300,7 @@ class _ArticleParser:
         Returns:
             The parsed article.
         """
+        # Sections are parsed before floats so each figure can find its section.
         abstracts = tuple(
             self._parse_section(element, f"abs{n}", "abstract", element.get("abstract-type"))
             for n, element in enumerate(_children(self._meta, "abstract"), start=1)
@@ -395,13 +396,16 @@ class _ArticleParser:
                 corresponding = contrib.get("corresp") == "yes" or any(
                     x.get("ref-type") == "corresp" for x in _children(contrib, "xref")
                 )
+                # Unstructured names keep their text; structured parts are used if present.
+                string_name = _child(contrib, "string-name") if name is None else None
+                parts = name if name is not None else string_name
                 authors.append(
                     Author(
-                        surname=_text(_child(name, "surname")),
-                        given_names=_text(_child(name, "given-names")),
+                        surname=_text(_child(parts, "surname")),
+                        given_names=_text(_child(parts, "given-names")),
                         # A collab may list its members in a nested contrib-group.
-                        collab=_text(_child(contrib, "collab"), skip=("contrib-group",))
-                        or (None if name is not None else _text(_child(contrib, "string-name"))),
+                        collab=_text(_child(contrib, "collab"), skip=("contrib-group",)),
+                        literal=_text(string_name),
                         orcid=orcid,
                         corresponding=corresponding,
                     )
@@ -514,6 +518,7 @@ class _ArticleParser:
             The parsed section.
         """
         self._section_ids[element] = section_id
+        # Nested sections recurse; every other child may become paragraph blocks.
         blocks: list[tuple[etree._Element, str, str]] = []
         subsections: list[Section] = []
         for child in element:
@@ -526,6 +531,7 @@ class _ArticleParser:
             elif name not in {"title", "label"}:
                 blocks.extend(_blocks(child, name))
 
+        # A block's position within its section is its stable ID.
         paragraphs = tuple(
             Paragraph(
                 id=f"{section_id}-p{n}",
@@ -575,6 +581,7 @@ class _ArticleParser:
         """
         figures: list[Figure] = []
         tables: list[Figure] = []
+        # Document order across body then back gives the stable fig/table numbers.
         for container in (self._body, self._back):
             if container is None:
                 continue
@@ -597,10 +604,12 @@ class _ArticleParser:
         Returns:
             The parsed object, with its own permissions block if present.
         """
+        # Captions normally hold <p> elements; some publishers put text directly in <caption>.
         caption = _child(element, "caption")
         caption_paragraphs = [flatten(p) for p in _children(caption, "p")]
         if not caption_paragraphs and caption is not None:
             caption_paragraphs = [flatten(caption, skip=("title",))]
+        # Only a direct <permissions> child belongs to this object (JATS4R).
         permissions = _child(element, "permissions")
         footnotes: list[str] = []
         for foot in _children(element, "table-wrap-foot"):

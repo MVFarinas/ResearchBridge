@@ -314,17 +314,19 @@ def test_authors_collab_orcid_and_corresponding() -> None:
             "<contrib contrib-type='author'><collab>Synthetic Consortium"
             "<contrib-group><contrib><name><surname>Member</surname></name></contrib></contrib-group>"
             "</collab></contrib>"
+            "<contrib contrib-type='author'><string-name>J. Q. Literal</string-name></contrib>"
             "<contrib contrib-type='editor'><name><surname>Editor</surname></name></contrib>"
             "</contrib-group>"
         )
     )
-    first, group = article.authors
+    first, group, literal = article.authors
     assert (first.display_name, first.orcid, first.corresponding) == (
         "Jane Doe",
         "https://orcid.org/0000-0000-0000-0000",
         True,
     )
     assert group.display_name == "Synthetic Consortium"
+    assert (literal.literal, literal.display_name) == ("J. Q. Literal", "J. Q. Literal")
 
 
 def test_coi_and_funding_sources() -> None:

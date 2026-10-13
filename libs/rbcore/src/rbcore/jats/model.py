@@ -54,6 +54,8 @@ class Author:
         surname: Family name, if given as a structured name.
         given_names: Given names, if given.
         collab: Group-author name, for collaboration contributors.
+        literal: Unstructured name text (``string-name``), when no
+            structured ``name`` is given.
         orcid: ORCID iD URL or bare iD, as given.
         corresponding: Whether the contributor is marked corresponding.
     """
@@ -61,15 +63,17 @@ class Author:
     surname: str | None = None
     given_names: str | None = None
     collab: str | None = None
+    literal: str | None = None
     orcid: str | None = None
     corresponding: bool = False
 
     @property
     def display_name(self) -> str:
-        """The name to show: "Given Surname", or the group name."""
+        """The name to show: group name, "Given Surname", or the literal name."""
         if self.collab:
             return self.collab
-        return " ".join(part for part in (self.given_names, self.surname) if part)
+        structured = " ".join(part for part in (self.given_names, self.surname) if part)
+        return structured or self.literal or ""
 
 
 @dataclass(frozen=True, slots=True)

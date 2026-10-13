@@ -428,9 +428,11 @@ class _ArticleParser:
             The journal.
         """
         meta = _child(self._front, "journal-meta")
+        # JATS 3.0+ wraps the title in journal-title-group; older NLM DTDs do not.
         title = _child(_child(meta, "journal-title-group"), "journal-title")
         if title is None:
             title = _child(meta, "journal-title")
+        # The NLM title abbreviation is one journal-id among several types.
         nlm_ta = next(
             (
                 flatten(e)
@@ -620,6 +622,7 @@ class _ArticleParser:
             caption_paragraphs = [flatten(caption, skip=("title",))]
         # Only a direct <permissions> child belongs to this object (JATS4R).
         permissions = _child(element, "permissions")
+        # Table footnotes: one entry per <fn>, or the whole foot when it has none.
         footnotes: list[str] = []
         for foot in _children(element, "table-wrap-foot"):
             notes = [flatten(fn, skip=("label",)) for fn in foot.iter() if local_name(fn) == "fn"]
@@ -739,16 +742,21 @@ def _statement_elements(
             continue
         for element in container.iter():
             name = local_name(element)
+            # Skip anything nested inside an earlier match so its text is not collected twice.
             if not name or any(a in matched for a in element.iterancestors()):
                 continue
+            # Skip excluded subtrees (e.g. funding-group, which is read in structured form).
             if any(local_name(a) in exclude_names for a in element.iterancestors()):
                 continue
+            # Publishers put the statement type in different attributes; pool them.
             types = {
                 (element.get(attr) or "").lower()
                 for attr in ("fn-type", "sec-type", "notes-type", "content-type")
             }
+            # Footnotes match on type alone; named elements such as <conflict> always match.
             if name in extra_names or (name == "fn" and types & fn_types):
                 matched.append(element)
+            # Section-like containers match on type, or on a title such as "Competing interests".
             elif name in {"sec", "notes", "fn-group"}:
                 heading = _text(_child(element, "title"))
                 if types & fn_types or (heading and title.search(heading)):

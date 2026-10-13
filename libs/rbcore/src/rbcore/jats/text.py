@@ -141,6 +141,7 @@ def _collect_child(
         parts: Output buffer.
         skipped: Local names whose content is omitted.
     """
+    # Formulas read as their TeX or alt text; display formulas are set apart.
     if name in {"inline-formula", "disp-formula"}:
         parts.append(f" {formula_text(child)} " if name == "disp-formula" else formula_text(child))
     elif name == "alternatives":
@@ -149,16 +150,21 @@ def _collect_child(
         if first is not None:
             _collect_child(first, local_name(first), parts, skipped)
     elif name == "sup":
+        # Citations in superscript read as [..]; any other superscript as ^..
+        # so that 10^5 is not read as 105.
         inner = flatten(child, skip=skipped)
         if inner:
             parts.append(f"[{inner}]" if _contains_citation(child) else f"^{inner}")
     elif name == "break":
+        # A line break separates words just like a space.
         parts.append(" ")
     elif name in _BLOCKISH:
+        # Pad block-level content so adjacent blocks' words do not run together.
         parts.append(" ")
         _collect(child, parts, skipped)
         parts.append(" ")
     else:
+        # Any other inline element keeps its text and loses its markup.
         _collect(child, parts, skipped)
 
 

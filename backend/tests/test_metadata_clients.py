@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import date
 from urllib.parse import parse_qs, urlsplit
 
+import httpx
 import pytest
 from metadata_support import (
     KARGER_DOI,
@@ -17,10 +18,15 @@ from metadata_support import (
 
 from rb_backend.metadata.crossref import parse_notices
 from rb_backend.metadata.errors import UpstreamError, UpstreamRefusedError
-from rb_backend.metadata.fetch import redact
+from rb_backend.metadata.fetch import build_metadata_fetcher, redact
 from rb_backend.metadata.icite import parse_pub
 from rb_backend.metadata.idconv import parse_record
-from rb_backend.metadata.openalex import SearchRequest, parse_metrics, parse_work
+from rb_backend.metadata.openalex import (
+    OpenAlexClient,
+    SearchRequest,
+    parse_metrics,
+    parse_work,
+)
 from rb_backend.metadata.services import MetadataClients
 
 SYNTHETIC_KEY = "synthetic-test-key-not-real"
@@ -217,3 +223,23 @@ def test_idconv_maps_a_doi_to_a_pmcid(clients: MetadataClients) -> None:
 def test_idconv_not_in_pmc_is_none(clients: MetadataClients) -> None:
     """The recorded per-record error ("not found in PMC") means no record."""
     assert clients.idconv.lookup(LANCET_DOI, "doi") is None
+
+
+@pytest.mark.parametrize(("status", "error"), [(429, UpstreamRefusedError), (503, UpstreamError)])
+def test_production_fetcher_never_waits_out_retry_after(
+    status: int, error: type[Exception]
+) -> None:
+    """A 429 or 503 with a long Retry-After fails at once: one request, no sleep."""
+    requests: list[str] = []
+    sleeps: list[float] = []
+
+    def refuse(request: httpx.Request) -> httpx.Response:
+        """Answer every request with the status and an hour-long Retry-After."""
+        requests.append(str(request.url))
+        return httpx.Response(status, headers={"Retry-After": "3600"}, content=b"{}")
+
+    fetcher = build_metadata_fetcher(transport=httpx.MockTransport(refuse), sleep=sleeps.append)
+    with pytest.raises(error):
+        OpenAlexClient(fetcher).work("doi", PLOS_DOI)
+    assert len(requests) == 1
+    assert sleeps == []

@@ -25,13 +25,13 @@ from rb_backend.discovery.lookup import LookupOutcome, lookup, request_status
 from rb_backend.discovery.models import LookupRequest
 from rb_backend.discovery.search import SearchParams, run_search
 from rb_backend.identifiers import IdentifierError
-from rb_backend.ingestion.runtime import get_bucket
+from rb_backend.ingestion.runtime import get_request_bucket
 from rb_backend.metadata.credibility import paper_credibility
 from rb_backend.metadata.services import default_clients
 
 # Factories, replaced in tests.
 metadata_clients = default_clients
-pmc_bucket = get_bucket
+pmc_bucket = get_request_bucket
 
 
 class _PublicView(APIView):

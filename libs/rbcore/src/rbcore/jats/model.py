@@ -13,7 +13,7 @@ position, so re-parsing the same article version yields the same IDs):
 * A paragraph ID is its section ID plus ``-p`` and its 1-based position
   among that section's own paragraph blocks: ``sec2.1-p3``.
 * Figures are ``fig1``, ``fig2``, ... and tables ``table1``, ... in document
-  order across body and back matter.
+  order across body, back matter and ``floats-group``.
 
 The publisher's own ``@id`` attributes are kept as ``xml_id`` for reference,
 but are not used as IDs because they are optional and inconsistent.
@@ -207,7 +207,9 @@ class Figure:
         label: Label such as "Figure 1", if any.
         caption_title: Caption title text, if any.
         caption: Caption paragraph text (title excluded), blank-line separated.
-        section_id: ID of the section the object appears in.
+        section_id: ID of the section the object appears in; for objects in
+            ``floats-group``, the section of the first cross-reference to it
+            (None if nothing cites it).
         xml_id: The publisher's ``@id``, if any.
         permissions: Every ``<permissions>`` block that applies to the
             object: its own, one on an enclosing ``fig-group``,

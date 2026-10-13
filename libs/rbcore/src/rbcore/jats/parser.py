@@ -7,8 +7,9 @@ malformed XML raises :class:`JatsParseError` rather than being silently
 "recovered", because recovery can drop elements such as a figure's own
 ``<permissions>`` block and so widen what the licence gate allows.
 
-Only the main article (``front``, ``body``, ``back``) is parsed;
-``sub-article`` elements (eLife peer-review material and similar) are skipped.
+Only the main article (``front``, ``body``, ``back``, ``floats-group``) is
+parsed; ``sub-article`` elements (eLife peer-review material and similar) are
+skipped.
 
 Licence safety: every ``<permissions>`` block in the main article is either
 attached to the part it covers (the article, a figure or table, or a
@@ -393,6 +394,7 @@ class _ArticleParser:
         self._meta = _child(self._front, "article-meta")
         self._body = _child(article, "body")
         self._back = _child(article, "back")
+        self._floats_group = _child(article, "floats-group")
         # Maps each parsed section element to its stable ID, so figures can
         # find the section they sit in.
         self._section_ids: dict[etree._Element, str] = {}
@@ -738,15 +740,16 @@ class _ArticleParser:
     # ----- figures and tables ------------------------------------------
 
     def _parse_floats(self) -> tuple[tuple[Figure, ...], tuple[Figure, ...]]:
-        """Collect every figure and table in body and back matter.
+        """Collect every figure and table in body, back matter and floats-group.
 
         Returns:
             ``(figures, tables)``, each in document order.
         """
         figures: list[Figure] = []
         tables: list[Figure] = []
-        # Document order across body then back gives the stable fig/table numbers.
-        for container in (self._body, self._back):
+        # Document order across body, back, then floats-group (which JATS
+        # places after back) gives the stable fig/table numbers.
+        for container in (self._body, self._back, self._floats_group):
             if container is None:
                 continue
             for element in container.iter():
@@ -784,7 +787,7 @@ class _ArticleParser:
             label=_text(_child(element, "label")),
             caption_title=_text(_child(caption, "title")),
             caption="\n\n".join(p for p in caption_paragraphs if p),
-            section_id=self._enclosing_section(element),
+            section_id=self._enclosing_section(element) or self._citing_section(element.get("id")),
             xml_id=element.get("id"),
             permissions=self._part_permissions(element),
             graphics=tuple(
@@ -808,6 +811,28 @@ class _ArticleParser:
         for ancestor in element.iterancestors():
             if ancestor in self._section_ids:
                 return self._section_ids[ancestor]
+        return None
+
+    def _citing_section(self, xml_id: str | None) -> str | None:
+        """Return the section of the first body or back ``xref`` citing an ID.
+
+        Used for objects in ``floats-group``, which sit outside every section.
+
+        Args:
+            xml_id: The object's ``@id``, or None.
+
+        Returns:
+            The citing section's ID, or None if the object is not cited.
+        """
+        if xml_id is None:
+            return None
+        for container in (self._body, self._back):
+            if container is None:
+                continue
+            for node in container.iter():
+                # @rid may list several targets separated by spaces.
+                if local_name(node) == "xref" and xml_id in (node.get("rid") or "").split():
+                    return self._enclosing_section(node)
         return None
 
     # ----- conflicts of interest and funding ---------------------------

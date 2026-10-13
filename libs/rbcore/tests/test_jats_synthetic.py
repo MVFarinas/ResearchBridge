@@ -576,6 +576,35 @@ def test_unclaimed_permissions_are_reported_not_dropped() -> None:
     assert unattached.copyright_holders == ("Synthetic Newspaper",)
 
 
+# ----- floats-group (SYNTHETIC) -----------------------------------------------
+
+
+def test_floats_group_figures_are_parsed_after_body_and_back() -> None:
+    """Objects in floats-group are numbered after body/back and placed by their first xref."""
+    article = synthetic(
+        "<sec><p>Intro.</p></sec>"
+        "<sec><p>See <xref ref-type='fig' rid='f2 f9'>Figures 2</xref>.</p>"
+        "<fig id='f1'><caption><p>Inline.</p></caption></fig></sec>",
+        meta=ARTICLE_CC_BY,
+        extra=(
+            "<floats-group>"
+            f"<fig id='f2'><label>Figure 2</label><caption><p>Floating.</p></caption>{CLOSED_BLOCK}"
+            "</fig><fig id='f3'><caption><p>Uncited.</p></caption></fig>"
+            "<table-wrap id='t1'><caption><p>Table.</p></caption></table-wrap>"
+            "</floats-group>"
+        ),
+    )
+    assert [(f.id, f.xml_id, f.section_id) for f in article.figures] == [
+        ("fig1", "f1", "sec2"),
+        ("fig2", "f2", "sec2"),
+        ("fig3", "f3", None),
+    ]
+    assert article.figures[1].caption == "Floating."
+    assert [block.context for block in article.figures[1].permissions] == ["fig"]
+    assert [t.id for t in article.tables] == ["table1"]
+    assert article.unattached_permissions == ()
+
+
 # ----- NISO ALI dates (SYNTHETIC) ---------------------------------------------
 
 

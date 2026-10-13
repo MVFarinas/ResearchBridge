@@ -270,3 +270,39 @@ def final_labels_by_unit(
             else:
                 labels[derived.id] = None
     return grouped
+
+
+def finals_as_ratings(
+    finals: Sequence[FinalLabel], rubric: Rubric, *, rater_id: str = "adjudicated"
+) -> list[Rating]:
+    """Turn resolved final labels into one pseudo-rater's ratings.
+
+    Used to measure the LLM judge against the adjudicated human labels with
+    the same agreement statistics. Unresolved codes are left out of the
+    labels, so they count as missing rather than as a value.
+
+    Args:
+        finals: Output of :func:`merge_labels`.
+        rubric: The rubric.
+        rater_id: The pseudo-rater's ID.
+
+    Returns:
+        One rating per unit with at least one resolved code.
+    """
+    grouped: dict[tuple[Unit, str], dict[str, str]] = {}
+    for final in finals:
+        labels = grouped.setdefault((final.unit, final.unit_id), {})
+        if final.value is not None:
+            labels[final.code_id] = final.value
+    return [
+        Rating(
+            rater_id=rater_id,
+            unit=unit,
+            unit_id=unit_id,
+            labels=labels,
+            rubric_id=rubric.id,
+            rubric_sha256=rubric.sha256,
+        )
+        for (unit, unit_id), labels in grouped.items()
+        if labels
+    ]

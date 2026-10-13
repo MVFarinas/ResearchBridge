@@ -206,3 +206,40 @@ def _code_agreement(
         value_counts={value: counts.get(value, 0) for value in categories},
         notes=tuple(notes),
     )
+
+
+def _fmt(value: float | None) -> str:
+    """Format a statistic for a table; undefined values are shown as such.
+
+    Args:
+        value: The statistic or None.
+
+    Returns:
+        Three decimals, or "undefined".
+    """
+    return "undefined" if value is None else f"{value:.3f}"
+
+
+def format_agreement_table(entries: Sequence[CodeAgreement]) -> str:
+    """Render agreement entries as a Markdown table.
+
+    Args:
+        entries: Output of :func:`agreement_report`.
+
+    Returns:
+        The table, one row per code, with prevalence.
+    """
+    lines = [
+        "| Code | Unit | Units | Raters | Observed | Cohen's κ | Fleiss' κ | Krippendorff's alpha "
+        "| Values |",
+        "|---|---|---|---|---|---|---|---|---|",
+    ]
+    for entry in entries:
+        name = f"`{entry.code_id}`" + (" (derived)" if entry.derived else "")
+        values = ", ".join(f"{k}: {v}" for k, v in entry.value_counts.items())
+        lines.append(
+            f"| {name} | {entry.unit.value} | {entry.n_units} | {len(entry.raters)} "
+            f"| {_fmt(entry.observed_agreement)} | {_fmt(entry.cohen_kappa)} "
+            f"| {_fmt(entry.fleiss_kappa)} | {_fmt(entry.krippendorff_alpha)} | {values} |"
+        )
+    return "\n".join(lines)

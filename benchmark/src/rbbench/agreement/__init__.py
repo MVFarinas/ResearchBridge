@@ -5,11 +5,17 @@ from rbbench.agreement.adjudicate import (
     FinalLabel,
     Policy,
     final_labels_by_unit,
+    finals_as_ratings,
     merge_labels,
     read_adjudications,
     write_disagreements,
 )
-from rbbench.agreement.report import CodeAgreement, RatingsError, agreement_report
+from rbbench.agreement.report import (
+    CodeAgreement,
+    RatingsError,
+    agreement_report,
+    format_agreement_table,
+)
 from rbbench.agreement.stats import (
     AgreementError,
     cohen_kappa,
@@ -29,7 +35,9 @@ __all__ = [
     "agreement_report",
     "cohen_kappa",
     "final_labels_by_unit",
+    "finals_as_ratings",
     "fleiss_kappa",
+    "format_agreement_table",
     "kendall_tau_b",
     "krippendorff_alpha_nominal",
     "merge_labels",

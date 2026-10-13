@@ -251,3 +251,26 @@ def test_browser_export_logic_round_trips_through_importer(
     ratings = import_ratings(path, load_key(packets / "key.json"), rubric)
     assert len(ratings) == 6
     assert {r.comment for r in ratings} == {"synthetic"}
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is not installed")
+def test_form_renders_and_exports_under_a_dom_stub(packets: Path) -> None:
+    """The form's DOM code runs: every question renders, answering all completes it."""
+    node = shutil.which("node")
+    assert node is not None
+    runner = Path(__file__).parent / "js" / "dom_stub_runner.js"
+    result = subprocess.run(  # noqa: S603 - fixed arguments, committed runner
+        [node, str(runner), str(packets / "synthetic-r1.html")],
+        capture_output=True,
+        text=True,
+        check=True,
+        timeout=60,
+    )
+    summary = json.loads(result.stdout)
+    # 2 rewrites x 1 paragraph: 2 claims x 9 codes + 1 paragraph code, per rewrite.
+    assert summary["groups"] == 2 * (2 * 9 + 1)
+    assert summary["radios"] == 2 * (2 * (3 + 7 * 2 + 3) + 2)
+    assert summary["before"] == "0 of 6 done"
+    assert summary["after"] == "6 of 6 done"
+    assert summary["status"].startswith("Exported. Thank you")
+    assert summary["marks"] == 2

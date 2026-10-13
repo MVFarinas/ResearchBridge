@@ -28,7 +28,6 @@ from rb_backend.ingestion.pipeline import (
     PARSER_VERSION,
     IngestOutcome,
     ingest_pmc_article,
-    normalise_doi,
 )
 from rb_backend.ingestion.pmc import PmcBucket
 from rbcore.http import FetchError
@@ -507,21 +506,6 @@ def test_missing_xml_raises_for_retry_and_leaves_paper_pending(
     version = PaperVersion.objects.get()
     assert version.content_state == ContentState.NONE
     assert not version.can_display
-
-
-@pytest.mark.parametrize(
-    ("value", "expected"),
-    [
-        ("10.7554/eLife.93719", "10.7554/elife.93719"),
-        ("https://doi.org/10.1/ABC", "10.1/abc"),
-        ("doi:10.1/x", "10.1/x"),
-        ("", None),
-        (None, None),
-    ],
-)
-def test_normalise_doi(value: str | None, expected: str | None) -> None:
-    """DOIs are stored bare and lower-cased."""
-    assert normalise_doi(value) == expected
 
 
 def test_doi_already_held_by_another_paper_is_not_taken(

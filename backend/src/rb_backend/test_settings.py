@@ -19,3 +19,5 @@ STORAGES = {
 }
 # Fast password hashing for tests that create users.
 PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
+# Tests never serve static files; WhiteNoise would warn that STATIC_ROOT is empty.
+MIDDLEWARE = [m for m in MIDDLEWARE if not m.startswith("whitenoise.")]  # noqa: F405

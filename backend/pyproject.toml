@@ -32,6 +32,8 @@ rb_backend = ["py.typed"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# Test helpers (tests/support.py) are imported as a top-level module.
+pythonpath = ["tests"]
 DJANGO_SETTINGS_MODULE = "rb_backend.test_settings"
 addopts = ["-ra", "--strict-markers", "--strict-config", "--import-mode=importlib"]
 filterwarnings = ["error"]
@@ -45,6 +47,7 @@ strict = true
 files = ["src", "tests"]
 warn_unreachable = true
 plugins = ["mypy_django_plugin.main"]
+mypy_path = "tests"
 
 [[tool.mypy.overrides]]
 # Generated migrations are not type-checked.

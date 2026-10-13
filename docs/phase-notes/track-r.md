@@ -19,14 +19,14 @@ Scope: the first half of Plan.md "Track R" and decisions.md §2.4:
 | NLP | spaCy `en_core_web_sm` 3.8.0, NER excluded, loaded once; the pipeline is configurable with `RB_SCORES_SPACY_MODEL`. | `rbscores.nlp` |
 | Familiarity | wordfreq Zipf frequencies; letter-digit codes looked up by their letters (IL-6 counts as unseen, COVID-19 as "covid"); De-Jargonizer bands reimplemented (common > 1,000 per 90M words, i.e. Zipf 4.05; rare < 50, i.e. Zipf 2.74); a burden weight that is linear between Zipf 4.0 (weight 0) and 1.5 (weight 1). | `rbscores.familiarity` |
 | Readability | Per-sentence counts pooled per unit: words per sentence, dependency depth, nominalisations per 100 words (suffix heuristic with a stop list), share of sentences with a passive clause, and jargon density (rare + 0.5 × mid) / words. Composite: mean of z-scores against packaged reference statistics, equal weights. Flesch-Kincaid grade as a baseline only. | `rbscores.readability` |
-| Burden | Terms (noun-phrase cores from the first unfamiliar word to the head, abbreviations, unfamiliar single words; citations and figure references skipped). Definitions, found document-wide: Schwartz-Hearst abbreviations; "defined as", "refers to", "means", "stands for"; "known as", "called", "termed"; copular "X is a Y that ..." and "X, which is a Y"; determiner-marked appositives; glosses "X (Y)" and "X, or Y,". Citation markers (numeric and author-year). Weighting: each unfamiliar word counted once per unit, defined terms and words removed, plus 0.5 per citation, per 1,000 words. | `rbscores.burden` |
+| Burden | Terms (noun-phrase cores from the first unfamiliar word to the head, abbreviations, unfamiliar single words; citations, figure references and full reference strings skipped). Definitions, found document-wide: Schwartz-Hearst abbreviations; "defined as", "refers to", "means", "stands for"; "known as", "called", "termed"; copular "X is a Y that ..." and "X, which is a Y"; determiner-marked, adjacent appositives outside lists; noun-phrase glosses "X (Y)" and "X, or Y," that are not stock phrases, statistics, numbers, lists or bare names. Citation markers (numeric and author-year, including eLife's unbracketed "Smith et al., 2020"). Weighting: each unfamiliar word counted once per unit, defined terms and words removed, plus 0.5 per citation, per 1,000 words. | `rbscores.burden` |
 | Ranked-term API | `rank_undefined_terms(document)`: undefined, unfamiliar terms across the whole document (abstracts included), with weight, count, and every location (paragraph ID and character offsets). This is the hook for Phase 3 annotation targeting. | `rbscores.scoring` |
 | Reports | `ScoreReport` per paragraph, section and paper; `to_dict()` JSON with the provisional notice, method version, reference version, model, and every definition found. | `rbscores.scoring` |
 | Validation 1 | Download (Hugging Face rows API via `PoliteFetcher`, cached in `data/`), detokenising, abstract/lay pairs, calibration windows, reference statistics, scoring in full and length-matched, Wilson intervals, sign tests, exact McNemar paired comparisons, failure analysis, markdown tables. | `rbscores.validation1`, `scores/reports/` |
 | Human data | Two versioned JSON formats with validators (every problem reported at once, pseudonymous rater IDs enforced, a required `synthetic` flag, mark offsets checked against the text) and evaluation code. Pairwise: agreement per judgement and per majority, plus inter-rater agreement. Marks: term-level Spearman and AUC, list precision and recall, passage-level Spearman. Synthetic examples sit in the docs and are validated by the tests. | `rbscores.human_data`, `docs/data-formats/` |
-| CLI | `rbscores score`, `terms`, `validation1 download/calibrate/run`, `human validate/evaluate`. | `rbscores.cli` |
+| CLI | `rbscores score`, `terms`, `validation1 download/calibrate/run`, `human validate/evaluate`. Expected user errors (missing or non-UTF-8 input, broken JATS, malformed reference JSON, an over-long paragraph, a missing model, validation steps run before the download) exit 1 with one line on standard error. | `rbscores.cli` |
 | Statistics | Wilson interval, exact sign test, average ranks, Pearson, Spearman, AUC and median, without SciPy. | `rbscores.stats` |
-| Tests | 183 pytest tests covering every module. They use the real spaCy model and wordfreq data, synthetic familiarity tables, synthetic Hugging Face pages (`httpx.MockTransport`), real CC BY JATS fixtures from rbcore, and the synthetic format examples. No network. | `scores/tests/` |
+| Tests | 237 pytest tests covering every module, including parametrised regression cases for every definition false positive found in review. They use the real spaCy model and wordfreq data, synthetic familiarity tables, synthetic Hugging Face pages (`httpx.MockTransport`), real CC BY JATS fixtures from rbcore, and the synthetic format examples. No network. | `scores/tests/` |
 
 ## Validation 1 results (real data)
 
@@ -37,7 +37,7 @@ with its 95% Wilson interval. Full report: [scores/reports/validation_1.md](../.
 | Metric | eLife | PLOS | Pooled | Pooled, length-matched |
 |---|---|---|---|---|
 | Composite readability | 88.8% [84.2, 92.2] | 66.9% [64.3, 69.3] | 70.1% [67.9, 72.3] | 69.0% [66.7, 71.2] |
-| Burden | 99.6% [97.7, 99.9] | 70.8% [68.3, 73.1] | 75.1% [72.9, 77.1] | 82.3% [80.4, 84.1] |
+| Burden | 99.6% [97.7, 99.9] | 70.9% [68.5, 73.3] | 75.2% [73.0, 77.2] | 82.6% [80.7, 84.4] |
 | Jargon density alone | 99.6% | 79.4% | 82.4% | 83.6% |
 | Flesch-Kincaid (baseline) | 95.0% | 59.0% | 64.4% | 63.1% |
 
@@ -50,8 +50,29 @@ What the results show:
 - So the equal-weight composite is significantly worse than jargon density alone (McNemar
   p < 0.001).
 - Detecting definitions does not help in this test: abstracts define about as many terms as
-  lay summaries, mostly abbreviations.
+  lay summaries, mostly abbreviations. Ignoring definitions is still slightly better when
+  length-matched (85.1% vs 82.6% pooled, p < 0.001), after the fix below.
 - None of this is a human-difficulty result. The "truth" is a genre label.
+
+## Definition-detection precision (review fix round 1)
+
+Review found that definition detection was net harmful: stock parentheticals ("data not
+shown", "arrows", "Methods", "wild type"), comma lists of journal names, proper names, clauses
+and citation authors were recorded as definitions and removed real terms from the burden score.
+The detector was tightened (see the module docstring of `rbscores.burden.definitions`) and its
+precision measured by hand. Full method and every labelled detection:
+[scores/reports/definition_precision.md](../../scores/reports/definition_precision.md).
+
+| Sample | Precision (95% Wilson CI) |
+|---|---|
+| Committed JATS fixtures, old detector (all 85 detections) | 42.4% (32.4-53.0) |
+| Same fixtures, new detector (all 37; inspected during the fix, so optimistic) | 83.8% (68.9-92.3) |
+| **Held-out validation-split sample, new detector (50 detections)** | **88.0% (76.2-94.4)** |
+
+Abbreviations were 28 of 29 correct in the held-out sample; the other kinds 16 of 21 (76%), with
+parenthetical glosses the weakest (2 of 6). One labeller, no agreement figure; recall
+unmeasured. The burden score's definition step should not be relied on beyond this until the
+"terms I don't know" study measures whether defined terms really cost readers nothing.
 
 ## How to run
 
@@ -69,7 +90,11 @@ make setup && make check                      # lint, typecheck, tests (no netwo
    general model is MIT. The pipeline is configurable, and the inventory records the decision.
 2. **The model is installed by the lock file from spaCy's GitHub release** (a direct-URL
    dependency in `scores/pyproject.toml`), so `make setup` and CI get it reproducibly and it is
-   never committed. It is a 12 MB download from github.com.
+   never committed. It is a 12 MB download from github.com; the existing CI job already has
+   network access for PyPI, so nothing changes there. The lock has no hashes (a Phase 0
+   choice), so the wheel's SHA-256 is recorded in docs/licence-inventory.md; a release asset
+   can be replaced in a way a PyPI file cannot. Switching `make lock` to `--generate-hashes`
+   repository-wide would close that gap when the lock policy is next revisited.
 3. **wordfreq for familiarity, with its CC BY-SA 4.0 data** used only through lookups. The
    reasoning, the obligations if we ever ship a derived word list, and the rejected
    alternatives are in docs/licence-inventory.md.
@@ -107,11 +132,26 @@ make setup && make check                      # lint, typecheck, tests (no netwo
     a few random pairs, came before four burden fixes (determiner-marked appositives,
     once-per-word counting, the minimum starting weight, cutting cores at determiners). The
     fixes were for errors seen in the output, not for the scores, but this is disclosed in the
-    report as a limitation.
+    report as a limitation. Review fix round 1 tightened definition detection again, developed
+    on the committed fixtures and 80 inspected validation-split pairs; its precision was then
+    measured on 120 other pairs, and validation 1 was re-run.
 12. **Final definitions are not yet recorded in decisions.md.** Plan.md does that at the end of
     Track R, after the human validations.
 13. **Statistics are implemented in-house** (`rbscores.stats`, tested against published and
     hand-computed values) rather than adding SciPy for five functions.
+14. **Schwartz-Hearst, one tightening of the paper.** In the "SF (long form)" order the short
+    form must look like an abbreviation (two capitals, or a capital and a digit), not merely
+    contain a capital, so "Best (but the results were inconsistent)" is not an abbreviation.
+    A two-word parenthetical that is not a valid short form ("ATP (adenosine triphosphate)") is
+    tried in that order too. Short forms inside citations are ignored.
+15. **Reference strings are excluded, boxed text is not.** The eLife Insight's "Related research
+    article" box put author surnames at the top of the ranked-term list. Excluding all
+    `boxed` paragraphs would also drop glossary boxes, which hold definitions, so a
+    reference-string detector (three or more "Surname AB" authors and a year, through a
+    following DOI) excludes the reference instead.
+16. **Input limits.** Plain-text files over 5 MB (was 20 MB) and paragraphs over 100,000
+    characters are refused with the package's own error; spaCy refuses texts over 1,000,000
+    characters, and real paragraphs are a few thousand.
 
 ## Pending the owner (manual steps)
 
@@ -133,8 +173,6 @@ make setup && make check                      # lint, typecheck, tests (no netwo
    both scores in decisions.md, superseding the §2.4 drafts.
 4. **Confirm the wordfreq attribution plan** (CC BY-SA 4.0 data) before the scores are shown in
    the product: the scores' credits must name wordfreq and its sources.
-5. **CI:** the first CI run downloads `en_core_web_sm` from github.com during `make setup`;
-   network access must be allowed in that job, as it already is for PyPI.
 
 ## Known limitations
 
@@ -146,9 +184,10 @@ make setup && make check                      # lint, typecheck, tests (no netwo
 - **Familiarity is general-text frequency**, frozen around 2021 (wordfreq stopped updating in
   2024). An everyday word with a technical sense ("significant", "power") counts as familiar.
   A phrase made of common words ("cell wall", "fixed effects") is not a term.
-- **Definition detection is heuristic**, with unmeasured precision and recall. It misses
-  definitions spread across sentences, dashes, and definitions in figures. Copular sentences
-  that classify rather than explain are counted as definitions.
+- **Definition detection is heuristic.** Precision is 88.0% (76.2-94.4) on a held-out sample of
+  50; recall is unmeasured. It misses definitions spread across sentences, dashes, and
+  definitions in figures. Remaining false hits include field labels after list items
+  ("synapses (neuroscience)") and glosses read in the wrong direction.
 - **Nominalisation detection is a suffix heuristic.** It misses zero-derived nouns ("a change")
   and gerunds.
 - **Burden per 1,000 words depends on length**, because terms count once per unit. Compare units

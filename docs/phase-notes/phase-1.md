@@ -96,7 +96,10 @@ make setup && make check                 # lint, typecheck, tests (all packages)
     replace this once real judge output exists.
 12. **The dry run uses the Phase 0 fixtures in place** (`libs/rbcore/tests/fixtures/jats/`), with
     their manifest's recorded licence evidence, instead of committing copies.
-13. **No Docker/Postgres was used.** Nothing in Phase 1 needs a database; no containers were
+13. **Non-JATS XML (S3 bucket listings) is parsed with hardened lxml** (`rbbench.sources.safexml`:
+    no entities, no DTD, no network, no recovery, DOCTYPE refused, size-capped) rather than adding
+    defusedxml; lxml is already a dependency and the task allows this. CLAUDE.md now names it.
+14. **No Docker/Postgres was used.** Nothing in Phase 1 needs a database; no containers were
     started.
 
 ## Pending the owner

@@ -12,7 +12,7 @@ Guidance for Claude (and other agents) working in this repository.
   copy copyleft, non-commercial, no-derivatives or unlicensed code.
 - **Safety:** never fabricate content or results; LLM calls only via `rbcore.llm.LLMClient`
   (fake in tests, model IDs from config); licence gate via `rbcore.licences`; parse XML only with
-  `rbcore.jats` or defusedxml; be polite to public APIs (`rbcore.http.PoliteFetcher`); downloads
+  `rbcore.jats`, `rbbench.sources.safexml` (hardened lxml) or defusedxml; be polite to public APIs (`rbcore.http.PoliteFetcher`); downloads
   go in the gitignored `data/`.
 - **Commands:** `make setup`, `make lint`, `make format`, `make typecheck`, `make test`,
   `make check` (what CI runs), `make lock` (after changing dependencies), `make db-up` / `make db-down`.

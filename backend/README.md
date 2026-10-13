@@ -1,13 +1,18 @@
-# backend/ — Django backend (Phase 2)
+# backend/ — Django backend (Phases 2, 4 and 5)
 
 Corpus storage, the licence gate (decisions.md §1.1) and PMC ingestion, with a Procrastinate
-worker on the same codebase. Details, decisions and results: [docs/phase-notes/phase-2.md](../docs/phase-notes/phase-2.md).
+worker on the same codebase (Phase 2), and the reader API for the web app (Phases 4-5). Details,
+decisions and results: [docs/phase-notes/phase-2.md](../docs/phase-notes/phase-2.md) and
+[docs/phase-notes/phase-4-5.md](../docs/phase-notes/phase-4-5.md).
 
 | Package | What |
 |---|---|
 | `rb_backend.corpus` | `Paper`, `PaperVersion`, `Section`, `Paragraph`, `Figure`; licence provenance (`LicenceRecord`, `PermissionsBlockRecord`); the `LicenceReview` queue; the gate (`gate.evaluate_version`, `precedence.resolve_licence`); the **gated read API** (`access`, and the `displayable()` / `rewriteable()` querysets); the static bypass check (`accesscheck`). |
 | `rb_backend.annotations` | W3C Web Annotation-shaped `Annotation` with provenance, plus `AnnotationRevision`, `Vote`, `Report`. |
 | `rb_backend.ingestion` | PMC Cloud Service client (`pmc`), ESearch discovery (`eutils`), the pipeline, worker tasks, and the `ingest_pmc` / `recheck_licences` commands. |
+| `rb_backend.metadata` | Cached clients for OpenAlex, NIH iCite, Crossref and the PMC ID converter (`CachedResponse`, "as of" dates, stale fallback), and the paper-level credibility signals. |
+| `rb_backend.discovery` | Corpus full-text search (`SearchDocument`, built by the gate), OpenAlex search with availability tags, and the lookup flow (`LookupRequest`, daily budget, worker job status). |
+| `rb_backend.api` | Django REST framework endpoints under `/api/v1/`: `papers/<key>/`, `papers/<key>/credibility/`, `search/`, `lookup/`, `lookup/requests/<id>/`. |
 
 **The one rule for later phases:** read papers, versions, sections, paragraphs, figures and
 annotations only through `rb_backend.corpus.access` or the `displayable()` / `rewriteable()`
@@ -29,7 +34,8 @@ export DJANGO_DEBUG=true                     # or set DJANGO_SECRET_KEY
 
 ../.venv/bin/python manage.py corpus_stats              # counts by licence and gate status
 ../.venv/bin/python manage.py recheck_licences --offline  # recompute decisions, no network
-../.venv/bin/python manage.py runserver                 # admin at http://127.0.0.1:8000/admin/
+../.venv/bin/python manage.py rebuild_search_index      # only for versions stored before Phase 4
+../.venv/bin/python manage.py runserver                 # API at /api/v1/, admin at /admin/
 ```
 
 `ingest_pmc --sync` ingests inline without the worker. Without `--one-shot` the worker keeps

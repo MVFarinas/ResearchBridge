@@ -202,11 +202,14 @@ def write_disagreements(path: Path, finals: Sequence[FinalLabel], rubric: Rubric
     Returns:
         The number of rows written.
     """
+    # Only unresolved labels need a human; resolved ones stay out of the sheet.
     rows = [final for final in finals if final.basis is Basis.UNRESOLVED]
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=DISAGREEMENT_COLUMNS)
         writer.writeheader()
+        # One row per (unit, code), with every rater's value and the allowed values;
+        # the adjudication columns are left blank for the adjudicator to fill.
         for final in rows:
             writer.writerow(
                 {
@@ -309,11 +312,13 @@ def finals_as_ratings(
     Returns:
         One rating per unit with at least one resolved code.
     """
+    # Collect each unit's resolved codes; unresolved ones are simply absent.
     grouped: dict[tuple[Unit, str], dict[str, str]] = {}
     for final in finals:
         labels = grouped.setdefault((final.unit, final.unit_id), {})
         if final.value is not None:
             labels[final.code_id] = final.value
+    # One rating per unit that has at least one resolved code.
     return [
         Rating(
             rater_id=rater_id,

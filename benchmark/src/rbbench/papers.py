@@ -77,8 +77,11 @@ def benchmark_licence(
     Returns:
         The decision and whether the benchmark may use the paper.
     """
+    # One decision over primary-source and JATS evidence together, so they cross-check.
     jats = article.permissions.evidence() if article.permissions else ()
     decision = decide([*external, *jats], today=today)
+
+    # Every refusal reason is collected (not just the first), so the record explains itself.
     reasons: list[str] = []
     if not decision.permissions.can_rewrite:
         reasons.append(f"licence does not permit rewriting ({decision.licence.label})")

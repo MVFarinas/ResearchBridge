@@ -142,13 +142,16 @@ def parse_record(data: bytes, url: str) -> PmcRecord:
     Raises:
         PmcError: If the JSON is not an object or lacks required fields.
     """
+    # The document is untrusted: it must be a JSON object with the fields we rely on.
     try:
         raw: Any = json.loads(data)
     except json.JSONDecodeError as exc:
         raise PmcError(f"{url}: invalid JSON") from exc
     if not isinstance(raw, dict) or "pmcid" not in raw or "xml_url" not in raw:
         raise PmcError(f"{url}: not a PMC metadata record")
+    # The JATS location is an s3:// URL with its MD5; fetch it over HTTPS and check it.
     xml_url, xml_md5 = s3_to_https(str(raw["xml_url"]))
+    # Absent flags read as false; a missing licence stays None so the gate refuses it.
     return PmcRecord(
         pmcid=str(raw["pmcid"]),
         version=int(raw.get("version") or 1),
@@ -212,6 +215,9 @@ def retrieved_on(fetcher: PoliteFetcher, url: str) -> date:
 
     Returns:
         The cache file's modification date, or today when nothing is cached.
+        It is a file-system date: copying the cache without preserving
+        modification times, or rebuilding it, changes it although the
+        evidence did not change (documented in benchmark/selection/README.md).
     """
     path = fetcher.cache_path(url)
     if path is not None and path.is_file():

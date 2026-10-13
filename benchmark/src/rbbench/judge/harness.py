@@ -167,6 +167,7 @@ def build_items(rewrites: Sequence[RewriteRecord], claims: Sequence[Claim]) -> l
     """
     by_id = {rewrite.rewrite_id: rewrite for rewrite in rewrites}
     items: list[JudgeItem] = []
+    # Claim items: each claim with its rewritten paragraph and the whole source passage.
     for claim in claims:
         rewrite = by_id[claim.rewrite_id]
         paragraph = next(p for p in rewrite.paragraphs if p.paragraph_id == claim.paragraph_id)
@@ -183,6 +184,7 @@ def build_items(rewrites: Sequence[RewriteRecord], claims: Sequence[Claim]) -> l
                 synthetic=rewrite.synthetic or claim.synthetic,
             )
         )
+    # Paragraph items: paragraph-level codes such as a dropped limitation.
     for rewrite in rewrites:
         for paragraph in rewrite.paragraphs:
             items.append(
@@ -367,11 +369,14 @@ def _judge_one(
     Returns:
         The record; failures carry their error and no labels.
     """
+    # Defaults describe a failed call, so an error leaves an invalid but complete record.
     timestamp = utc_now_iso()
     model, raw, synthetic = "", "", item.synthetic
     labels: dict[str, str] = {}
     rationale = ""
     errors: tuple[str, ...] = ()
+
+    # Call and parse; a call or parse failure becomes the record's error.
     try:
         response = client.complete(request)
         model, raw = response.model, response.text
@@ -379,6 +384,8 @@ def _judge_one(
         labels, rationale = parse_judgement(response.text, rubric, item.unit)
     except (LLMError, JudgeError) as exc:
         errors = (f"{type(exc).__name__}: {exc}",)
+
+    # Full provenance on every record: prompt and rubric hashes, temperature, time.
     return JudgeRecord(
         unit=item.unit,
         unit_id=item.unit_id,

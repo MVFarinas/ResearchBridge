@@ -107,8 +107,10 @@ class AlignScoreScorer:
             BaselineUnavailableError: If alignscore is not installed or no
                 checkpoint path is given.
         """
+        # Nothing is ever downloaded here: the checkpoint must already be on disk.
         if not ckpt_path:
             raise BaselineUnavailableError("AlignScore needs ckpt_path (a downloaded checkpoint)")
+        # Import lazily so the optional package is needed only when this baseline is used.
         module = _require("alignscore", "see benchmark/README.md, 'Automatic baselines'")
         self._scorer: Any = module.AlignScore(
             model=model,

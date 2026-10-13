@@ -139,6 +139,7 @@ def parse_decomposition(
     Raises:
         DecompositionError: If the JSON is invalid or breaks the contract.
     """
+    # Strip code fences and take the outermost JSON object, tolerating prose around it.
     text = _FENCE.sub("", output.strip())
     start, end = text.find("{"), text.rfind("}")
     if start < 0 or end < start:
@@ -147,10 +148,12 @@ def parse_decomposition(
         data: Any = json.loads(text[start : end + 1])
     except json.JSONDecodeError as exc:
         raise DecompositionError(f"invalid JSON: {exc}") from exc
+    # Top-level structure: an object holding a list of paragraphs.
     paragraphs = data.get("paragraphs") if isinstance(data, dict) else None
     if not isinstance(paragraphs, list):
         raise DecompositionError("missing 'paragraphs' list")
 
+    # Each paragraph: a known, unique ID with a non-empty list of well-formed claims.
     result: dict[str, list[tuple[str, bool]]] = {}
     for item in paragraphs:
         paragraph_id = item.get("paragraph_id") if isinstance(item, dict) else None
@@ -171,6 +174,7 @@ def parse_decomposition(
                 raise DecompositionError(f"{paragraph_id}: in_addition must be true or false")
             parsed.append((" ".join(claim_text.split()), in_addition))
         result[paragraph_id] = parsed
+    # Every source paragraph must be covered: none may be silently dropped.
     missing = [pid for pid in expected_ids if pid not in result]
     if missing:
         raise DecompositionError(f"missing paragraph ids {missing}")

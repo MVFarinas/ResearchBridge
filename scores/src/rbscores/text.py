@@ -90,12 +90,16 @@ class TextDocument:
         sections: Sections in document order (abstracts first for JATS).
         source: "jats" or "text".
         identifier: DOI for JATS input when present, else the file name or None.
+        names: Names that are never technical terms when mentioned in the
+            text: for JATS input, the journal's title and NLM abbreviation
+            ("eLife", "PLoS Med"), so "Now, in eLife, ..." adds no burden.
     """
 
     title: str | None
     sections: tuple[TextSection, ...]
     source: str
     identifier: str | None = None
+    names: tuple[str, ...] = ()
 
     @property
     def paper_sections(self) -> tuple[TextSection, ...]:
@@ -142,12 +146,17 @@ def document_from_article(article: Article) -> TextDocument:
     for child in article.body.sections:
         sections.append(_section_from(child, title=child.title, kind="body", flatten=True))
 
+    # The journal's own name, when the text mentions it, is not a term.
+    journal = article.journal
+    names = tuple(dict.fromkeys(n for n in (journal.title, journal.nlm_ta) if n and n.strip()))
+
     non_empty = tuple(s for s in sections if s.paragraphs)
     return TextDocument(
         title=article.title,
         sections=non_empty,
         source="jats",
         identifier=article.identifiers.doi,
+        names=names,
     )
 
 

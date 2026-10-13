@@ -10,8 +10,10 @@ it lists) counts once towards the burden score. Recognised forms:
   Lee and Park 2020a)``, ``(see Smith et al., 2019)``, with name particles
   and non-English letters (``van den Ent et al., 2014``, ``Domínguez-Escobar``);
 * narrative author-year: ``Smith et al. (2019)``, and eLife's unbracketed
-  ``Smith et al., 2019`` and ``Day and Bentley, 1911`` (a single author with
-  a bare year, "Crick, 1984", is too easily confused with prose to count).
+  ``Smith et al., 2019`` and ``Day and Bentley, 1911``. The two-author form
+  needs the comma before the year (eLife's house style), so "the Wnt and
+  Notch 2019 consortium" is not a citation; a single author with a bare
+  year, "Crick, 1984", is too easily confused with prose to count.
 
 Superscript numbers are not recognised: JATS flattening keeps a citation's
 text but not that it was superscript, and bare digits are ambiguous.
@@ -21,6 +23,27 @@ bibliographic reference strings (three or more "Surname AB" authors and a
 year, extended to a DOI that follows, as in an eLife Insight's "Related
 research article" box) are found only so that their words are not mistaken
 for terms; they add no burden.
+
+Two kinds of personal and institutional name are skipped for the same
+reason (no NER is used, see :mod:`rbscores.burden.terms`):
+
+* attributions, "Rut Carballido-López and colleagues" (one to three
+  capitalised names before "and colleagues", "and co-workers",
+  "and coauthors" or "and collaborators"), and "Mao et al." without a year
+  (the year-less mention of a cited work, which is not counted as a
+  citation marker). A capitalised common noun at the start of a sentence
+  ("Researchers and colleagues") is caught too, which costs nothing, since
+  such a word is familiar and never a term;
+* affiliations in parentheses, "(Université Paris-Saclay)", "(University of
+  Oxford)", "(Max Planck Institute)", together with the one to three
+  capitalised names right before them ("Wei Mao (Université Paris-Saclay)").
+  The parenthetical must contain a capitalised institution word
+  (:data:`_INSTITUTION_WORD`).
+
+A journal's name in running text ("Now, in eLife, ...") is not found here,
+because it cannot be told from a term by its shape;
+:func:`find_name_mentions` finds given names (such as the document's own
+journal title) instead.
 """
 
 from __future__ import annotations
@@ -40,7 +63,25 @@ _PARENTHETICAL = re.compile(
     rf"\((?:see\s+|e\.g\.,?\s+)?{_AUTHOR_YEAR}(?:\s*[;,]\s*(?:{_AUTHOR_YEAR}|{_YEAR}))*\)"
 )
 _NARRATIVE = re.compile(rf"\b{_AUTHOR}\s+et\s+al\.?\s*\({_YEAR}\)")
-_NARRATIVE_BARE = re.compile(rf"\b{_AUTHOR}\s+(?:et\s+al\.?|(?:and|&)\s+{_AUTHOR}),?\s+{_YEAR}\b")
+# "Smith et al., 2019" (comma optional) and "Day and Bentley, 1911" (comma required).
+_NARRATIVE_BARE = re.compile(rf"\b{_AUTHOR}\s+(?:et\s+al\.?,?|(?:and|&)\s+{_AUTHOR},)\s+{_YEAR}\b")
+
+# Personal names: a capitalised word, possibly hyphenated ("Carballido-López").
+_NAME_WORD = r"[A-Z][^\W\d_][\w'\u2019]*(?:-[A-Z][^\W\d_][\w'\u2019]*)?"
+_PERSON = rf"(?:{_NAME_WORD}\s+){{0,2}}{_NAME_WORD}"
+_ATTRIBUTION = re.compile(
+    rf"(?<![\w\-]){_PERSON}(?=\s+and\s+(?:colleagues|co-?workers|co-?authors|collaborators)\b)"
+)
+_ET_AL = re.compile(rf"\b{_AUTHOR}\s+et\s+al\b\.?")
+# "Centre" and "Center" only as "Centre for/of ...", since "(Center panel)" is a figure label.
+_INSTITUTION_WORD = (
+    r"(?:Universit(?:y|ies|é|ät|à|eit|at|ad)|Institut(?:e|o|es)?|Hospital|College"
+    r"|Laborator(?:y|ies)|Academy|Akademie|Faculty|School\s+of|(?:Centre|Center)\s+(?:for|of))"
+)
+"""Capitalised words that mark a parenthetical as an affiliation."""
+_AFFILIATION = re.compile(
+    rf"(?:(?<![\w\-]){_PERSON}\s*)?\((?=[^()]*\b{_INSTITUTION_WORD}\b)[^()]{{1,200}}\)"
+)
 
 # A reference-list author: up to three name words or particles, a surname, initials.
 _REF_NAME_WORD = rf"(?:[A-Z][^\W\d_][\w'\u2019\-]*|{_PARTICLE_WORDS})"
@@ -117,6 +158,44 @@ def find_reference_strings(text: str) -> list[tuple[int, int]]:
     return _non_overlapping(spans + dois)
 
 
+def find_personal_names(text: str) -> list[tuple[int, int]]:
+    """Find attributed researchers' names and parenthesised affiliations.
+
+    Args:
+        text: Paragraph text.
+
+    Returns:
+        Non-overlapping ``(start, end)`` spans, sorted by start: the names in
+        "X Y and colleagues", "X et al." and "X Y (University of Z)" (with or
+        without the names).
+    """
+    return _non_overlapping(
+        (match.start(), match.end())
+        for pattern in (_ATTRIBUTION, _ET_AL, _AFFILIATION)
+        for match in pattern.finditer(text)
+    )
+
+
+def find_name_mentions(text: str, names: Iterable[str]) -> list[tuple[int, int]]:
+    """Find whole-word mentions of given names, such as a journal's title.
+
+    Args:
+        text: Paragraph text.
+        names: Names to look for, matched case-sensitively as whole words;
+            blank names are ignored.
+
+    Returns:
+        Non-overlapping ``(start, end)`` spans, sorted by start.
+    """
+    spans: list[tuple[int, int]] = []
+    for name in names:
+        if not name.strip():
+            continue
+        pattern = re.compile(rf"(?<![\w\-]){re.escape(name.strip())}(?![\w\-])")
+        spans.extend((m.start(), m.end()) for m in pattern.finditer(text))
+    return _non_overlapping(spans)
+
+
 def excluded_spans(text: str) -> list[tuple[int, int]]:
     """Return the spans that can hold neither terms nor definitions.
 
@@ -124,11 +203,15 @@ def excluded_spans(text: str) -> list[tuple[int, int]]:
         text: Paragraph text.
 
     Returns:
-        Citation markers, display-object references and reference strings,
-        sorted by start (they may overlap one another).
+        Citation markers, display-object references, reference strings and
+        personal names with affiliations, sorted by start (they may overlap
+        one another).
     """
     return sorted(
-        find_citations(text) + find_display_references(text) + find_reference_strings(text)
+        find_citations(text)
+        + find_display_references(text)
+        + find_reference_strings(text)
+        + find_personal_names(text)
     )
 
 

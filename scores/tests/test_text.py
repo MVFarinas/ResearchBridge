@@ -109,10 +109,18 @@ def test_load_document_reads_real_jats_fixture(jats_fixtures: Path) -> None:
     document = load_document(jats_fixtures / "plos-pmed-1004542.xml")
     assert document.source == "jats"
     assert document.identifier == "10.1371/journal.pmed.1004542"
+    assert "PLOS Medicine" in document.names
     assert any(s.kind == "abstract" for s in document.sections)
     body_ids = [p.id for s in document.paper_sections for p in s.paragraphs]
     assert body_ids
     assert all(pid.startswith(("sec", "body")) for pid in body_ids)
+
+
+def test_jats_document_names_its_journal(jats_fixtures: Path) -> None:
+    """The journal title and NLM abbreviation are recorded once each; text has none."""
+    document = load_document(jats_fixtures / "elife-93719-pmc-s3.xml")
+    assert document.names == ("eLife",)
+    assert document_from_text("Some text.").names == ()
 
 
 def test_load_document_reads_text_files(tmp_path: Path) -> None:

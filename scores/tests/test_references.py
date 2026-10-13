@@ -8,6 +8,8 @@ from rbscores.burden.references import (
     excluded_spans,
     find_citations,
     find_display_references,
+    find_name_mentions,
+    find_personal_names,
     find_reference_strings,
     overlaps_any,
 )
@@ -36,6 +38,8 @@ def _found(text: str) -> list[str]:
         ("Later, Crowe et al., 2020 reported it.", ["Crowe et al., 2020"]),
         ("Day and Bentley, 1911 placed Paramecia in tubes.", ["Day and Bentley, 1911"]),
         ("As Crick, 1984 noted, and in December, 2019 too.", []),
+        # "X and Y YEAR" needs eLife's comma before the year to be a citation.
+        ("The Wnt and Notch 2019 consortium met.", []),
         ("We used 12 mice (n = 12) at 37 °C (Fig. 2).", []),
         ("In 2019 (the first year) it began.", []),
     ],
@@ -92,3 +96,50 @@ def test_bare_doi_is_excluded() -> None:
     assert [text[a:b] for a, b in find_reference_strings(text)] == [
         "https://doi.org/10.1371/journal.pmed.1004542"
     ]
+
+
+def test_personal_names_cover_attributions_and_affiliations() -> None:
+    """Names before "and colleagues" and "Name (Université ...)" are excluded (C-C2)."""
+    text = (
+        "Now, in eLife, Rut Carballido-López and colleagues at research institutes in France "
+        "and Germany \u2013 including Wei Mao (Université Paris-Saclay) as first author \u2013 "
+        "report new insights."
+    )
+    found = [text[a:b] for a, b in find_personal_names(text)]
+    assert found == ["Rut Carballido-López", "Wei Mao (Université Paris-Saclay)"]
+    assert all(span in excluded_spans(text) for span in find_personal_names(text))
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Cells were imaged (confocal microscopy) daily.",
+        "The researchers and colleagues met.",
+        "Neurons in the centre (Center panel) fired.",
+    ],
+)
+def test_personal_names_need_a_name_or_an_institution(text: str) -> None:
+    """Lower-case words before "and colleagues" and non-institutional brackets are not names."""
+    assert find_personal_names(text) == []
+
+
+def test_year_less_et_al_is_a_name() -> None:
+    """A year-less "Mao et al." is excluded as a name, not counted as a citation."""
+    text = "Mao et al. used liposomes; van den Ent et al showed it."
+    assert [text[a:b] for a, b in find_personal_names(text)] == [
+        "Mao et al.",
+        "van den Ent et al",
+    ]
+    assert find_citations(text) == []
+
+
+def test_affiliation_without_a_preceding_name() -> None:
+    """An affiliation in brackets is excluded even when no name precedes it."""
+    text = "the first author (University of Oxford) wrote it"
+    assert [text[a:b] for a, b in find_personal_names(text)] == ["(University of Oxford)"]
+
+
+def test_name_mentions_are_whole_words_and_case_sensitive() -> None:
+    """Given names (a journal title) match only as whole, same-case words."""
+    text = "Now, in eLife, authors of eLifeSciences and elife readers"
+    assert [text[a:b] for a, b in find_name_mentions(text, ["eLife", " "])] == ["eLife"]

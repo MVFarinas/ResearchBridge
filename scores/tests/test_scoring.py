@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Callable
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -131,8 +132,25 @@ def test_rank_undefined_terms_skips_the_related_article_reference(
     for surname in ("Cornilleau", "Gallay", "Afensiss", "Benlamara", "Tilbeurgh", "Nessler"):
         assert surname not in top_words
     assert not any("e84505" in t.key for t in ranked)
+    # The attribution sentence in body-p5 adds no names, affiliation or journal
+    # title anywhere in the list ("Rut Carballido-López and colleagues", "Wei Mao
+    # (Université Paris-Saclay)", "Now, in eLife, ...").
+    all_words = {word for t in ranked for word in t.key.replace("-", " ").split()}
+    assert not {"carballido", "lópez", "université", "saclay", "elife", "mao"} & all_words
     # Real technical terms of the Insight are still ranked.
     assert {"protofilament", "liposome"} <= {t.key for t in top}
+
+
+def test_document_names_are_not_terms(nlp: Language) -> None:
+    """A name listed on the document (its journal's title) is never ranked as a term."""
+    text = "Now, in Zyxomica, researchers report how protofilaments assemble."
+    plain = document_from_text(text)
+    named = replace(plain, names=("Zyxomica",))
+    familiarity = WordfreqFamiliarity()
+    plain_keys = {t.key for t in rank_undefined_terms(plain, nlp=nlp, familiarity=familiarity)}
+    named_keys = {t.key for t in rank_undefined_terms(named, nlp=nlp, familiarity=familiarity)}
+    assert "zyxomica" in plain_keys
+    assert named_keys == plain_keys - {"zyxomica"}
 
 
 def test_real_lay_text_scores_easier_than_its_technical_version(nlp: Language) -> None:

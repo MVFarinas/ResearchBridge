@@ -15,7 +15,7 @@ from spacy.language import Language
 from spacy.tokens import Doc
 
 from rbscores.burden.definitions import Definition, find_definitions
-from rbscores.burden.references import find_citations
+from rbscores.burden.references import find_citations, find_name_mentions, overlaps_any
 from rbscores.burden.score import DefinedTerms
 from rbscores.burden.terms import TermOccurrence, extract_terms
 from rbscores.familiarity import Familiarity, WordfreqFamiliarity
@@ -108,7 +108,7 @@ def analyse_document(
     paragraphs = document.iter_paragraphs()
     docs = pipeline.pipe(p.text for p in paragraphs)
     analyses = tuple(
-        analyse_paragraph(paragraph, doc, lookup)
+        analyse_paragraph(paragraph, doc, lookup, names=document.names)
         for paragraph, doc in zip(paragraphs, docs, strict=True)
     )
     # A term defined in any paragraph counts as defined throughout the document.
@@ -121,7 +121,11 @@ def analyse_document(
 
 
 def analyse_paragraph(
-    paragraph: TextParagraph, doc: Doc, familiarity: Familiarity
+    paragraph: TextParagraph,
+    doc: Doc,
+    familiarity: Familiarity,
+    *,
+    names: tuple[str, ...] = (),
 ) -> ParagraphAnalysis:
     """Extract readability counts, terms, definitions and citations from one parse.
 
@@ -129,10 +133,18 @@ def analyse_paragraph(
         paragraph: The paragraph.
         doc: Its spaCy parse.
         familiarity: Word-frequency source.
+        names: Names that are not terms where mentioned (see
+            :attr:`rbscores.text.TextDocument.names`).
 
     Returns:
         The paragraph analysis.
     """
+    # Terms overlapping a mention of a known name (the journal's) are dropped.
+    mentions = find_name_mentions(paragraph.text, names)
+    terms = tuple(
+        t for t in extract_terms(doc, familiarity) if not overlaps_any(t.start, t.end, mentions)
+    )
+
     stats = sentence_stats(doc, familiarity)
     words = tuple(
         tuple(t.text for t in sentence if is_word(t))
@@ -143,7 +155,7 @@ def analyse_paragraph(
         paragraph=paragraph,
         sentences=tuple(stats),
         sentence_words=words,
-        terms=tuple(extract_terms(doc, familiarity)),
+        terms=terms,
         definitions=tuple(find_definitions(doc, familiarity)),
         citations=tuple(find_citations(paragraph.text)),
     )

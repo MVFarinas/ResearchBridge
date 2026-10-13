@@ -115,11 +115,20 @@ DATABASES = {"default": database_from_env(_ENV)}
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # --- Cache: a database table, so API rate limits hold across processes -------
-# The table is created by the api app's migrations.
+# The table is created by the api app's migrations. It holds the DRF throttle
+# histories: one row per client address per scope, each expiring after its
+# rate window (a minute). Django's default MAX_ENTRIES of 300 would make every
+# write cull a third of the rows once about 60 readers were active across five
+# scopes, resetting other clients' counters exactly under load. Expired rows are
+# deleted first when the table is over the limit, so with 100,000 entries live
+# histories are only culled (a tenth at a time) beyond 100,000 active
+# client-scope pairs per minute, far past any expected load.
+RB_CACHE_MAX_ENTRIES = 100_000
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.db.DatabaseCache",
         "LOCATION": "rb_cache",
+        "OPTIONS": {"MAX_ENTRIES": RB_CACHE_MAX_ENTRIES, "CULL_FREQUENCY": 10},
     }
 }
 

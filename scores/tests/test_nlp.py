@@ -6,7 +6,6 @@ import pytest
 import spacy
 from spacy.language import Language
 
-from rbscores import nlp as nlp_module
 from rbscores.nlp import (
     DEFAULT_MODEL,
     MODEL_ENV_VAR,
@@ -38,14 +37,14 @@ def test_missing_pipeline_raises_a_clear_error(monkeypatch: pytest.MonkeyPatch) 
         """Fail as spaCy does for a package that is not installed."""
         raise OSError(f"[E050] Can't find model '{name}'")
 
-    monkeypatch.setattr(nlp_module.spacy, "load", not_installed)
+    monkeypatch.setattr(spacy, "load", not_installed)
     with pytest.raises(ModelNotInstalledError, match="'rb-test-missing' is not installed"):
         load_pipeline("rb-test-missing")
 
 
 def test_pipeline_without_parser_is_refused(monkeypatch: pytest.MonkeyPatch) -> None:
     """A pipeline with no dependency parser cannot compute the features."""
-    monkeypatch.setattr(nlp_module.spacy, "load", lambda name, **_: spacy.blank("en"))
+    monkeypatch.setattr(spacy, "load", lambda name, **_: spacy.blank("en"))
     with pytest.raises(ModelNotInstalledError, match="has no dependency parser"):
         load_pipeline("rb-test-no-parser")
 

@@ -1,0 +1,41 @@
+# Lay comprehension question set: TEMPLATE (schema: schema_v1.json).
+#
+# This is a skeleton only. No questions have been written: writing them is
+# the study team's job, after the owner approves the 12 papers and passages.
+# Copy this file, set status to DRAFT, add one passage entry per benchmark
+# passage, and write questions that are answerable from all three arms.
+# Validate with:  rbbench comprehension validate <file>
+#
+# Before recruiting lay readers, check whether University of Alberta research
+# ethics approval is needed (see benchmark/comprehension/README.md), and record
+# the outcome under study.ethics.
+
+schema_version: comprehension_v1
+status: TEMPLATE
+study:
+  title: ResearchBridge lay comprehension study (template)
+  notes: >-
+    Arms: original passage, LLM rewrite, human rewrite. Outcome: share of
+    questions answered correctly per arm, by question target.
+  ethics:
+    status: not_checked
+    board: null
+    reference: null
+    decided_on: null
+arms: [original, llm_rewrite, human_rewrite]
+design:
+  allocation: within_subjects_latin_square
+  passages_per_participant: 3
+  time_limit_minutes: null
+passages:
+  # One entry per benchmark passage. Example of the shape, with no questions:
+  - passage_id: TO-BE-FILLED:discussion
+    paper_key: TO-BE-FILLED
+    texts:
+      original: {source: ingest, ref: TO-BE-FILLED:discussion}
+      llm_rewrite: {source: not_yet_available, ref: null}
+      human_rewrite: {source: not_yet_available, ref: null}
+    questions: []
+jargon_marking:
+  format: defined by Track R (scores/)
+  collect: true

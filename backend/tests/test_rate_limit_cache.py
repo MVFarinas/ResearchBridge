@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any, cast
+
 import pytest
 from django.conf import settings
 from django.core.cache import cache
@@ -14,7 +16,7 @@ MANY_CLIENTS = 400
 
 def test_cache_is_sized_far_beyond_djangos_default() -> None:
     """The cache's entry limit is configured, not Django's default of 300."""
-    options = settings.CACHES["default"]["OPTIONS"]
+    options = cast(dict[str, Any], settings.CACHES["default"]["OPTIONS"])
     assert options["MAX_ENTRIES"] == settings.RB_CACHE_MAX_ENTRIES >= 100_000
 
 

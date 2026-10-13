@@ -44,9 +44,9 @@ parenthetical that starts like a clause ("which ...", "but not ...", "as
 
 These are heuristics with known misses (definitions spread across sentences,
 dashes, figures) and false hits (a sentence that classifies rather than
-explains, a field label after a list item). Their precision on the committed
-fixtures was measured by hand: see docs/phase-notes/track-r.md. Recall has
-not been measured.
+explains, a field label after a list item). Their precision was measured by
+hand, 88% on a held-out sample of 50 detections (scores/reports/
+definition_precision.md). Recall has not been measured.
 """
 
 from __future__ import annotations

@@ -64,8 +64,10 @@ rank_undefined_terms(load_document("paper.xml"), limit=20)
 - **Validation 1** (done, real data): do lay summaries score easier than their abstracts on the
   PLOS and eLife corpora? See [reports/validation_1.md](reports/validation_1.md). In short:
   - eLife pairs: composite 88.8%, burden 99.6%;
-  - PLOS pairs: composite 66.9%, burden 70.8%;
+  - PLOS pairs: composite 66.9%, burden 70.9%;
   - jargon density alone beats the equal-weight composite.
+- **Definition-detection precision** (done, hand-labelled): 88.0% on a held-out sample of 50
+  detections. See [reports/definition_precision.md](reports/definition_precision.md).
 - **Validation 2** (pending human data): agreement with lay readers' pairwise "which is
   harder?" judgements. Format: [docs/data-formats/pairwise-judgements.md](../docs/data-formats/pairwise-judgements.md).
 - **Burden validation** (pending human data): agreement with lay readers' "terms I don't know"

@@ -1,0 +1,13 @@
+slot,query,pubmed_count,retrieved,truncated,screen_limit
+S01,"(""eLife""[ta]) AND (""Randomized Controlled Trial""[pt]) AND 2015:2022[dp] AND ""pubmed pmc""[sb]",25,25,false,25
+S02,"(""PLoS Negl Trop Dis""[ta]) AND (""Randomized Controlled Trial""[pt]) AND 2015:2022[dp] AND ""pubmed pmc""[sb]",138,138,false,40
+S03,"(""PLoS Pathog""[ta] OR ""PLoS Biol""[ta] OR ""PLoS Genet""[ta] OR ""PLoS Comput Biol""[ta]) AND (""Randomized Controlled Trial""[pt]) AND 2015:2022[dp] AND ""pubmed pmc""[sb]",23,23,false,23
+S04,"(""eLife""[ta]) AND (""Observational Study""[pt]) AND 2015:2022[dp] AND ""pubmed pmc""[sb]",17,17,false,17
+S05,"(""PLoS Negl Trop Dis""[ta]) AND (""Observational Study""[pt]) AND 2015:2022[dp] AND ""pubmed pmc""[sb]",90,90,false,40
+S06,"(""PLoS Pathog""[ta] OR ""PLoS Biol""[ta] OR ""PLoS Genet""[ta] OR ""PLoS Comput Biol""[ta]) AND (""Observational Study""[pt]) AND 2015:2022[dp] AND ""pubmed pmc""[sb]",16,16,false,16
+S07,"(""eLife""[ta]) AND (""Journal Article""[pt] AND (""Animals""[mh] OR ""Cells, Cultured""[mh]) NOT ""Humans""[mh]) AND 2015:2022[dp] AND ""pubmed pmc""[sb]",5530,500,true,40
+S08,"(""PLoS Biol""[ta] OR ""PLoS Genet""[ta]) AND (""Journal Article""[pt] AND (""Animals""[mh] OR ""Cells, Cultured""[mh]) NOT ""Humans""[mh]) AND 2015:2022[dp] AND ""pubmed pmc""[sb]",2552,500,true,40
+S09,"(""PLoS Pathog""[ta] OR ""PLoS Comput Biol""[ta]) AND (""Journal Article""[pt] AND (""Animals""[mh] OR ""Cells, Cultured""[mh]) NOT ""Humans""[mh]) AND 2015:2022[dp] AND ""pubmed pmc""[sb]",2528,500,true,40
+S10,"(""eLife""[ta]) AND ((""Review""[pt] OR ""Systematic Review""[pt] OR ""Meta-Analysis""[pt])) AND 2015:2022[dp] AND ""pubmed pmc""[sb]",134,134,false,40
+S11,"(""PLoS Negl Trop Dis""[ta]) AND ((""Review""[pt] OR ""Systematic Review""[pt] OR ""Meta-Analysis""[pt])) AND 2015:2022[dp] AND ""pubmed pmc""[sb]",569,500,true,40
+S12,"(""PLoS Pathog""[ta] OR ""PLoS Biol""[ta] OR ""PLoS Genet""[ta] OR ""PLoS Comput Biol""[ta]) AND ((""Review""[pt] OR ""Systematic Review""[pt] OR ""Meta-Analysis""[pt])) AND 2015:2022[dp] AND ""pubmed pmc""[sb]",692,500,true,40

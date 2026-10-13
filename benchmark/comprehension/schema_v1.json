@@ -1,0 +1,134 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/MVFarinas/ResearchBridge/benchmark/comprehension/schema_v1.json",
+  "title": "ResearchBridge lay comprehension question set, version 1",
+  "description": "Questions that lay readers answer after reading one passage in one arm (original, LLM rewrite, human rewrite). Authored as YAML, validated with this schema by `rbbench comprehension validate`. Status TEMPLATE or DRAFT may have no questions; FINAL needs questions for every passage and a recorded ethics decision.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "status", "study", "arms", "design", "passages", "jargon_marking"],
+  "properties": {
+    "schema_version": {"const": "comprehension_v1"},
+    "status": {"enum": ["TEMPLATE", "DRAFT", "FINAL"]},
+    "study": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["title", "ethics"],
+      "properties": {
+        "title": {"type": "string", "minLength": 1},
+        "notes": {"type": "string"},
+        "ethics": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status"],
+          "properties": {
+            "status": {"enum": ["not_checked", "pending", "approved", "not_required"]},
+            "board": {"type": ["string", "null"]},
+            "reference": {"type": ["string", "null"]},
+            "decided_on": {"type": ["string", "null"], "format": "date"}
+          }
+        }
+      }
+    },
+    "arms": {
+      "description": "The three reading conditions, always these three.",
+      "const": ["original", "llm_rewrite", "human_rewrite"]
+    },
+    "design": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allocation", "passages_per_participant"],
+      "properties": {
+        "allocation": {
+          "enum": ["within_subjects_latin_square", "between_subjects"],
+          "description": "Within-subjects: each participant reads every passage once, in a different arm per passage, balanced by a Latin square. Between-subjects: each participant reads all passages in one arm."
+        },
+        "passages_per_participant": {"type": "integer", "minimum": 1},
+        "time_limit_minutes": {"type": ["integer", "null"], "minimum": 1}
+      }
+    },
+    "passages": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/passage"}
+    },
+    "jargon_marking": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["format"],
+      "properties": {
+        "format": {
+          "const": "defined by Track R (scores/)",
+          "description": "The 'terms I don't know' marking data format is owned by Track R; this study only records that it is collected."
+        },
+        "collect": {"type": "boolean"}
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"status": {"const": "FINAL"}}},
+      "then": {
+        "properties": {
+          "study": {"properties": {"ethics": {"properties": {"status": {"enum": ["approved", "not_required"]}}}}},
+          "passages": {"minItems": 1, "items": {"properties": {"questions": {"minItems": 1}}}}
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "passage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["passage_id", "paper_key", "texts", "questions"],
+      "properties": {
+        "passage_id": {"type": "string", "minLength": 1},
+        "paper_key": {"type": "string", "minLength": 1},
+        "texts": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["original", "llm_rewrite", "human_rewrite"],
+          "properties": {
+            "original": {"$ref": "#/$defs/text_ref"},
+            "llm_rewrite": {"$ref": "#/$defs/text_ref"},
+            "human_rewrite": {"$ref": "#/$defs/text_ref"}
+          }
+        },
+        "questions": {"type": "array", "items": {"$ref": "#/$defs/question"}}
+      }
+    },
+    "text_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source"],
+      "properties": {
+        "source": {"enum": ["ingest", "rewrite_record", "human_file", "not_yet_available"]},
+        "ref": {"type": ["string", "null"], "description": "Passage ID, rewrite ID, or file path, depending on source."}
+      }
+    },
+    "question": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["question_id", "type", "stem", "targets", "options", "correct_option_ids"],
+      "properties": {
+        "question_id": {"type": "string", "pattern": "^[A-Za-z0-9_.-]+$"},
+        "type": {"enum": ["multiple_choice", "true_false", "short_answer"]},
+        "stem": {"type": "string", "minLength": 1},
+        "targets": {
+          "enum": ["main_finding", "population", "number", "certainty", "causal_claim", "limitation", "recommendation"],
+          "description": "Which kind of content the question checks, matching the rubric's failure modes."
+        },
+        "options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "text"],
+            "properties": {"id": {"type": "string"}, "text": {"type": "string", "minLength": 1}}
+          }
+        },
+        "correct_option_ids": {"type": "array", "items": {"type": "string"}},
+        "answer_key": {"type": ["string", "null"], "description": "Marking guidance for short answers."},
+        "rationale": {"type": ["string", "null"], "description": "Where in the original passage the answer is stated."}
+      }
+    }
+  }
+}

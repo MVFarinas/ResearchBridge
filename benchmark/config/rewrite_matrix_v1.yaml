@@ -1,0 +1,28 @@
+# Rewrite configuration matrix, version 1 (decisions.md §1.4, Plan.md Phase 1).
+#
+# Every passage is rewritten once per arm. The model ID is NOT here: it comes
+# from configuration (RB_LLM_GENERATION_MODEL, or `rbbench rewrite --model`),
+# never from code or this file, because the benchmark chooses it.
+#
+# The two arms test the reported effect of temperature on overgeneralisation
+# (Peters & Chin-Yee 2025: temperature 0 cut the odds by about 76%).
+#
+# Caveat (Claude API reference bundled with Claude Code, model table cached
+# 2026-10-06; not verified against the live API, no key): a non-default
+# temperature returns HTTP 400 on every current-generation Claude model
+# (Fable 5/5.1, Opus 5.5/5/4.8/4.7, Sonnet 5.5/5, Haiku 5.5). Only Opus 4.6,
+# Sonnet 4.6, Haiku 4.5 and older accept it. On a current model the
+# temperature-0 arm therefore fails, and the harness records each failure as
+# an invalid cell instead of silently running at the default. To test the
+# temperature effect, run this arm on a 4.6-generation model, or replace it
+# (for example with an effort-level arm in rewrite_matrix_v2).
+
+version: rewrite_matrix_v1
+prompt: rewrite_v1
+max_added_sentences: 2
+arms:
+  - name: temperature-0
+    temperature: 0.0
+  - name: default
+    # null: send no temperature, so the model's default applies.
+    temperature: null

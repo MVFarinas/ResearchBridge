@@ -12,10 +12,12 @@ Guidance for Claude (and other agents) working in this repository.
   copy copyleft, non-commercial, no-derivatives or unlicensed code.
 - **Safety:** never fabricate content or results; LLM calls only via `rbcore.llm.LLMClient`
   (fake in tests, model IDs from config); licence gate via `rbcore.licences`; parse XML only with
-  `rbcore.jats` or defusedxml; be polite to public APIs (`rbcore.http.PoliteFetcher`); downloads
+  `rbcore.jats`, `rbbench.sources.safexml` (hardened lxml) or defusedxml; be polite to public APIs (`rbcore.http.PoliteFetcher`); downloads
   go in the gitignored `data/`.
 - **Commands:** `make setup`, `make lint`, `make format`, `make typecheck`, `make test`,
   `make check` (what CI runs), `make lock` (after changing dependencies), `make db-up` / `make db-down`.
+  Benchmark (Phase 1): `rbbench --help`; `rbbench dry-run` runs every step offline on the
+  fixtures with fake clients and synthetic raters ([benchmark/README.md](benchmark/README.md)).
 - **Layout:** `libs/rbcore` (shared library), `tools` (repo checks), `benchmark` (Phase 1),
   `backend` (Phase 2), `scores` (Track R), `web` (Phases 4-5), `docs`, `third_party`.
   A directory with a `pyproject.toml` is a Python package and is picked up automatically.

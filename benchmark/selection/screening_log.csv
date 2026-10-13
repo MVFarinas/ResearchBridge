@@ -1,0 +1,112 @@
+slot,rank,pmid,pmcid,outcome,reason
+S01,1,36107485,PMC9512403,rejected,abstract does not name the design (randomised_trial)
+S01,2,36413383,PMC9681201,rejected,no expert lay summary (eLife digest / PLOS author summary)
+S01,3,36226829,PMC9596164,rejected,abstract does not name the design (randomised_trial)
+S01,4,29482720,PMC5828662,accepted,A
+S01,5,29555019,PMC5860873,rejected,abstract does not name the design (randomised_trial)
+S01,6,30592459,PMC6344088,rejected,abstract does not name the design (randomised_trial)
+S01,7,28825973,PMC5566451,accepted,B
+S02,1,28976976,PMC5643133,accepted,A
+S02,2,27459266,PMC4961416,rejected,abstract does not name the design (randomised_trial)
+S02,3,35259172,PMC8903297,accepted,B
+S03,1,27788130,PMC5082893,accepted,A
+S03,2,25764173,PMC4357384,rejected,abstract does not name the design (randomised_trial)
+S03,3,27898732,PMC5127584,accepted,B
+S04,1,35131031,PMC8896831,rejected,no expert lay summary (eLife digest / PLOS author summary)
+S04,2,35137684,PMC8903833,accepted,A
+S04,3,33847561,PMC8087440,accepted,B
+S05,1,32804954,PMC7430706,accepted,A
+S05,2,36215330,PMC9584401,rejected,"body has 2151 words, outside the configured range"
+S05,3,29864127,PMC6002134,rejected,abstract does not name the design (observational)
+S05,4,28723905,PMC5536389,accepted,B
+S06,1,33216760,PMC7717534,rejected,abstract does not name the design (observational)
+S06,2,29879116,PMC5991662,rejected,abstract does not name the design (observational)
+S06,3,29462208,PMC5877888,accepted,A
+S06,4,35788562,PMC9286229,rejected,no expert lay summary (eLife digest / PLOS author summary)
+S06,5,33156843,PMC7728249,rejected,no expert lay summary (eLife digest / PLOS author summary)
+S06,6,33201880,PMC7721131,rejected,abstract does not name the design (observational)
+S06,7,32841299,PMC7473585,rejected,abstract does not name the design (observational)
+S06,8,29902191,PMC6001951,rejected,abstract does not name the design (observational)
+S06,9,30532227,PMC6301721,rejected,abstract does not name the design (observational)
+S06,10,30849118,PMC6426266,accepted,B
+S07,1,35775393,PMC9249394,rejected,no expert lay summary (eLife digest / PLOS author summary)
+S07,2,35635747,PMC9150890,rejected,no expert lay summary (eLife digest / PLOS author summary)
+S07,3,35758650,PMC9299849,rejected,no expert lay summary (eLife digest / PLOS author summary)
+S07,4,35635436,PMC9197390,rejected,no expert lay summary (eLife digest / PLOS author summary)
+S07,5,35993548,PMC9451538,rejected,no expert lay summary (eLife digest / PLOS author summary)
+S07,6,36083801,PMC9462849,rejected,no expert lay summary (eLife digest / PLOS author summary)
+S07,7,36129180,PMC9566850,rejected,no expert lay summary (eLife digest / PLOS author summary)
+S07,8,36480266,PMC9810328,rejected,no expert lay summary (eLife digest / PLOS author summary)
+S07,9,35861713,PMC9348850,rejected,no expert lay summary (eLife digest / PLOS author summary)
+S07,10,35822617,PMC9323005,rejected,no expert lay summary (eLife digest / PLOS author summary)
+S07,11,35575462,PMC9170251,rejected,abstract does not name the design (lab_mechanistic)
+S07,12,36562467,PMC9822265,rejected,no expert lay summary (eLife digest / PLOS author summary)
+S07,13,35658971,PMC9170247,rejected,no expert lay summary (eLife digest / PLOS author summary)
+S07,14,36476387,PMC9788811,rejected,no expert lay summary (eLife digest / PLOS author summary)
+S07,15,36196992,PMC9699699,rejected,no expert lay summary (eLife digest / PLOS author summary)
+S07,16,35993549,PMC9436413,rejected,no expert lay summary (eLife digest / PLOS author summary)
+S07,17,35587649,PMC9119680,rejected,no expert lay summary (eLife digest / PLOS author summary)
+S07,18,36066004,PMC9451534,rejected,no expert lay summary (eLife digest / PLOS author summary)
+S07,19,35791902,PMC9292995,rejected,no expert lay summary (eLife digest / PLOS author summary)
+S07,20,36155655,PMC9545535,rejected,no expert lay summary (eLife digest / PLOS author summary)
+S07,21,36125121,PMC9525063,rejected,no expert lay summary (eLife digest / PLOS author summary)
+S07,22,36511779,PMC9799979,rejected,abstract does not name the design (lab_mechanistic)
+S07,23,36468693,PMC9873254,accepted,A
+S07,24,35736539,PMC9273210,rejected,no expert lay summary (eLife digest / PLOS author summary)
+S07,25,35621159,PMC9142147,rejected,no expert lay summary (eLife digest / PLOS author summary)
+S07,26,35876643,PMC9355562,rejected,no expert lay summary (eLife digest / PLOS author summary)
+S07,27,36193674,PMC9531945,accepted,B
+S08,1,34644293,PMC8513875,accepted,A
+S08,2,34534206,PMC8448318,rejected,JATS article-type 'article-commentary' disagrees with lab_mechanistic
+S08,3,34237069,PMC8266116,accepted,B
+S09,1,36121866,PMC9521894,accepted,A
+S09,2,34352041,PMC8341508,accepted,B
+S10,1,34544548,PMC8455132,rejected,abstract does not name the design (review)
+S10,2,31841112,PMC6989118,rejected,abstract does not name the design (review)
+S10,3,34309511,PMC8313236,accepted,A
+S10,4,33170122,PMC7704107,rejected,abstract does not name the design (review)
+S10,5,26460544,PMC4600817,rejected,abstract does not name the design (review)
+S10,6,33900197,PMC8075586,rejected,abstract does not name the design (review)
+S10,7,33138914,PMC7609067,rejected,abstract does not name the design (review)
+S10,8,35833830,PMC9282852,rejected,no expert lay summary (eLife digest / PLOS author summary)
+S10,9,25807083,PMC4373459,rejected,abstract does not name the design (review)
+S10,10,33784238,PMC8009660,rejected,abstract does not name the design (review)
+S10,11,34346866,PMC8337078,rejected,abstract does not name the design (review)
+S10,12,32367803,PMC7200151,rejected,abstract does not name the design (review)
+S10,13,32223891,PMC7105376,rejected,abstract does not name the design (review)
+S10,14,30382941,PMC6211829,rejected,JATS article-type 'discussion' disagrees with review
+S10,15,34037521,PMC8154019,rejected,abstract does not name the design (review)
+S10,16,33685583,PMC7943191,rejected,abstract does not name the design (review)
+S10,17,25807088,PMC4373457,rejected,abstract does not name the design (review)
+S10,18,33370234,PMC7769568,rejected,abstract does not name the design (review)
+S10,19,32896273,PMC7478889,rejected,abstract does not name the design (review)
+S10,20,25807084,PMC4373673,rejected,abstract does not name the design (review)
+S10,21,36355038,PMC9648965,rejected,abstract does not name the design (review)
+S10,22,34032570,PMC8149122,rejected,abstract does not name the design (review)
+S10,23,36472067,PMC9725750,rejected,abstract does not name the design (review)
+S10,24,26041333,PMC4454838,rejected,abstract does not name the design (review)
+S10,25,35838024,PMC9286731,rejected,no expert lay summary (eLife digest / PLOS author summary)
+S10,26,33779550,PMC8007216,rejected,abstract does not name the design (review)
+S10,27,30420005,PMC6234027,accepted,B
+S11,1,36512611,PMC9794075,rejected,abstract does not name the design (review)
+S11,2,33091001,PMC7580937,rejected,abstract does not name the design (review)
+S11,3,34928944,PMC8722724,accepted,A
+S11,4,34375338,PMC8405032,accepted,B
+S12,1,34437655,PMC8389518,rejected,abstract does not name the design (review)
+S12,2,32463825,PMC7255592,rejected,abstract does not name the design (review)
+S12,3,29182635,PMC5705066,rejected,abstract does not name the design (review)
+S12,4,28880911,PMC5589261,rejected,abstract does not name the design (review)
+S12,5,33705374,PMC7951803,rejected,abstract does not name the design (review)
+S12,6,30335852,PMC6193718,rejected,abstract does not name the design (review)
+S12,7,28253332,PMC5333895,rejected,abstract does not name the design (review)
+S12,8,35617217,PMC9135246,rejected,abstract does not name the design (review)
+S12,9,31022172,PMC6483161,rejected,abstract does not name the design (review)
+S12,10,33476326,PMC7819612,rejected,abstract does not name the design (review)
+S12,11,31671152,PMC6822718,rejected,abstract does not name the design (review)
+S12,12,29912869,PMC6023226,accepted,A
+S12,13,28472194,PMC5417715,rejected,abstract does not name the design (review)
+S12,14,33909611,PMC8081451,rejected,abstract does not name the design (review)
+S12,15,30161134,PMC6116924,rejected,abstract does not name the design (review)
+S12,16,33886685,PMC8062007,rejected,abstract does not name the design (review)
+S12,17,28570683,PMC5453609,rejected,abstract does not name the design (review)
+S12,18,35385469,PMC9084525,accepted,B

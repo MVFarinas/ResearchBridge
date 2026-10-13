@@ -1,0 +1,5 @@
+# Runtime dependencies of the backend Docker image (backend/Dockerfile): rbcore and the backend,
+# without development tools. `make lock` compiles this into requirements/backend.txt, and a
+# backend test checks that every pin there matches requirements/dev.txt.
+-e file:libs/rbcore
+-e file:backend

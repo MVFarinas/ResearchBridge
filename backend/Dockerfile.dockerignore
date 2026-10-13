@@ -1,0 +1,12 @@
+# Build context is the repository root; send only what the backend image needs.
+*
+!requirements/backend.txt
+!libs/rbcore/
+!backend/
+**/__pycache__
+**/*.egg-info
+**/.pytest_cache
+**/.mypy_cache
+backend/tests/
+libs/rbcore/tests/
+backend/staticfiles/

@@ -13,7 +13,7 @@ the user must decide or provide is listed in the phase notes.
 
 | Path | What |
 |---|---|
-| `selection/` | `slots_v1.yaml` (how candidates are chosen), `candidates.csv` (24 PROPOSED candidates, two per slot), `screening_log.csv`, README with the method |
+| `selection/` | `slots_v1.yaml` (how candidates are chosen), `candidates.csv` (24 PROPOSED candidates, two per slot), `screening_log.csv`, `pool_log.csv` (PubMed count per slot), README with the method |
 | `prompts/` | Versioned prompts: `rewrite_v1.md`, `decompose_v1.md`, `judge_v1.md`. Never edited after use; a change is a new version |
 | `rubric/` | `rubric_v1.yaml` (machine-readable), `rubric_v1.md`, `rater_guide_v1.md`, all DRAFT |
 | `config/` | `rewrite_matrix_v1.yaml`: temperature 0 vs default |
@@ -85,6 +85,9 @@ Record the exact versions in docs/licence-inventory.md when enabling one.
 
 ## Rules this package follows
 
-decisions.md §1.1 (licence gate at paper and paragraph level, through `rbcore.licences`), §1.4
+decisions.md §1.1 (licence gate at paper and paragraph level, through `rbcore.licences`; a
+retracted paper is refused at ingest; `rewrite`, `packets` and `judge` re-check every passage
+against the ingest gate, so an edited `passages.jsonl` cannot send refused text anywhere; packets
+carry a CC BY attribution line and the NLM acknowledgement for every paper), §1.4
 (claim-level codes, separate judge model), docs/conventions.md (no fabricated results: every fake
 or synthetic output says so; downloads in `data/`; polite, cached HTTP; XML parsed safely).

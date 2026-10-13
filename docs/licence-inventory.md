@@ -72,7 +72,7 @@ and to all copied code.
 | Coral (talk) | Comments | Apache-2.0 | — | — | planned option (Phase 7) | |
 | Isso | Comments | MIT | — | — | planned option | |
 | AlignScore | Faithfulness metric | MIT (`yuh-zha/AlignScore`, head `a0936d5` checked 2026-10-13) | MIT (HF `yzha/AlignScore`, checked 2026-10-13) | — | optional adapter, not installed (`rbbench.baselines`) | Install instructions in benchmark/README.md. |
-| SummaC | Faithfulness metric | Apache-2.0 | check checkpoint licence | — | planned (Phase 1 baseline) | |
+| SummaC | Faithfulness metric | Apache-2.0 | check checkpoint licence | — | not used (Phase 1); possible later baseline | Phase 1 built adapters for AlignScore, MiniCheck and QAFactEval only (the three the task named); add SummaC behind the same interface if wanted. |
 | QAFactEval | Faithfulness metric | BSD-3-Clause (`salesforce/QAFactEval`, head `01177f1` checked 2026-10-13) | models from `download_models.sh`: **licence not verified** | — | optional adapter, not installed (`rbbench.baselines`) | Verify the model licences before enabling. |
 | FActScore | Faithfulness metric | MIT | — | — | reference | |
 | MiniCheck | Faithfulness metric | Apache-2.0 (`Liyan06/MiniCheck`, head `b58b9fa` checked 2026-10-13) | `lytang/MiniCheck-{RoBERTa,DeBERTa-v3,Flan-T5}-Large` MIT (HF, checked 2026-10-13) | — | optional adapter, not installed (`rbbench.baselines`) | **Not** Bespoke-MiniCheck-7B (CC BY-NC): the adapter refuses it. |
@@ -109,7 +109,7 @@ and to all copied code.
 | Crossref (incl. Retraction Watch data) | Metadata open; Retraction Watch citation requested | planned | Cite Retraction Watch. Licence fields are secondary signals only. |
 | DOAJ | CC0 metadata | planned (discovery only) | Licence is journal-level, never the gate. |
 | PLOS and eLife lay-summary datasets (HF `tomasg25/scientific_lay_summarisation`) | CC BY 4.0 (card) | reference only (Phase 1): **not downloaded** (a ~1.6 GB Google Drive release behind a loading script; the HF viewer does not serve it). Candidates come from the same journals and must carry an expert lay summary in their JATS | Re-check each paper's licence at its primary source (done per candidate). |
-| PLABA | CC0 | planned (Phase 1) | |
+| PLABA | CC0 | not used (Phase 1); planned (later phase) | Phase 1 drew its material from PLOS/eLife with lay summaries and calibrated the judge on FactPICO; PLABA remains a candidate for a later plain-language baseline. |
 | FactPICO annotations | CC BY 4.0 (verified 2026-10-13 in the paper's Appendix B, arXiv:2402.11456v2; repository MIT) | in use (Phase 1, judge calibration): `FactPICO.zip` from the Box link in the repo's `data/README.md`, SHA-256 `ec260d7c…d4f4`, extracted into `data/benchmark/factpico/`, **never committed** | Attribute Joseph et al. (ACL 2024). The source abstracts inside keep their own PMC OA licences. |
 | Claude API | Anthropic commercial terms | planned (key not yet provisioned) | No-training / minimal retention settings for §1.2 uploads. |
 

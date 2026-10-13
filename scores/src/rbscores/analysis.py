@@ -21,7 +21,7 @@ from rbscores.burden.terms import TermOccurrence, extract_terms
 from rbscores.familiarity import Familiarity, WordfreqFamiliarity
 from rbscores.nlp import load_pipeline, pipeline_label
 from rbscores.readability.features import SentenceStats, is_word, sentence_stats
-from rbscores.text import TextDocument, TextParagraph
+from rbscores.text import TextDocument, TextParagraph, check_paragraph_lengths
 
 
 @dataclass(frozen=True, slots=True)
@@ -94,7 +94,13 @@ def analyse_document(
 
     Returns:
         The document analysis.
+
+    Raises:
+        rbscores.text.ParagraphTooLongError: If a paragraph is longer than
+            :data:`rbscores.text.MAX_PARAGRAPH_CHARS`.
     """
+    # Refuse over-long paragraphs before loading or running the parser.
+    check_paragraph_lengths(document)
     pipeline = nlp or load_pipeline()
     lookup = familiarity or WordfreqFamiliarity()
     paragraphs = document.iter_paragraphs()

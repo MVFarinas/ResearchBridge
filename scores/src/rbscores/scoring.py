@@ -307,6 +307,9 @@ def score_document(
 
     Returns:
         The PROVISIONAL score report.
+
+    Raises:
+        rbscores.text.ParagraphTooLongError: If a paragraph is too long to analyse.
     """
     analysis = analyse_document(document, nlp=nlp, familiarity=familiarity)
     return score_analysis(analysis, reference=reference, params=params)
@@ -331,6 +334,9 @@ def score_text(
 
     Returns:
         The paper-level PROVISIONAL scores.
+
+    Raises:
+        rbscores.text.ParagraphTooLongError: If a paragraph is too long to analyse.
     """
     report = score_document(
         document_from_text(text),
@@ -365,6 +371,9 @@ def rank_undefined_terms(
 
     Returns:
         Undefined terms, most burdensome first. PROVISIONAL, like the scores.
+
+    Raises:
+        rbscores.text.ParagraphTooLongError: If a paragraph is too long to analyse.
     """
     analysis = analyse_document(document, nlp=nlp, familiarity=familiarity)
     located = [LocatedTerm(a.paragraph.id, t) for a in analysis.paragraphs for t in a.terms]

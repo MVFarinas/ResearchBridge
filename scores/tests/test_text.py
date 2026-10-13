@@ -7,8 +7,12 @@ from pathlib import Path
 import pytest
 
 from rbcore.jats import parse_jats
+from rbscores.analysis import analyse_document
 from rbscores.text import (
+    MAX_PARAGRAPH_CHARS,
     MAX_TEXT_BYTES,
+    ParagraphTooLongError,
+    check_paragraph_lengths,
     document_from_article,
     document_from_text,
     load_document,
@@ -127,3 +131,21 @@ def test_load_document_refuses_oversized_text(tmp_path: Path) -> None:
         handle.truncate(MAX_TEXT_BYTES + 1)
     with pytest.raises(ValueError, match="larger than"):
         load_document(path)
+
+
+def test_over_long_paragraph_gets_the_packages_own_error() -> None:
+    """A paragraph over the cap is refused by name before spaCy sees it."""
+    long_paragraph = "word " * (MAX_PARAGRAPH_CHARS // 5 + 1)
+    document = document_from_text(f"A short first paragraph.\n\n{long_paragraph}")
+    with pytest.raises(ParagraphTooLongError, match=r"paragraph p2 has [\d,]+ characters"):
+        check_paragraph_lengths(document)
+
+    # analyse_document refuses it before any pipeline is needed (none is passed here).
+    with pytest.raises(ParagraphTooLongError):
+        analyse_document(document)
+
+
+def test_paragraph_at_the_cap_is_accepted() -> None:
+    """A paragraph exactly at the cap passes the check."""
+    document = single_paragraph_document("x" * MAX_PARAGRAPH_CHARS)
+    check_paragraph_lengths(document)

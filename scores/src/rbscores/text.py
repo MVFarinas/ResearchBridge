@@ -29,7 +29,23 @@ from rbcore.jats import Article, Section, parse_jats_file
 _UNSCORED_PARAGRAPH_KINDS = frozenset({"formula"})
 _BLANK_LINES = re.compile(r"\n\s*\n")
 _WHITESPACE = re.compile(r"\s+")
-MAX_TEXT_BYTES = 20 * 1024 * 1024
+
+MAX_TEXT_BYTES = 5 * 1024 * 1024
+"""Largest plain-text file :func:`load_document` reads (about 40 long papers' worth)."""
+
+MAX_PARAGRAPH_CHARS = 100_000
+"""Longest paragraph the scores analyse.
+
+A real paragraph is a few thousand characters. Anything near this is text
+without paragraph breaks (often dumped from a PDF), whose parse would be slow
+and whose sentence splitting would be unreliable; spaCy itself refuses texts
+over 1,000,000 characters. Far below that limit, this keeps parsing memory
+modest.
+"""
+
+
+class ParagraphTooLongError(ValueError):
+    """Raised when a paragraph is longer than :data:`MAX_PARAGRAPH_CHARS`."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -195,6 +211,24 @@ def single_paragraph_document(text: str, *, paragraph_id: str = "p1") -> TextDoc
     paragraph = TextParagraph(id=paragraph_id, text=text, section_id="text")
     section = TextSection(id="text", title=None, kind="text", paragraphs=(paragraph,))
     return TextDocument(title=None, sections=(section,), source="text")
+
+
+def check_paragraph_lengths(document: TextDocument) -> None:
+    """Refuse a document with a paragraph too long to analyse.
+
+    Args:
+        document: The document.
+
+    Raises:
+        ParagraphTooLongError: If any paragraph is longer than
+            :data:`MAX_PARAGRAPH_CHARS`, naming the first such paragraph.
+    """
+    for paragraph in document.iter_paragraphs():
+        if len(paragraph.text) > MAX_PARAGRAPH_CHARS:
+            raise ParagraphTooLongError(
+                f"paragraph {paragraph.id} has {len(paragraph.text):,} characters; the limit "
+                f"is {MAX_PARAGRAPH_CHARS:,} (separate paragraphs with blank lines)"
+            )
 
 
 def load_document(path: str | Path) -> TextDocument:

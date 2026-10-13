@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import UTC, date, datetime
 
 import pytest
 from support import synthetic_block, synthetic_code, synthetic_content, synthetic_version
@@ -15,8 +15,10 @@ from rb_backend.corpus.models import (
     GateStatus,
     LicenceReview,
     Paragraph,
+    PermissionsBlockRecord,
     ReviewScope,
     ReviewStatus,
+    Section,
 )
 from rb_backend.corpus.reviews import ReviewError, resolve_review
 from rbcore.licences import AliLicenceRef, LicenceField, LicenceStatement, PermissionsBlock
@@ -154,6 +156,13 @@ def test_rejection_and_refusing_resolution_both_reject() -> None:
         resolve_review(review, approve=False, licence_value="", note="No licence.", reviewer=None)
         == GateStatus.REJECTED
     )
+    # The rejected text is removed, and the rejection is stable on re-evaluation.
+    version.refresh_from_db()
+    assert version.content_state == ContentState.REMOVED
+    assert not Paragraph.objects.filter(version=version).exists()
+    assert not Figure.objects.filter(version=version).exists()
+    assert evaluate_version(version, today=TODAY) == GateStatus.REJECTED
+    assert not LicenceReview.objects.filter(status=ReviewStatus.OPEN).exists()
 
     other = synthetic_version(pmcid="PMC900000002")
     synthetic_content(other)
@@ -324,10 +333,13 @@ def test_parts_wait_and_part_reviews_close_while_the_version_is_not_approved() -
     evaluate_version(version, today=TODAY)
     assert LicenceReview.objects.get().status == ReviewStatus.OPEN
 
-    code.raw_value = "TDM"
+    # An unrecognised code sends the version itself to review (not to rejection,
+    # which would remove the parts altogether).
+    code.raw_value = "SOMETHING-UNKNOWN"
     code.save()
-    assert evaluate_version(version, today=TODAY) == GateStatus.REJECTED
-    assert LicenceReview.objects.get().status == ReviewStatus.SUPERSEDED
+    assert evaluate_version(version, today=TODAY) == GateStatus.REVIEW
+    figure_review = LicenceReview.objects.get(scope=ReviewScope.FIGURE)
+    assert figure_review.status == ReviewStatus.SUPERSEDED
     figure.refresh_from_db()
     assert figure.gate_status == GateStatus.PENDING
 
@@ -349,3 +361,64 @@ def test_expired_licence_fails_closed() -> None:
     synthetic_block(version, ali_block(CC_BY_4, end_date="2025-01-01"), scope=BlockScope.ARTICLE)
     assert evaluate_version(version, today=TODAY) == GateStatus.REVIEW
     assert not version.can_display
+
+
+def test_jats_rejection_removes_text_but_keeps_the_evidence() -> None:
+    """An all-rights-reserved article licence rejects the version and removes its text."""
+    # Arrange: parsed synthetic content, an ARR article block and a figure-level block.
+    version = synthetic_version()
+    synthetic_content(version)
+    article_block = synthetic_block(
+        version, ali_block("all-rights-reserved"), scope=BlockScope.ARTICLE
+    )
+    figure_block = synthetic_block(
+        version,
+        ali_block(CC_BY_4, context="fig"),
+        scope=BlockScope.FIGURE,
+        figure=Figure.objects.get(version=version),
+    )
+
+    # Act: the gate rejects outright (no review) and removes the text in the same step.
+    assert evaluate_version(version, today=TODAY) == GateStatus.REJECTED
+    assert not LicenceReview.objects.exists()
+    assert version.content_state == ContentState.REMOVED
+    for model in (Section, Paragraph, Figure):
+        assert not model.objects.filter(version=version).exists()
+
+    # The article block is the evidence for the rejection and stays active;
+    # the figure's block went with the figure.
+    active = set(PermissionsBlockRecord.objects.active().values_list("pk", flat=True))
+    assert article_block.pk in active
+    assert figure_block.pk not in active
+    assert PermissionsBlockRecord.objects.filter(pk=figure_block.pk).exists()
+
+    # Re-running reaches the same decision from the same evidence.
+    assert evaluate_version(version, today=TODAY) == GateStatus.REJECTED
+    assert version.licence_family == "all-rights-reserved"
+
+
+def test_withdrawn_version_goes_to_review_until_listed_again() -> None:
+    """A version the source stopped listing is held for a human; relisting restores it."""
+    version = synthetic_version()
+    synthetic_content(version)
+    synthetic_code(version, "CC BY")
+    assert evaluate_version(version, today=TODAY) == GateStatus.APPROVED
+
+    # Withdrawn upstream: fail closed with a version review that says why.
+    version.source_withdrawn_at = datetime(2026, 10, 12, tzinfo=UTC)
+    version.save()
+    assert evaluate_version(version, today=TODAY) == GateStatus.REVIEW
+    assert not version.can_display
+    review = LicenceReview.objects.get(status=ReviewStatus.OPEN)
+    assert "no longer listed by the source" in " ".join(review.reasons)
+    assert {"source_withdrawn_at": "2026-10-12T00:00:00+00:00"} in review.evidence
+
+    # A reviewer may keep it; the answer holds while it stays withdrawn.
+    resolve_review(review, approve=True, licence_value="CC BY", note="Checked.", reviewer=None)
+    assert evaluate_version(version, today=TODAY) == GateStatus.APPROVED
+
+    # Listed again: the automated decision applies once more.
+    version.source_withdrawn_at = None
+    version.save()
+    assert evaluate_version(version, today=TODAY) == GateStatus.APPROVED
+    assert version.decision_source == LicenceField.PMC_LICENSE_CODE.value

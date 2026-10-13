@@ -35,6 +35,7 @@ class ContentState(models.TextChoices):
     PARSED = "parsed", "Parsed"
     FAILED = "failed", "Fetch or parse failed"
     SKIPPED = "skipped", "Not fetched: the licence refuses it"
+    REMOVED = "removed", "Removed: the licence gate rejected it"
 
 
 class Paper(models.Model):
@@ -136,6 +137,9 @@ class PaperVersion(GatedPermissions):
         metadata_retrieved_at: When the metadata was last fetched.
         content_retrieved_at: When the full text was last fetched.
         last_checked_at: When the source was last checked for changes.
+        source_withdrawn_at: When the source was first found no longer to
+            list this version (withdrawn or removed); None while it is listed.
+            A withdrawn version goes to licence review.
         created_at: Row creation time.
         updated_at: Last update time.
     """
@@ -180,6 +184,7 @@ class PaperVersion(GatedPermissions):
     metadata_retrieved_at = models.DateTimeField(null=True, blank=True)
     content_retrieved_at = models.DateTimeField(null=True, blank=True)
     last_checked_at = models.DateTimeField(null=True, blank=True, db_index=True)
+    source_withdrawn_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

@@ -123,6 +123,7 @@ class PaperVersionAdmin(ReadOnlyAdmin):
         "can_rewrite",
         "content_state",
         "last_checked_at",
+        "source_withdrawn_at",
     )
     list_filter = (
         "gate_status",

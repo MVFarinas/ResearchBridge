@@ -25,6 +25,7 @@ from rb_backend.corpus.models import (
     PermissionsBlockRecord,
     Section,
 )
+from rb_backend.corpus.retention import supersede_blocks
 from rbcore.jats import Article
 from rbcore.jats import Figure as JatsFigure
 from rbcore.jats import Section as JatsSection
@@ -135,22 +136,6 @@ def store_article(
         source_url=source_url,
         retrieved_at=retrieved_at,
     )
-
-
-def purge_content(version: PaperVersion, *, superseded_at: datetime) -> None:
-    """Remove a version's stored full text (when its licence now refuses it).
-
-    Sections, paragraphs and figures are deleted; JATS permissions blocks are
-    kept as superseded provenance.
-
-    Args:
-        version: The version.
-        superseded_at: Time to record on the superseded blocks.
-    """
-    _supersede_blocks(version, superseded_at)
-    Figure.objects.filter(version=version).delete()
-    Paragraph.objects.filter(version=version).delete()
-    Section.objects.filter(version=version).delete()
 
 
 def _apply_metadata(version: PaperVersion, article: Article) -> None:
@@ -389,19 +374,6 @@ def _figure_values(parsed: JatsFigure, position: int) -> dict[str, Any]:
     }
 
 
-def _supersede_blocks(version: PaperVersion, when: datetime) -> None:
-    """Mark every active JATS block and JATS licence record of a version superseded.
-
-    Args:
-        version: The version.
-        when: The supersession time.
-    """
-    LicenceRecord.objects.active().filter(version=version, block__isnull=False).update(
-        superseded_at=when
-    )
-    PermissionsBlockRecord.objects.active().filter(version=version).update(superseded_at=when)
-
-
 def _replace_blocks(
     version: PaperVersion,
     article: Article,
@@ -421,7 +393,7 @@ def _replace_blocks(
         source_url: URL of the XML.
         retrieved_at: When it was retrieved.
     """
-    _supersede_blocks(version, retrieved_at)
+    supersede_blocks(version, retrieved_at)
     built = []
 
     # Article-level block (at most one) and blocks the parser could not attach.

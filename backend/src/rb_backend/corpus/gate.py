@@ -12,13 +12,21 @@ Flow for one version:
 2. :func:`rb_backend.corpus.precedence.resolve_licence` decides it across
    sources.
 3. Extra review triggers: ``<permissions>`` blocks the parser could not
-   attach to anything, and full text that failed to parse.
+   attach to anything, full text that failed to parse, and a version the
+   source no longer lists (withdrawn or removed upstream).
 4. Anything that needs review is settled against the review queue: a
    resolution for the *same* evidence applies; otherwise an open review is
    kept or created and the version fails closed.
-5. Each figure, table and paragraph is decided with
+5. A rejected version's stored text is removed
+   (:func:`rb_backend.corpus.retention.remove_rejected_text`); the evidence
+   for the rejection stays, so re-running reaches the same decision.
+6. Each figure, table and paragraph is decided with
    :func:`rbcore.licences.decide_part` over the version's effective decision,
    and settled the same way.
+
+Callers that change licence evidence call :func:`evaluate_version` inside the
+same transaction as that change, so a stored decision never outlives the
+evidence it was made from.
 """
 
 from __future__ import annotations
@@ -49,6 +57,7 @@ from rb_backend.corpus.models import (
 )
 from rb_backend.corpus.models.gated import GATE_FIELDS, GatedPermissions
 from rb_backend.corpus.precedence import DEFINITE_REFUSALS, proposed_licence, resolve_licence
+from rb_backend.corpus.retention import remove_rejected_text
 from rbcore.licences import (
     NO_PERMISSIONS,
     UNKNOWN_LICENCE,
@@ -103,6 +112,10 @@ def evaluate_version(
 ) -> GateStatus:
     """Recompute and store the licence decision of a version and all its parts.
 
+    A rejected version's stored text is removed as part of the same
+    transaction (decisions.md §1.1: content that is not openly licensed is
+    not kept).
+
     Args:
         version: The version (its stored records are re-read).
         today: Date for NISO ALI licence dates (default: today, UTC).
@@ -120,6 +133,12 @@ def evaluate_version(
         outcome = _version_outcome(locked, blocks, today=today, now=now)
         outcome.apply_to(locked, now)
         locked.save(update_fields=[*GATE_FIELDS, "updated_at"])
+
+        # A rejected version keeps its evidence but not its text (and so no parts).
+        if outcome.status == GateStatus.REJECTED and remove_rejected_text(
+            locked, superseded_at=now
+        ):
+            blocks = _active_blocks(locked)
         _evaluate_parts(locked, outcome, blocks, today=today, now=now)
     # Keep the caller's instance in step with what was stored.
     version.refresh_from_db()
@@ -215,6 +234,13 @@ def _version_outcome(
         needs_review = True
         reasons.append(f"full text could not be fetched or parsed: {version.content_error}")
         snapshot.append({"content_error": version.content_error})
+
+    # A source that stopped listing the version may have withdrawn it or changed
+    # its licence (PMC asks redistributors to keep data current): a human decides.
+    if version.source_withdrawn_at is not None and not refused:
+        needs_review = True
+        reasons.append("no longer listed by the source (withdrawn or removed upstream)")
+        snapshot.append({"source_withdrawn_at": version.source_withdrawn_at.isoformat()})
 
     outcome = _settle(
         version,

@@ -22,6 +22,8 @@ from rb_backend.corpus.models import (
     PermissionsBlockRecord,
     ReviewScope,
 )
+from rb_backend.corpus.reviews import resolve_review
+from rb_backend.ingestion import pipeline
 from rb_backend.ingestion.pipeline import (
     PARSER_VERSION,
     IngestOutcome,
@@ -65,7 +67,7 @@ def serve_synthetic(
     *,
     version: int,
     xml: bytes,
-    code: str = "CC BY",
+    code: str | None = "CC BY",
     listed: list[int] | None = None,
     **extra: Any,
 ) -> None:
@@ -226,6 +228,132 @@ def test_article_not_in_bucket_creates_nothing(bucket: PmcBucket) -> None:
     report = ingest("PMC900000999", bucket)
     assert report.outcome == IngestOutcome.NOT_IN_BUCKET
     assert not Paper.objects.exists()
+
+
+def test_article_removed_from_bucket_is_held_for_review_until_relisted(
+    bucket: PmcBucket, recorded: RecordedBucket
+) -> None:
+    """A stored article the bucket stops listing stops being displayable and is re-checked."""
+    ingest("PMC10718527", bucket)
+    assert Paper.objects.displayable().exists()
+
+    # The bucket now lists no version of it (a synthetic empty listing).
+    recorded.add_listing("PMC10718527", [])
+    later = NOW + timedelta(days=8)
+    report = ingest("PMC10718527", bucket, now=later)
+    assert (report.outcome, report.gate_status, report.version_id) == (
+        IngestOutcome.WITHDRAWN,
+        GateStatus.REVIEW,
+        "PMC10718527.1",
+    )
+    version = PaperVersion.objects.get()
+    assert (version.last_checked_at, version.source_withdrawn_at) == (later, later)
+    assert not Paper.objects.displayable().exists()
+    assert not Paragraph.objects.displayable().exists()
+    review = LicenceReview.objects.get(scope=ReviewScope.VERSION)
+    assert "no longer listed by the source" in " ".join(review.reasons)
+
+    # Checking again keeps the first withdrawal time and the same single review.
+    even_later = later + timedelta(days=8)
+    ingest("PMC10718527", bucket, now=even_later)
+    version.refresh_from_db()
+    assert (version.last_checked_at, version.source_withdrawn_at) == (even_later, later)
+    assert LicenceReview.objects.filter(status="open").count() == 1
+
+    # Listed again: the withdrawal is cleared and the automated decision returns.
+    recorded.overrides.clear()
+    report = ingest("PMC10718527", bucket, now=even_later + timedelta(days=1))
+    assert (report.outcome, report.gate_status) == (IngestOutcome.UPDATED, GateStatus.APPROVED)
+    version.refresh_from_db()
+    assert version.source_withdrawn_at is None
+    assert Paper.objects.displayable().get() == version.paper
+    assert not LicenceReview.objects.filter(status="open").exists()
+
+
+def test_jats_rejection_removes_text_and_does_not_refetch_it(
+    bucket: PmcBucket, recorded: RecordedBucket
+) -> None:
+    """No code plus an all-rights-reserved JATS licence: rejected, and no text is kept."""
+    # A synthetic article without a PMC code whose JATS licence reserves all rights.
+    serve_synthetic(
+        recorded,
+        version=1,
+        xml=synthetic_jats(["Synthetic reserved text."], licence="all-rights-reserved"),
+        code=None,
+    )
+    report = ingest(SYNTHETIC_PMCID, bucket)
+    assert (report.gate_status, report.licence_family) == (
+        GateStatus.REJECTED,
+        "all-rights-reserved",
+    )
+    version = PaperVersion.objects.get()
+    assert version.content_state == ContentState.REMOVED
+    assert not Paragraph.objects.exists()
+    assert PermissionsBlockRecord.objects.active().filter(scope="article").count() == 1
+
+    # A re-check with the same XML keeps the rejection without parsing the text again.
+    report = ingest(SYNTHETIC_PMCID, bucket, now=NOW + timedelta(days=8))
+    assert (report.outcome, report.gate_status, report.content_parsed) == (
+        IngestOutcome.UNCHANGED,
+        GateStatus.REJECTED,
+        False,
+    )
+    assert not Paragraph.objects.exists()
+
+
+def test_reviewer_rejection_removes_text_and_approval_brings_it_back(
+    bucket: PmcBucket, recorded: RecordedBucket
+) -> None:
+    """Text removed after a review rejection is fetched again once a reviewer approves."""
+    # The code and the JATS disagree (synthetic CC BY-ND code), so the version is reviewed.
+    recorded.add_metadata({**recorded_metadata("PMC10718527.1"), "license_code": "CC BY-ND"})
+    ingest("PMC10718527", bucket)
+    review = LicenceReview.objects.get(scope=ReviewScope.VERSION, status="open")
+    assert Paragraph.objects.exists()
+
+    # Rejecting removes the text; the evidence stays, so a re-check stays rejected.
+    resolve_review(review, approve=False, licence_value="", note="Synthetic test.", reviewer=None)
+    assert PaperVersion.objects.get().content_state == ContentState.REMOVED
+    assert not Paragraph.objects.exists()
+    report = ingest("PMC10718527", bucket, now=NOW + timedelta(days=8))
+    assert (report.gate_status, report.content_parsed) == (GateStatus.REJECTED, False)
+
+    # New evidence (the code now agrees with the JATS) re-opens the question: the
+    # automated decision approves, so the text is fetched again in the same run.
+    recorded.add_metadata(recorded_metadata("PMC10718527.1"))
+    report = ingest("PMC10718527", bucket, now=NOW + timedelta(days=9))
+    assert (report.gate_status, report.content_parsed) == (GateStatus.APPROVED, True)
+    assert PaperVersion.objects.get().content_state == ContentState.PARSED
+    assert Paragraph.objects.displayable().exists()
+
+
+def test_crash_before_the_gate_leaves_evidence_and_decision_consistent(
+    bucket: PmcBucket, recorded: RecordedBucket, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """New licence evidence and the decision drawn from it commit together or not at all."""
+    ingest("PMC10718527", bucket)
+    recorded.add_metadata({**recorded_metadata("PMC10718527.1"), "license_code": "CC BY-ND"})
+
+    def crash(*args: object, **kwargs: object) -> None:
+        """Simulate the worker dying before the gate is recomputed."""
+        raise RuntimeError("synthetic crash")
+
+    # The run dies after writing the new code but before the gate runs.
+    monkeypatch.setattr(pipeline, "evaluate_version", crash)
+    with pytest.raises(RuntimeError, match="synthetic crash"):
+        ingest("PMC10718527", bucket, now=NOW + timedelta(days=1))
+
+    # Nothing of that run is stored: the old code and the old decision still match.
+    code = LicenceRecord.objects.active().get(field="pmc:license_code")
+    assert code.raw_value == "CC BY"
+    assert LicenceRecord.objects.filter(field="pmc:license_code").count() == 1
+    assert PaperVersion.objects.get().gate_status == GateStatus.APPROVED
+
+    # The next run applies the new evidence and its decision together.
+    monkeypatch.undo()
+    report = ingest("PMC10718527", bucket, now=NOW + timedelta(days=2))
+    assert report.gate_status == GateStatus.REVIEW
+    assert not Paper.objects.displayable().exists()
 
 
 def test_retraction_is_recorded_blocks_rewriting_and_can_be_withdrawn(

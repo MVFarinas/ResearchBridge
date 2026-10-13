@@ -104,20 +104,32 @@ per day. `ingest_pmc --sync` ingests inline without the worker. `NCBI_API_KEY` i
    current version is the highest version prefix in the bucket. Older versions keep their
    records for provenance. This is how the "maintain the most current version" term is met;
    the daily re-check keeps it current.
-6. **Retraction.** `is_retracted` comes from the current version's JSON (PMC gives no date, so
-   `retraction_date` stays empty and `retraction_recorded_at` is when we learnt of it).
-   A retracted paper stays **displayable** (readers need to see it, with a retraction banner from
-   Phase 4) but is **never rewriteable**: we do not produce a plain-English version of a
-   retracted paper. A flag PMC later withdraws is cleared only if PMC set it. Phase 5 adds
-   Crossref/Retraction Watch as further sources.
+6. **Retraction: shown with a notice, never rewritten** (decided in fix round 2). `is_retracted`
+   comes from the current version's JSON (PMC gives no date, so `retraction_date` stays empty and
+   `retraction_recorded_at` is when we learnt of it). A retracted paper stays **displayable** and
+   is **never rewriteable**: no plain-English version, no rewrite-derived annotations
+   (`rewriteable()` excludes it at every level). Why not hide it: decisions.md has no rule on
+   retractions; the PMC bucket terms ask redistributors to keep data current, which we meet by
+   re-reading the flag on every re-check; and the research notes behind the prior-art report
+   (`ingestion_licence_pipeline.md`) give "unpublishing or flagging" as the two options. Flagging
+   serves lay readers better: someone who meets a retracted paper elsewhere can find out here that
+   it was retracted, which hiding it would prevent. The read API makes the notice part of the
+   contract: `access.retraction_notice(paper)` returns the source, date and record time, and every
+   reader path that shows a displayable paper must show that notice prominently (stated in
+   `corpus/access.py` and `corpus/querysets.py`; Phase 4 builds the banner). A flag PMC later
+   withdraws is cleared only if PMC set it. Phase 5 adds Crossref/Retraction Watch as further
+   sources. To hide retracted papers instead, add `paper__is_retracted=False` to
+   `version_displayable_q()` (`corpus/querysets.py`) and the matching rule in the enforcement tests.
 7. **TDM author manuscripts are rejected without downloading the XML**, and any previously stored
    text of a version that turns TDM is purged (records of why stay). More generally, **a rejected
    version keeps no text** (fix round 1): whenever the gate rejects a version (an
    all-rights-reserved JATS licence, a reviewer's rejection), its sections, paragraphs and figures
-   are deleted in the same transaction. The article-level permissions blocks that justify the
-   rejection stay active, so re-evaluation reaches the same decision; the version's content state
-   becomes `removed`, and its XML is fetched again only if new evidence stops the gate rejecting
-   it. ESearch discovery
+   are deleted in the same transaction, and its XML is deleted from the download cache in `data/`
+   (fix round 2). The article-level permissions blocks that justify the rejection stay active, so
+   re-evaluation reaches the same decision, and licence reviews of the deleted parts stay as the
+   audit trail (fix round 2); the version's content state becomes `removed`, and its XML is
+   fetched again only if new evidence or a reviewer's approval stops the gate rejecting it. ESearch
+   discovery
    deliberately includes `author_manuscript[Filter]` with `--licence any`, so the gate's refusal
    is exercised on real data; use `--licence cc-by` (or `rewrite`, `commercial`) to avoid them.
 8. **A licence that permits display still waits for parsed full text** (`pending`) before any
@@ -216,10 +228,9 @@ yet and were reported as `not-in-bucket` (not stored).
   direct dependency. Please confirm the exception, ideally as a numbered decisions.md entry such
   as "LGPL libraries may be used unmodified and dynamically imported as dependencies; their source
   is never copied or modified". It was not added to decisions.md on your behalf.
-- **Retracted papers** (deviation 6): they stay displayable (never rewriteable) on the assumption
-  that Phase 4 shows a retraction banner. If you would rather hide them until that banner exists,
-  it is one condition in `version_displayable_q()` (`corpus/querysets.py`) plus the matching
-  rule in the enforcement tests.
+- **Retracted papers** (deviation 6, decided in fix round 2): shown with a retraction notice,
+  never rewritten. Nothing needs doing; if you prefer to hide them, deviation 6 names the one
+  condition to add. Consider recording the policy in decisions.md.
 - **Withdrawn articles:** any article the bucket stops listing appears in the review queue
   ("no longer listed by the source"); decide whether to keep or reject each one.
 
@@ -244,9 +255,15 @@ yet and were reported as `not-in-bucket` (not stored).
   stored, because deleting parts of a version would break the stable IDs the rest of it uses.
 - When a rejected version's text is removed, its annotations stay but lose their paragraph link
   (they keep `paragraph_stable_id`); nothing re-attaches them if the text later returns. Licence
-  reviews of removed figures and paragraphs are deleted with them.
-- After a reviewer approves a version whose text was removed, it stays `pending` until the next
-  re-check fetches the XML again (`recheck_licences --pmcid <id>` does it at once).
+  reviews of removed figures and paragraphs are kept (fix round 2); they lose their link to the
+  part row and are matched by `part_stable_id` instead.
+- After a reviewer approves a version whose text was removed, it stays `pending` until the worker
+  runs the ingestion job queued at that moment (fix round 2). Without a running worker it waits.
+- Only the cached XML at the current metadata's URL is deleted on rejection. The URL embeds the
+  MD5, so a copy of an *older* XML of the same version (downloaded before the publisher replaced
+  the file) can remain in `data/http-cache/` until deleted by hand.
+- Retraction notices are a read-API contract (`access.retraction_notice`) until Phase 4 renders
+  them; nothing serves papers to readers before then.
 
 ## Fix round 1 (review findings)
 
@@ -269,6 +286,18 @@ yet and were reported as `not-in-bucket` (not stored).
 `corpus_stats` also reports content states and withdrawn versions now. Migration
 `corpus/0003_version_withdrawal_and_removed_content` adds `source_withdrawn_at` and the `removed`
 content state.
+
+## Fix round 2 (review findings)
+
+| Finding | What changed |
+|---|---|
+| S-C1: retracted papers displayable | Decided: shown with a retraction notice, never rewritten (deviation 6 gives the reasons). New `access.retraction_notice()` / `RetractionNotice` make the notice part of the read API; the pipeline retraction test checks it appears and clears with the flag. |
+| R-N3: resolved part reviews deleted with the text | `LicenceReview.figure` and `.paragraph` are `SET_NULL`; reviews keep `part_stable_id` and are matched by it. `retention.delete_parts()` (used by text removal and re-parsing) supersedes open part reviews before deleting the parts. Database constraints: one open review per (version, scope, stable ID); an open part review must still link its part. Migration `corpus/0004_review_part_survives_text_removal` copies the stable IDs (checked on the local corpus: all 22 open figure reviews filled). Test: a resolved figure review survives a rejection and applies again when the same text returns; an open one is superseded. |
+| R-N1: rejected XML stayed in the download cache | `PmcBucket.forget_xml()`; `ingest_pmc_article` calls it whenever the gate rejects. A reviewer's rejection does the same through the receiver below. Tests in `test_pmc.py`, `test_pipeline.py` and `test_receivers.py`. |
+| R-N4: an approved removed version waited for the re-check | `resolve_review` sends `corpus.signals.review_resolved`; `ingestion/receivers.py` queues an ingestion job on commit when the version's text was removed and it is no longer rejected (the corpus app does not import ingestion). Tests in `test_receivers.py`. |
+| R-N2: test name did not match the test | Renamed to `test_reviewer_rejection_removes_text_and_new_evidence_brings_it_back`; reviewer approval of a removed version is tested in `test_receivers.py`. Through `ingest`, conflicting new evidence re-fetches the text in the same run, so a removed version only reaches a reviewer by offline re-evaluation. |
+| S-L1: inventory said every direct dependency is permissive | The inventory's rule now names psycopg as the one recorded exception awaiting confirmation. |
+| C-C10: no decisions.md entry for LGPL | Left to the owner (still under "Pending the owner"). decisions.md is the owner's spec. |
 
 ## Final verification
 

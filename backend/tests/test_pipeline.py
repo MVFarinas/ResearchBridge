@@ -394,11 +394,17 @@ def test_retraction_is_recorded_blocks_rewriting_and_can_be_withdrawn(
     assert not Paper.objects.rewriteable().exists()
     assert not Paragraph.objects.rewriteable().exists()
 
-    # PMC clears the flag: so do we, because PMC set it.
+    # The read API hands every reader path the notice it must show.
+    assert access.retraction_notice(paper) == access.RetractionNotice(
+        source="pmc:is_retracted", retraction_date=None, recorded_at=NOW
+    )
+
+    # PMC clears the flag: so do we, because PMC set it, and the notice goes.
     recorded.add_metadata(metadata)
     ingest("PMC10718527", bucket)
     paper.refresh_from_db()
     assert not paper.is_retracted
+    assert access.retraction_notice(paper) is None
     assert Paper.objects.rewriteable().filter(pk=paper.pk).exists()
 
 

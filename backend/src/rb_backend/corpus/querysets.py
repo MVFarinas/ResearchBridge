@@ -10,7 +10,10 @@ exactly the same rules:
   gate status is approved and its effective ``can_display`` is true. Only the
   current version is ever served (the PMC terms ask redistributors to keep
   data current). It is rewriteable when it is also ``can_rewrite`` and the
-  paper is not retracted (decisions.md §1.1; retraction handling in
+  paper is not retracted (decisions.md §1.1). A retracted paper stays
+  displayable on purpose, so readers can see what was retracted, and every
+  reader path shows its retraction notice
+  (:func:`rb_backend.corpus.access.retraction_notice`; the policy is in
   docs/phase-notes/phase-2.md).
 * A **part** (paragraph or figure/table) is displayable when its own gate
   decision allows display *and* its version is displayable, and rewriteable

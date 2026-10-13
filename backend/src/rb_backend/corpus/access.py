@@ -7,9 +7,17 @@ paper, figure or paragraph whose licence fails §1.1, is under review or is not
 the current version cannot be returned. :mod:`rb_backend.corpus.accesscheck`
 fails the test suite if code outside the corpus internals reads gated models
 any other way.
+
+Retracted papers stay displayable but are never rewriteable (the retraction
+policy in docs/phase-notes/phase-2.md). Every page or API response that shows
+a displayable paper must also show :func:`retraction_notice` prominently
+whenever it returns one.
 """
 
 from __future__ import annotations
+
+from dataclasses import dataclass
+from datetime import date, datetime
 
 from rb_backend.corpus.models import Figure, Paper, PaperVersion, Paragraph, Section
 from rb_backend.corpus.querysets import (
@@ -21,8 +29,44 @@ from rb_backend.corpus.querysets import (
 )
 
 
+@dataclass(frozen=True, slots=True)
+class RetractionNotice:
+    """What a reader must be told about a retracted paper.
+
+    Attributes:
+        source: Which source reported the retraction, e.g. ``pmc:is_retracted``.
+        retraction_date: Date of the retraction notice, if the source gives
+            one (PMC does not).
+        recorded_at: When ResearchBridge first recorded the retraction.
+    """
+
+    source: str
+    retraction_date: date | None
+    recorded_at: datetime | None
+
+
+def retraction_notice(paper: Paper) -> RetractionNotice | None:
+    """The retraction notice a reader must see alongside a paper, if any.
+
+    Args:
+        paper: The paper (normally one from :func:`displayable_papers`).
+
+    Returns:
+        The notice when the paper is retracted, else None.
+    """
+    if not paper.is_retracted:
+        return None
+    return RetractionNotice(
+        source=paper.retraction_source,
+        retraction_date=paper.retraction_date,
+        recorded_at=paper.retraction_recorded_at,
+    )
+
+
 def displayable_papers() -> PaperQuerySet:
     """Papers whose current version may be displayed.
+
+    Retracted papers are included; show each one's :func:`retraction_notice`.
 
     Returns:
         A queryset of papers.

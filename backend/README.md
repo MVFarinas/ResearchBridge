@@ -7,11 +7,13 @@ worker on the same codebase. Details, decisions and results: [docs/phase-notes/p
 |---|---|
 | `rb_backend.corpus` | `Paper`, `PaperVersion`, `Section`, `Paragraph`, `Figure`; licence provenance (`LicenceRecord`, `PermissionsBlockRecord`); the `LicenceReview` queue; the gate (`gate.evaluate_version`, `precedence.resolve_licence`); the **gated read API** (`access`, and the `displayable()` / `rewriteable()` querysets); the static bypass check (`accesscheck`). |
 | `rb_backend.annotations` | W3C Web Annotation-shaped `Annotation` with provenance, plus `AnnotationRevision`, `Vote`, `Report`. |
-| `rb_backend.ingestion` | PMC Cloud Service client (`pmc`), ESearch discovery (`eutils`), the pipeline, worker tasks, and the `ingest_pmc` / `recheck_licences` commands. |
+| `rb_backend.ingestion` | PMC Cloud Service client (`pmc`), ESearch discovery (`eutils`), the pipeline, worker tasks, the review-resolution receivers (`receivers`), and the `ingest_pmc` / `recheck_licences` commands. |
 
 **The one rule for later phases:** read papers, versions, sections, paragraphs, figures and
 annotations only through `rb_backend.corpus.access` or the `displayable()` / `rewriteable()`
 queryset methods. The test suite fails if a module outside the corpus internals does otherwise.
+Retracted papers are displayable but never rewriteable: wherever a paper is shown, show
+`access.retraction_notice(paper)` prominently when it returns one.
 
 ## Run it locally
 

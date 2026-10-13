@@ -13,7 +13,10 @@ Two situations remove text that was stored earlier:
   decision; only the text and the part-level blocks go.
 
 In both cases sections, paragraphs and figures (with their original JATS
-XML) are deleted. Licence records and superseded blocks remain as provenance.
+XML) are deleted. Licence records and superseded blocks remain as provenance,
+and so do licence reviews: :func:`delete_parts` supersedes the open reviews of
+the parts it deletes, and resolved ones lose only their link to the part row
+(they keep its stable ID), so a reviewer's decision is never deleted.
 """
 
 from __future__ import annotations
@@ -21,14 +24,18 @@ from __future__ import annotations
 from collections.abc import Collection
 from datetime import datetime
 
+from django.db.models import Q, QuerySet
+
 from rb_backend.corpus.models import (
     BlockScope,
     ContentState,
     Figure,
     LicenceRecord,
+    LicenceReview,
     PaperVersion,
     Paragraph,
     PermissionsBlockRecord,
+    ReviewStatus,
     Section,
 )
 
@@ -47,7 +54,7 @@ def purge_content(version: PaperVersion, *, superseded_at: datetime) -> None:
         superseded_at: Time to record on the superseded blocks.
     """
     supersede_blocks(version, superseded_at)
-    _delete_text(version)
+    _delete_text(version, superseded_at)
 
 
 def remove_rejected_text(version: PaperVersion, *, superseded_at: datetime) -> bool:
@@ -75,7 +82,7 @@ def remove_rejected_text(version: PaperVersion, *, superseded_at: datetime) -> b
 
     # Part-level blocks describe parts that are about to be deleted.
     supersede_blocks(version, superseded_at, scopes=PART_SCOPES)
-    _delete_text(version)
+    _delete_text(version, superseded_at)
 
     # Remember that the text was removed on purpose, not never fetched.
     if version.content_state == ContentState.PARSED:
@@ -104,12 +111,52 @@ def supersede_blocks(
     blocks.update(superseded_at=when)
 
 
-def _delete_text(version: PaperVersion) -> None:
+def delete_parts(
+    *,
+    figures: QuerySet[Figure] | None = None,
+    paragraphs: QuerySet[Paragraph] | None = None,
+    when: datetime,
+) -> None:
+    """Delete figures and paragraphs without losing their licence reviews.
+
+    Every deletion of a part goes through here. An open review of a deleted
+    part can no longer be answered, so it is superseded; a resolved review is
+    the audit trail of a human decision, so the database only clears its link
+    to the part row (``on_delete=SET_NULL``) and it keeps the part's stable ID.
+
+    Args:
+        figures: Figures and tables to delete, or None.
+        paragraphs: Paragraphs to delete, or None.
+        when: Time to record on the superseded reviews.
+    """
+    # Retire the questions about these parts before the rows go.
+    open_reviews = Q()
+    if figures is not None:
+        open_reviews |= Q(figure__in=figures.values("pk"))
+    if paragraphs is not None:
+        open_reviews |= Q(paragraph__in=paragraphs.values("pk"))
+    if open_reviews:
+        LicenceReview.objects.filter(open_reviews, status=ReviewStatus.OPEN).update(
+            status=ReviewStatus.SUPERSEDED, updated_at=when
+        )
+
+    # Then delete the parts; resolved reviews are detached, not deleted.
+    if figures is not None:
+        figures.delete()
+    if paragraphs is not None:
+        paragraphs.delete()
+
+
+def _delete_text(version: PaperVersion, when: datetime) -> None:
     """Delete a version's figures, paragraphs and sections.
 
     Args:
         version: The version.
+        when: Time to record on the reviews this supersedes.
     """
-    Figure.objects.filter(version=version).delete()
-    Paragraph.objects.filter(version=version).delete()
+    delete_parts(
+        figures=Figure.objects.filter(version=version),
+        paragraphs=Paragraph.objects.filter(version=version),
+        when=when,
+    )
     Section.objects.filter(version=version).delete()

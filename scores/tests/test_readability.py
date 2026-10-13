@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import json
 from collections.abc import Callable
+from pathlib import Path
 
 import pytest
 from spacy.language import Language
@@ -169,6 +171,30 @@ def test_packaged_reference_loads_and_is_marked_provisional() -> None:
     assert reference.units > 100
     assert set(reference.features) == set(FEATURE_NAMES)
     assert reference.to_json()["features"]["jargon_density"]["sd"] > 0
+
+
+def test_reference_loads_from_a_file(tmp_path: Path) -> None:
+    """A reference written with to_json() reads back identically from a path."""
+    synthetic = reference_from_json(
+        {
+            "version": "synthetic-file-reference",
+            "description": "SYNTHETIC: for this test only",
+            "units": 3,
+            "features": {name: {"mean": 1.5, "sd": 0.5} for name in FEATURE_NAMES},
+        }
+    )
+    path = tmp_path / "reference.json"
+    path.write_text(json.dumps(synthetic.to_json()), encoding="utf-8")
+    assert load_reference(path) == synthetic
+    assert load_reference(str(path)).version == "synthetic-file-reference"
+
+
+def test_reference_file_with_invalid_json_fails(tmp_path: Path) -> None:
+    """A reference file that is not JSON raises a ValueError, which the CLI reports."""
+    path = tmp_path / "reference.json"
+    path.write_text("{not json", encoding="utf-8")
+    with pytest.raises(ValueError, match="Expecting property name"):
+        load_reference(path)
 
 
 @pytest.mark.parametrize(

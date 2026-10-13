@@ -81,6 +81,20 @@ def test_report_dict_is_json_and_provisional(
     assert data["definitions"][0]["term"] == "BMI"
 
 
+def test_unit_dict_lists_every_term_when_unlimited(
+    nlp: Language, familiarity: Familiarity, synthetic_reference: ReferenceStats
+) -> None:
+    """to_dict(top_terms=None) includes all undefined terms; a limit truncates the list only."""
+    unit = score_text(
+        SYNTHETIC_TEXT, nlp=nlp, familiarity=familiarity, reference=synthetic_reference
+    )
+    everything = unit.to_dict(top_terms=None)["burden"]
+    first_only = unit.to_dict(top_terms=1)["burden"]
+    assert everything["undefined_term_count"] == first_only["undefined_term_count"] == 2
+    assert [t["key"] for t in everything["undefined_terms"]] == ["nephron", "apoptosis"]
+    assert first_only["undefined_terms"] == everything["undefined_terms"][:1]
+
+
 def test_score_text_returns_the_paper_unit(
     nlp: Language, familiarity: Familiarity, synthetic_reference: ReferenceStats
 ) -> None:

@@ -19,7 +19,7 @@ from functools import wraps
 
 from django.conf import settings
 from django.db import connections
-from django.db.models import Q
+from django.db.models import F, Q
 from django.utils import timezone
 from procrastinate import RetryStrategy
 from procrastinate.contrib.django import app
@@ -121,6 +121,9 @@ def defer_many(pmcids: Iterable[str]) -> tuple[int, int]:
 def stale_pmcids(*, max_age: timedelta, limit: int) -> list[str]:
     """PMC IDs of current versions not checked within ``max_age``, oldest first.
 
+    Versions never checked come before all others (Postgres would otherwise
+    sort NULLs last and starve them once the batch size is reached).
+
     Args:
         max_age: How old a check may be.
         limit: Maximum number of IDs.
@@ -132,7 +135,7 @@ def stale_pmcids(*, max_age: timedelta, limit: int) -> list[str]:
     versions = (
         PaperVersion.objects.filter(source=Source.PMC, is_current=True)
         .filter(Q(last_checked_at__lt=cutoff) | Q(last_checked_at__isnull=True))
-        .order_by("last_checked_at")
+        .order_by(F("last_checked_at").asc(nulls_first=True), "pk")
         .values_list("paper__pmcid", flat=True)[:limit]
     )
     return [pmcid for pmcid in versions if pmcid]

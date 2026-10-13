@@ -93,16 +93,22 @@ def test_worker_runs_ingestion_jobs(
 
 @pytest.mark.django_db
 def test_stale_pmcids_are_oldest_first() -> None:
-    """Only current versions not checked within the window are returned, oldest first."""
+    """Only current versions not checked within the window are returned, never-checked first."""
+    # Arrange: stale, fresh, non-current and never-checked (created last) versions.
     checked(synthetic_version(pmcid="PMC900000001"), days_ago=10)
     checked(synthetic_version(pmcid="PMC900000002"), days_ago=30)
     checked(synthetic_version(pmcid="PMC900000003"), days_ago=1)
     checked(synthetic_version(pmcid="PMC900000004", is_current=False), days_ago=99)
+    never = synthetic_version(pmcid="PMC900000005")
+    assert never.last_checked_at is None
+
+    # A never-checked version is the most overdue, so it comes first and survives a limit of 1.
     assert tasks.stale_pmcids(max_age=timedelta(days=7), limit=10) == [
+        "PMC900000005",
         "PMC900000002",
         "PMC900000001",
     ]
-    assert tasks.stale_pmcids(max_age=timedelta(days=7), limit=1) == ["PMC900000002"]
+    assert tasks.stale_pmcids(max_age=timedelta(days=7), limit=1) == ["PMC900000005"]
 
 
 @pytest.mark.django_db

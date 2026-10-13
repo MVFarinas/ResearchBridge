@@ -203,5 +203,18 @@ yet and were reported as `not-in-bucket` (not stored).
 - PMC media (figure images, PDFs) are not downloaded; figures are stored as captions, labels and
   licence data. Image storage belongs with R2.
 - Postgres full-text search and vector columns are not added yet (search is Phase 4).
+- HSTS is not configured. `DJANGO_SECURE_SSL_REDIRECT` can be set through the environment, but
+  `SECURE_HSTS_SECONDS` should be chosen once the production domain and its TLS setup exist
+  (`manage.py check --deploy` flags both until then).
 - The backend tests need a running Postgres (`make db-up`); there is no SQLite fallback, because
   the constraints and the queue rely on Postgres.
+
+## Final verification
+
+From a fresh `.venv` (`rm -rf .venv && make setup`) with cleared caches and the `rb-phase2`
+database on port 5433: `make check` passed (ruff lint and format, docstring and lock checks, mypy
+on backend, rbcore and tools, and pytest with 252 backend cases, 257 rbcore and 11 tools).
+`docker build -f backend/Dockerfile .` succeeded, and the image ran `django-admin check --deploy` as
+the unprivileged `app` user. The database counts above were re-read from the live database with
+`corpus_stats` before shutdown and matched. `docker compose -p rb-phase2 down` was run at the end; the
+named volume keeps the ingested corpus locally.

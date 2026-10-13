@@ -29,7 +29,9 @@ from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
-GATED_MODELS = frozenset({"Paper", "PaperVersion", "Section", "Paragraph", "Figure", "Annotation"})
+GATED_MODELS = frozenset(
+    {"Paper", "PaperVersion", "Section", "Paragraph", "Figure", "Annotation", "SearchDocument"}
+)
 GATED_RELATIONS = frozenset(
     {"versions", "sections", "paragraphs", "figures", "annotations", "children"}
 )

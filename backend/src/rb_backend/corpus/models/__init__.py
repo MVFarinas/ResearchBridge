@@ -18,8 +18,10 @@ from rb_backend.corpus.models.papers import (
     Section,
     Source,
 )
+from rb_backend.corpus.models.search import SEARCH_CONFIG, SearchDocument
 
 __all__ = [
+    "SEARCH_CONFIG",
     "BlockScope",
     "ContentState",
     "Figure",
@@ -33,6 +35,7 @@ __all__ = [
     "PermissionsBlockRecord",
     "ReviewScope",
     "ReviewStatus",
+    "SearchDocument",
     "Section",
     "Source",
 ]

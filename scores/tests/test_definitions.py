@@ -127,6 +127,18 @@ def test_misparsed_appositive_without_determiner_defines_nothing(
         "Apoptosis was increased in hepatocytes (Methods).",
         "Apoptosis was increased in hepatocytes (two-tailed t-test).",
         "Apoptosis was increased in hepatocytes (wild type).",
+        # Further figure and results idioms found in review round 2 (R-1).
+        "Apoptosis was increased in hepatocytes (black arrowheads).",
+        "Apoptosis was increased in hepatocytes (white arrows).",
+        "Apoptosis was increased in hepatocytes (negative control).",
+        "Apoptosis was increased in hepatocytes (vehicle).",
+        "Apoptosis was increased in hepatocytes (log-rank test).",
+        "Apoptosis was increased in hepatocytes (scale bar).",
+        "Apoptosis was increased in hepatocytes (open circles).",
+        "Apoptosis was increased in hepatocytes (filled circles).",
+        "Apoptosis was increased in hepatocytes (error bars).",
+        "Apoptosis was increased in hepatocytes (inset).",
+        "Mice were sacrificed at the endpoint (day 7).",
         "It was published in the Lancet, Deutsches Ärzteblatt, The BMJ, and JAMA.",
         "Wei Mao (Université Paris-Saclay) is the first author.",
         "The filament could match the curvature of the liposome (resulting in a sensing role).",
@@ -160,6 +172,13 @@ def test_stock_phrases_lists_and_names_define_nothing(
             "Infection by Naegleria fowleri, a free-living amoeba, is rare.",
             [("appositive", "naegleria fowleri")],
         ),
+        # "median" outside a statistic, and a numbered name, are ordinary glosses (R-4).
+        (
+            "Carpal tunnel syndrome (compression of the median nerve) is common.",
+            [("gloss", "carpal tunnel syndrome")],
+        ),
+        ("Down syndrome (trisomy 21) is common.", [("gloss", "trisomy")]),
+        ("Trisomy 21 (Down syndrome) is common.", [("gloss", "trisomy")]),
     ],
 )
 def test_real_definitions_survive_the_filters(

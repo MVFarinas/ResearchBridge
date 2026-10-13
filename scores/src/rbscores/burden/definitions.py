@@ -36,17 +36,25 @@ familiar, no definition is recorded.
 Both sides of an appositive or gloss must be noun phrases (their syntactic
 head a noun or proper noun). The explanation must contain a word of three or
 more letters and must not be a citation, a figure or table reference, a
-statistic, a stock parenthetical ("data not shown", "arrows", "Methods",
-"wild type", "two-tailed t-test", see :data:`_STOCK_PARENTHETICAL`), a list,
-a number, or a proper name alone ("Wei Mao (Université Paris-Saclay)"). A
-parenthetical that starts like a clause ("which ...", "but not ...", "as
-...", "e.g. ...") is never a gloss in either direction.
+statistic, a stock parenthetical ("data not shown", "black arrowheads",
+"Methods", "wild type", "vehicle", "scale bar", "two-tailed t-test", see
+:data:`_STOCK_PARENTHETICAL`), a list, a number, or a proper name alone
+("Wei Mao (Université Paris-Saclay)"). "Mean", "median" and "CI" mark a
+statistic only in a statistical shape ("mean ± SD", "median, IQR"), so
+"compression of the median nerve" is still a gloss. A parenthetical holding
+a quantity ("EUR 5000", "12 mice") is never a gloss, but one holding a
+numbered name ("trisomy 21", one or two digits after a word) may be the
+defined side, never the explanation. A parenthetical that starts like a
+clause ("which ...", "but not ...", "as ...", "e.g. ...") is never a gloss
+in either direction.
 
 These are heuristics with known misses (definitions spread across sentences,
 dashes, figures) and false hits (a sentence that classifies rather than
 explains, a field label after a list item). Their precision was measured by
 hand, 88% on a held-out sample of 50 detections (scores/reports/
-definition_precision.md). Recall has not been measured.
+definition_precision.md), before review round 2 added the stock idioms,
+numbered names and the statistical shapes above. Recall has not been
+measured.
 """
 
 from __future__ import annotations
@@ -107,8 +115,15 @@ _NOT_GLOSS_STARTS: Final = frozenset(
         "versus",
     }
 )
+_COLOURS: Final = (
+    r"(?:red|green|blue|yellow|magenta|cyan|orange|purple|pink|grey|gray|black|white|brown)"
+)
+_MARKERS: Final = (
+    r"(?:arrows?|arrowheads?|asterisks?|stars?|circles?|squares?|triangles?|diamonds?|dots?"
+    r"|symbols?|bars?|lines?|curves?|boxes|boxed\s+areas?|outlines?|traces?|columns?)"
+)
 _STOCK_PARENTHETICAL: Final = re.compile(
-    r"""^(?:
+    rf"""^(?:
         (?:(?:data|results?|figures?)\s+)?not\s+shown
       | (?:our\s+)?unpublished(?:\s+(?:data|observations?|results?|work))?
       | personal\s+communication
@@ -116,10 +131,13 @@ _STOCK_PARENTHETICAL: Final = re.compile(
       | submitted
       | this\s+(?:study|work|paper|article|issue)
       | (?:materials\s+and\s+)?methods(?:\s+section)?
-      | (?:arrows?|arrowheads?|asterisks?|stars?|insets?|boxed\s+areas?)
-      | (?:(?:top|bottom|upper|lower|middle|centre|center|left|right)\s*){1,2}(?:panels?)?
-      | (?:red|green|blue|yellow|magenta|cyan|orange|purple|grey|gray|black|white)
-      | (?:dashed|dotted|solid)\s+(?:lines?|curves?)
+      | {_COLOURS}?\s*(?:(?:open|filled|closed|solid|hollow|dashed|dotted|thick|thin
+            |scale|error|grey|gray)\s+)?{_MARKERS}
+      | insets? | merged? | overlay
+      | (?:(?:top|bottom|upper|lower|middle|centre|center|left|right)\s*){{1,2}}(?:panels?)?
+      | {_COLOURS}
+      | (?:(?:negative|positive|untreated|mock|vehicle|sham|loading|internal)\s+)?controls?
+      | vehicle | mock | sham | untreated
       | wild[\s-]?type | wt
       | online | above | below
       | supplementary\b.*
@@ -129,7 +147,11 @@ _STOCK_PARENTHETICAL: Final = re.compile(
 """Parentheticals that are stock phrases of papers, never explanations of the word before them."""
 _STATISTICS_WORDS: Final = re.compile(
     r"\b(?:t-?tests?|two-(?:tailed|sided)|one-(?:tailed|sided)|anova|mann-whitney|wilcoxon"
-    r"|chi-squared?|fisher'?s\s+exact|s\.?e\.?m\.?|s\.?d\.?|95\s*%|ci|mean|median)\b",
+    r"|chi-squared?|fisher'?s\s+exact|log-?rank|kaplan-meier|s\.?e\.?m\.?|s\.?d\.?|95\s*%)\b"
+    # "mean", "median" and "CI" only where they summarise data ("mean ± SD",
+    # "median, IQR", "(mean)"), not in "the median nerve".
+    r"|\b(?:mean|median|ci)\b(?=\s*(?:$|[=±:;,(\d]|of\s+\d|and\s+(?:s|range|iqr)|sem?\b"
+    r"|iqr|range|values?\b))",
     re.IGNORECASE,
 )
 _NON_WORD_EDGES = re.compile(r"^[\W_]+|[\W_]+$")
@@ -137,6 +159,7 @@ _NOT_GLOSS_CHARS: Final = frozenset("=<>±%")
 _MAX_GLOSS_TOKENS: Final = 25
 _MAX_OR_GLOSS_TOKENS: Final = 8
 _MIN_GLOSS_WORD_LETTERS: Final = 3
+_MAX_NAME_NUMBER_DIGITS: Final = 2
 _LIST_SEPARATORS: Final = frozenset({",", ";"})
 _GLOSS_END: Final = frozenset({",", ")", ".", ";", "\u2013", "\u2014"})
 
@@ -418,14 +441,16 @@ class _Finder:
             first += 1
         inner = doc[first : closing.i]
 
-        # Stock phrases ("data not shown", "arrows"), statistics, numbers
+        # Stock phrases ("data not shown", "arrows"), statistics, quantities
         # ("EUR 5000") and lists ("reinforcement and approach response") are
-        # not glosses, nor terms the outside text explains.
-        if _is_stock_or_statistic(inner) or _has_number(inner):
+        # not glosses, nor terms the outside text explains. A numbered name
+        # ("trisomy 21") may still be the defined side; _looks_like_gloss
+        # keeps any number out of the explanation.
+        if _is_stock_or_statistic(inner) or _has_quantity(inner):
             return
         if any(t.pos_ == "CCONJ" for t in inner):
             return
-        self._record_pair(DefinitionKind.GLOSS, self._phrase(doc[opening.i - 1]), inner)
+        self._record_pair(DefinitionKind.GLOSS, self._before_parenthesis(opening), inner)
 
     # --- Helpers ------------------------------------------------------------
 
@@ -440,6 +465,25 @@ class _Finder:
         """
         chunk = self.chunks.get(token.i)
         return chunk if chunk is not None else self.doc[token.i : token.i + 1]
+
+    def _before_parenthesis(self, opening: Token) -> Span:
+        """Return the phrase that ends right before an opening parenthesis.
+
+        The noun chunk of the preceding word is cut at the parenthesis (the
+        small model sometimes chunks across it), and a trailing number that
+        modifies the noun before it ("Trisomy 21") brings in that noun's
+        phrase, since the chunker can leave the number out.
+
+        Args:
+            opening: An opening-parenthesis token that is not the first token.
+
+        Returns:
+            The phrase outside the parenthesis.
+        """
+        doc = self.doc
+        last = doc[opening.i - 1]
+        anchor = last.head if last.dep_ == "nummod" and last.head.i < last.i else last
+        return doc[self._phrase(anchor).start : opening.i]
 
     def _weight(self, span: Span) -> float:
         """Return the largest unfamiliarity of the term words in a span.
@@ -698,6 +742,24 @@ def _opens_like_non_gloss(inner: Span) -> bool:
     return first.pos_ in _PARENTHETICAL_START_POS and lower != "or"
 
 
+def _number_tokens(span: Span) -> list[Token]:
+    """Return the tokens of a span that are numbers written in digits.
+
+    Args:
+        span: Any span.
+
+    Returns:
+        Tokens tagged as numbers that contain a digit, and tokens made only of
+        digits and punctuation ("0.0002-1.55"). "IL-6" and "p53" are words.
+    """
+    return [
+        t
+        for t in span
+        if any(ch.isdigit() for ch in t.text)
+        and (t.pos_ == "NUM" or all(ch.isdigit() or not ch.isalnum() for ch in t.text))
+    ]
+
+
 def _has_number(span: Span) -> bool:
     """Check whether a span contains a number written in digits.
 
@@ -705,14 +767,37 @@ def _has_number(span: Span) -> bool:
         span: Any span.
 
     Returns:
-        True if a token tagged as a number contains a digit, or a token is
-        made only of digits and punctuation ("0.0002-1.55").
+        True if :func:`_number_tokens` finds one.
     """
-    return any(
-        any(ch.isdigit() for ch in t.text)
-        and (t.pos_ == "NUM" or all(ch.isdigit() or not ch.isalnum() for ch in t.text))
-        for t in span
-    )
+    return bool(_number_tokens(span))
+
+
+def _has_quantity(span: Span) -> bool:
+    """Check whether a span contains a number that is not part of a name.
+
+    A number names something, rather than counts or measures it, when it is
+    one or two plain digits right after a word that is not all capitals
+    ("trisomy 21", "chromosome 7", "type 2"). Anything else is a quantity:
+    "EUR 5000", "12 mice", "0.5 mM", "2019".
+
+    Args:
+        span: Any span.
+
+    Returns:
+        True if any number in the span is a quantity.
+    """
+    for number in _number_tokens(span):
+        previous = span.doc[number.i - 1] if number.i > span.start else None
+        named = (
+            number.text.isdigit()
+            and len(number.text) <= _MAX_NAME_NUMBER_DIGITS
+            and previous is not None
+            and previous.is_alpha
+            and not previous.is_upper
+        )
+        if not named:
+            return True
+    return False
 
 
 def _roots(span: Span) -> list[Token]:

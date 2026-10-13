@@ -36,6 +36,9 @@ def _pairs(sentence: str) -> list[tuple[str, str]]:
             "Newly added monomers are bound to the nucleotide ATP (adenosine triphosphate).",
             [("ATP", "adenosine triphosphate")],
         ),
+        # Lower-case short forms explained by word initials are still found.
+        ("A gap of 200 base pairs (bp) was seen.", [("bp", "base pairs")]),
+        ("Fragments of 5 kilobases (kb) were cut.", [("kb", "kilobases")]),
     ],
 )
 def test_finds_definitions(sentence: str, expected: list[tuple[str, str]]) -> None:
@@ -55,6 +58,9 @@ def test_finds_definitions(sentence: str, expected: list[tuple[str, str]]) -> No
         # A capitalised ordinary word is not an abbreviation ("SF (long form)" order).
         "Best (but the results were inconsistent) tried it.",
         "Pavlov (Pavlovian conditioning theory) described it.",
+        # A lower-case word whose letters are scattered through the text before
+        # it is not a short form ("long form (SF)" order needs word initials).
+        "Apoptosis was increased in hepatocytes (inset).",
     ],
 )
 def test_rejects_non_definitions(sentence: str) -> None:

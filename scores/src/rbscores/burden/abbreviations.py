@@ -22,6 +22,15 @@ The algorithm, per sentence:
    scispaCy's implementation applies a similar shape check. A two-word
    parenthetical that is not a valid SF ("ATP (adenosine triphosphate)") is
    tried in this order too.
+
+   A second tightening, in the "long form (SF)" order: a short form with no
+   capital and no digit ("bp", "inset") must be explained by word initials.
+   The first letter of every long-form word, small function words aside,
+   must appear in the SF in order ("base pairs (bp)", "kilobases (kb)").
+   Without this, any lower-case word in brackets matched letters scattered
+   through the text before it, "increased in hepatocytes (inset)". Word
+   frequency cannot make the call: "inset" (Zipf 2.85) is rarer than "bp"
+   (3.83).
 2. A valid SF has a letter, starts with a letter or digit, and has 2 to 10
    letters and digits.
 3. Match the SF to the LF candidate right to left: every letter or digit of
@@ -44,6 +53,7 @@ from rbscores.burden.terms import looks_like_abbreviation
 MAX_SHORT_FORM_CHARS: Final = 10
 _LONG_FORM_WORD_SPLIT = re.compile(r"[\s\-]+")
 _TRAILING_WORD = re.compile(r"(\S+)\s*$")
+_FUNCTION_WORDS: Final = frozenset({"of", "in", "and", "the", "for", "to", "on", "with", "by"})
 
 
 @dataclass(frozen=True, slots=True)
@@ -100,7 +110,7 @@ def find_abbreviations(sentence: str, *, offset: int = 0) -> list[Abbreviation]:
         if pair is not None:
             short, short_start, long_candidate, long_base = pair
             match = _match_pair(short, long_candidate)
-            if match is not None:
+            if match is not None and _initials_fit(short, long_candidate[match:]):
                 long_start = long_base + match
                 found.append(
                     Abbreviation(
@@ -172,6 +182,31 @@ def _pair_at(sentence: str, open_index: int, close_index: int) -> tuple[str, int
     if not looks_like_abbreviation(short) or not _valid_short_form(short):
         return None
     return short, trailing.start(1), inner, inner_start
+
+
+def _initials_fit(short: str, long_form: str) -> bool:
+    """Check that a lower-case short form is explained by its long form's word initials.
+
+    Args:
+        short: The short form.
+        long_form: The matched long form.
+
+    Returns:
+        True if the short form has a capital or a digit (the paper's rule
+        applies unchanged), or if the first letters of the long form's words,
+        except :data:`_FUNCTION_WORDS`, appear in the short form in order.
+    """
+    if any(ch.isupper() or ch.isdigit() for ch in short):
+        return True
+
+    # Walk the short form once, consuming each initial in turn.
+    initials = [
+        word[0].lower()
+        for word in _LONG_FORM_WORD_SPLIT.split(long_form)
+        if word and word.lower() not in _FUNCTION_WORDS
+    ]
+    remaining = iter(short.lower())
+    return all(initial in remaining for initial in initials)
 
 
 def _valid_short_form(short: str) -> bool:

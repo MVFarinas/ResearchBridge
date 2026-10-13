@@ -13,17 +13,17 @@ unattended run. Plan.md "Phase 2"; decisions.md §1.1 (with its addendum) and §
 | Schema: papers | `Paper` (DOI, PMCID, PMID, arXiv ID; `is_retracted`, `retraction_source`, `retraction_date`, `retraction_recorded_at`; check constraints: an identifier is required, a retraction needs a source). `PaperVersion` (source, source version ID, `is_current` with a unique partial index, metadata, journal, dates, article type, source flags, content URLs, MD5/SHA-256, retrieval and last-checked times, parser version, content state). `Section` and `Paragraph` keyed by rbcore's stable IDs (the alignment unit), `Figure` for figures and tables. | `corpus/models/papers.py` |
 | Schema: licence provenance | `LicenceRecord`: one row per licence value, with the raw value, the **source field** (`LicenceField`: `pmc_license_code`, `jats_ali_license_ref`, `jats_license_xlink_href`, `jats_license_p`, ...), its normalised family/version/jurisdiction, `@specific-use`, ALI start/end dates, source URL, `retrieved_at`, `last_confirmed_at` and `superseded_at` (history is kept, never overwritten). `PermissionsBlockRecord`: every JATS `<permissions>` block (article, figure/table, paragraph, or unattached), with copyright statement, years, holders and free-to-read dates. | `corpus/models/licensing.py` |
 | Schema: derived permissions | `GatedPermissions` (abstract, on `PaperVersion`, `Figure`, `Paragraph`): `gate_status` (pending, approved, review, rejected), `can_display`, `can_rewrite`, `non_commercial`, `attribution_required`, `share_alike`, the licence, the **output licence** (share-alike sets it), decision source, reasons and time. Database check constraints refuse rows that break the §1.1 table (e.g. `can_rewrite` without `can_display`, display while not approved, rewriting an ND licence). | `corpus/models/gated.py` |
-| Gate | `gate.evaluate_version` is the only writer of decisions: rebuilds evidence from the stored records, resolves precedence, adds review triggers (unattached permissions blocks, failed parse), settles against the review queue, then decides every figure, table and paragraph with `rbcore.licences.decide_part`. Re-run on every ingestion, re-check and review resolution. | `corpus/gate.py`, `corpus/blocks.py` |
+| Gate | `gate.evaluate_version` is the only writer of decisions: rebuilds evidence from the stored records, resolves precedence, adds review triggers (unattached permissions blocks, failed parse, a version the source no longer lists), settles against the review queue, removes the stored text of a rejected version (`corpus/retention.py`), then decides every figure, table and paragraph with `rbcore.licences.decide_part`. Re-run on every ingestion, re-check and review resolution, in the same transaction as the evidence it reads. | `corpus/gate.py`, `corpus/blocks.py` |
 | Precedence | PMC `license_code` → Europe PMC `license` → JATS (`ali:license_ref`, `license/@xlink:href`) → arXiv OAI-PMH → bioRxiv API. Crossref/OpenAlex are recorded as secondary signals only. See "Precedence rules" below. | `corpus/precedence.py` |
 | Review queue | `LicenceReview` (scope version/figure/paragraph, reasons, evidence snapshot and fingerprint, proposed licence, resolution, reviewer, note). Never auto-approved. Resolving one in the admin re-runs the gate; a resolution applies only to the exact evidence it was made for, so changed evidence reopens review. | `corpus/models/licensing.py`, `corpus/reviews.py`, `corpus/admin.py` |
 | Enforcement | `displayable()` / `rewriteable()` on the querysets of `Paper`, `PaperVersion`, `Section`, `Paragraph`, `Figure` and `Annotation`, built from one set of `Q` conditions; a part is never more open than its version. `rb_backend.corpus.access` wraps them as the read API for later phases. `accesscheck` is an AST check, run by the test suite over all of `rb_backend`, that fails on any read of a gated model outside the trusted internals that bypasses those methods (managers, related managers, `_default_manager`, `.raw()`, `connection.cursor()`). | `corpus/querysets.py`, `corpus/access.py`, `corpus/accesscheck.py` |
-| Annotations | `Annotation` in W3C Web Annotation shape: `target` JSON (source + `TextQuoteSelector` + `TextPositionSelector`, validated against the paragraph's stored text), `body` (`TextualBody`, plain text or Markdown, HTML refused), `motivation`, `provenance` (`llm`, `human`, `llm_edited`), `model`, `prompt_version`, author, verification, supersession, timestamps; scoped to a paper version and paragraph. `AnnotationRevision` (full history, written on every change), `Vote`, `Report` (present, unused until Phase 7). `to_w3c()` exports the JSON-LD form. | `annotations/models.py`, `annotations/w3c.py` |
-| Ingestion | PMC Cloud Service over plain HTTPS (no AWS SDK, no credentials): bucket listing (parsed with defusedxml) → per-version JSON → JATS XML (MD5-checked against the bucket's `md5`), parsed by `rbcore.jats`. Discovery by NCBI ESearch with the bucket README's filters. All requests through `rbcore.http.PoliteFetcher` (rate-limited, neutral User-Agent, cache in `data/`). Idempotent; re-runs update stale rows. | `ingestion/pmc.py`, `eutils.py`, `pipeline.py`, `store.py`, `runtime.py` |
+| Annotations | `Annotation` in W3C Web Annotation shape: `target` JSON (source + `TextQuoteSelector` + `TextPositionSelector`, validated against the paragraph's stored text), `body` (`TextualBody`, plain text or Markdown, HTML refused), `motivation`, `provenance` (`llm`, `human`, `llm_edited`), `model`, `prompt_version`, author, verification, supersession, timestamps; scoped to a paper version and paragraph. `AnnotationRevision` (full history, written on every change), `Vote`, `Report` (present, unused until Phase 7). `annotations/w3c.py` validates the W3C target and body shapes; a JSON-LD export is not written yet (no read path needs one before Phase 4). | `annotations/models.py`, `annotations/w3c.py` |
+| Ingestion | PMC Cloud Service over plain HTTPS (no AWS SDK, no credentials): bucket listing (parsed with defusedxml) → per-version JSON → JATS XML (MD5-checked against the bucket's `md5`), parsed by `rbcore.jats`. Discovery by NCBI ESearch with the bucket README's filters. All requests through `rbcore.http.PoliteFetcher` (rate-limited, neutral User-Agent, cache in `data/`). Idempotent; re-runs update stale rows. Network requests come first; the version, licence records, content and gate decision are then written in one transaction. An article the bucket stops listing is marked withdrawn and held for review. | `ingestion/pmc.py`, `eutils.py`, `pipeline.py`, `store.py`, `runtime.py` |
 | Commands | `ingest_pmc` (`--limit`, `--query`, `--licence any/cc-by/cc0/rewrite/commercial`, `--pmcid`, `--skip-existing`, `--sync`), `recheck_licences` (network re-check through the worker, or `--offline` recompute from stored records; `--older-than-days`, `--pmcid`, `--limit`, `--sync`), `corpus_stats` (JSON counts). | `*/management/commands/` |
-| Admin | Papers (with versions inline), versions (gate fields, licence records and blocks inline), sections, paragraphs, figures, licence records, permissions blocks, the licence review queue (filter by status/scope; resolve with a licence or reject; the gate re-runs on save), annotations and their revisions, votes and reports. Licence data and annotations are read-only in the admin ("read-mostly"); only review resolutions and report moderation are editable. | `corpus/admin.py`, `annotations/admin.py` |
+| Admin | Papers (versions inline), versions (gate fields, content state, last check, withdrawal), licence records, permissions blocks, figures, paragraphs, the licence review queue (filter by status/scope; resolve with a licence or reject; the gate re-runs on save), annotations (revisions inline), votes and reports. Everything is read-only ("read-mostly") except resolving an open licence review. Sections have no admin page, and report moderation waits for Phase 7. | `corpus/admin.py`, `annotations/admin.py` |
 | Docker image | `backend/Dockerfile`: `python:3.12-slim-bookworm`, installs the pinned `requirements/backend.txt` (compiled by `make lock`; a test checks every pin equals `requirements/dev.txt`), then rbcore and the backend without re-resolving, `pip check`, `collectstatic` (WhiteNoise), unprivileged user, gunicorn. The same image runs `django-admin migrate` and `django-admin procrastinate worker`. CI builds it (`backend-image` job). | `backend/Dockerfile` |
 | CI | The Python job gets a `pgvector/pgvector:0.8.7-pg16` service on port 5433 for the backend tests. | `.github/workflows/ci.yml` |
-| Tests | 137 backend test functions (more cases with parametrisation) on Postgres via pytest-django: every precedence rule, the gate and review settling, the enforcement matrix, figure-level overrides, the access check, ingestion against recorded responses (never the network), tasks and commands, admin pages and the review flow, W3C validation, settings parsing, fixture checksums, the image lock. | `backend/tests/` |
+| Tests | 145 backend test functions (more cases with parametrisation) on Postgres via pytest-django: every precedence rule, the gate and review settling, the enforcement matrix, figure-level overrides, the access check, ingestion against recorded responses (never the network) including withdrawal, rejection and a simulated crash, tasks and commands, admin pages and the review flow, W3C validation, settings parsing, fixture checksums, the image lock. | `backend/tests/` |
 
 ## How to run
 
@@ -111,7 +111,13 @@ per day. `ingest_pmc --sync` ingests inline without the worker. `NCBI_API_KEY` i
    retracted paper. A flag PMC later withdraws is cleared only if PMC set it. Phase 5 adds
    Crossref/Retraction Watch as further sources.
 7. **TDM author manuscripts are rejected without downloading the XML**, and any previously stored
-   text of a version that turns TDM is purged (records of why stay). ESearch discovery
+   text of a version that turns TDM is purged (records of why stay). More generally, **a rejected
+   version keeps no text** (fix round 1): whenever the gate rejects a version (an
+   all-rights-reserved JATS licence, a reviewer's rejection), its sections, paragraphs and figures
+   are deleted in the same transaction. The article-level permissions blocks that justify the
+   rejection stay active, so re-evaluation reaches the same decision; the version's content state
+   becomes `removed`, and its XML is fetched again only if new evidence stops the gate rejecting
+   it. ESearch discovery
    deliberately includes `author_manuscript[Filter]` with `--licence any`, so the gate's refusal
    is exercised on real data; use `--licence cc-by` (or `rewrite`, `commercial`) to avoid them.
 8. **A licence that permits display still waits for parsed full text** (`pending`) before any
@@ -132,6 +138,19 @@ per day. `ingest_pmc --sync` ingests inline without the worker. `NCBI_API_KEY` i
     ingested at a time per process.
 13. **Ruff `RUF012` is off for model modules** (Django `Meta` options are mutable class attributes
     by design); migrations are excluded from docstring rules as generated code.
+14. **Withdrawn articles go to review, not straight to deletion** (fix round 1). When the bucket
+    lists no version of a stored article, the current version records `source_withdrawn_at` (the
+    first time only, so the review evidence is stable) and `last_checked_at`, and the gate sends it
+    to licence review with no permissions. A human decides whether to keep it (for example an
+    article moved under a new PMC ID); if the bucket lists it again, the flag is cleared and the
+    automated decision applies. Ingestion reports such runs as `withdrawn`.
+15. **Evidence and decision commit together** (fix round 1). Ingestion does every network request
+    first, then writes the metadata, licence records, content and gate decision in one
+    transaction, so a crash between them cannot leave a version approved on licence records it
+    no longer has. A failed XML download still records the metadata (the version stays pending)
+    before the worker retries.
+16. **`X-Forwarded-Proto` is trusted only when `DJANGO_TRUST_PROXY_SSL_HEADER=true`** (fix round
+    1), which should be set only behind a platform proxy that sets the header.
 
 ## PMC Cloud Service terms and NLM acknowledgement
 
@@ -144,7 +163,7 @@ these terms. How each is met:
 | Do not use the PubMed Central wordmark or PMC logo; no confusingly similar marks | None used. Text references to "PMC" as a source are factual. |
 | Do not imply NLM/NIH/HHS endorsement | Stated with every acknowledgement. |
 | Redistribute only data licensed for redistribution | The licence gate: `TDM` rejected without download; display only on approved, display-permitting licences; per-figure/paragraph overrides. |
-| Keep distributed data current, or say clearly that it is not | Only the current version is served; the daily periodic re-check and `recheck_licences` re-read listings and metadata; changed XML (MD5) is re-parsed; licence-code changes are recorded with history and re-gated. |
+| Keep distributed data current, or say clearly that it is not | Only the current version is served; the daily periodic re-check (never-checked versions first) and `recheck_licences` re-read listings and metadata; changed XML (MD5) is re-parsed; licence-code changes are recorded with history and re-gated; an article no longer listed is withheld and queued for review. |
 | No warranty; NLM held harmless | Noted; the product must not present PMC data as warranted (Phase 4 terms). |
 
 **Acknowledgement text** (use in the UI): "Full text and metadata from the NIH National Library of
@@ -183,7 +202,9 @@ yet and were reported as `not-in-bucket` (not stored).
 ## Pending the owner
 
 - **Hosting:** create the Render or Railway account and project (web, worker, Postgres with
-  pgvector), and set `DATABASE_URL`, `DJANGO_SECRET_KEY`, `DJANGO_ALLOWED_HOSTS` there. The image
+  pgvector), and set `DATABASE_URL`, `DJANGO_SECRET_KEY`, `DJANGO_ALLOWED_HOSTS`, and (behind the
+  platform's HTTPS proxy) `DJANGO_TRUST_PROXY_SSL_HEADER=true` and `DJANGO_SECURE_SSL_REDIRECT=true`
+  there. Every setting is listed in `.env.example`. The image
   and its commands are ready; no hosting account was used.
 - **Cloudflare R2:** not used yet. Source XML is cached locally in `data/`; storing source files
   in R2 needs an account and bucket (§1.6).
@@ -191,6 +212,16 @@ yet and were reported as `not-in-bucket` (not stored).
 - **Seed corpus:** Plan.md asks for "a few thousand" papers chosen to cover common lay searches.
   The machinery is ready; the topic list is an editorial choice for the owner.
 - **Output-licence policy** (from Phase 0): rewrites mirror the source licence; confirm or change.
+- **psycopg is LGPL-3.0** (deviation 2): docs/conventions.md says permissive licences for every
+  direct dependency. Please confirm the exception, ideally as a numbered decisions.md entry such
+  as "LGPL libraries may be used unmodified and dynamically imported as dependencies; their source
+  is never copied or modified". It was not added to decisions.md on your behalf.
+- **Retracted papers** (deviation 6): they stay displayable (never rewriteable) on the assumption
+  that Phase 4 shows a retraction banner. If you would rather hide them until that banner exists,
+  it is one condition in `version_displayable_q()` (`corpus/querysets.py`) plus the matching
+  rule in the enforcement tests.
+- **Withdrawn articles:** any article the bucket stops listing appears in the review queue
+  ("no longer listed by the source"); decide whether to keep or reject each one.
 
 ## Known limitations
 
@@ -208,13 +239,56 @@ yet and were reported as `not-in-bucket` (not stored).
   (`manage.py check --deploy` flags both until then).
 - The backend tests need a running Postgres (`make db-up`); there is no SQLite fallback, because
   the constraints and the queue rely on Postgres.
+- Text removal on rejection is version-level. A figure or paragraph rejected by its own
+  `<permissions>` (inside an approved paper) is never served, but its caption or text stays
+  stored, because deleting parts of a version would break the stable IDs the rest of it uses.
+- When a rejected version's text is removed, its annotations stay but lose their paragraph link
+  (they keep `paragraph_stable_id`); nothing re-attaches them if the text later returns. Licence
+  reviews of removed figures and paragraphs are deleted with them.
+- After a reviewer approves a version whose text was removed, it stays `pending` until the next
+  re-check fetches the XML again (`recheck_licences --pmcid <id>` does it at once).
+
+## Fix round 1 (review findings)
+
+| Finding | What changed |
+|---|---|
+| C-C1, C-C7: an article removed from the bucket stayed displayable and was re-queued daily | `ingest_pmc_article` marks the stored current version `source_withdrawn_at`, records `last_checked_at`, and the gate sends it to review (deviation 14). Outcome `withdrawn`. Tests: gate and pipeline (withdraw, re-check, relist). |
+| C-C2, C-C7: never-checked versions were starved in `stale_pmcids` | Ordered `NULLS FIRST`, then by primary key; the test now includes a never-checked version that must come first. |
+| C-C3: evidence and decision were written in separate transactions | One transaction after all network requests (deviation 15). Test: a simulated crash before the gate leaves the old evidence and decision together. |
+| C-C4: the NCBI API key could appear in error messages | `search_pmc` re-raises fetch errors with the key redacted and without the chained exception. Test included. |
+| C-C5: rejected versions kept their text | The gate removes the text of any rejected version, keeping the article-level evidence (decision 7, `corpus/retention.py`). Tests: JATS all-rights-reserved, reviewer rejection, and text fetched again once the gate stops rejecting. |
+| C-C6: inaccurate notes | `to_w3c()` claim removed; the Admin row lists what is registered. |
+| C-C9: `X-Forwarded-Proto` trusted unconditionally | Behind `DJANGO_TRUST_PROXY_SSL_HEADER` (default false); tested in `envconfig`. |
+| C-C10, S-L1: LGPL psycopg exception | Listed under "Pending the owner" for an explicit decision; not written into decisions.md on the owner's behalf. |
+| S-C1: retracted papers stay displayable | Owner decision; listed under "Pending the owner" with the one-line alternative. Behaviour unchanged. |
+| S-D1: settings missing from `.env.example` | Added `DJANGO_CSRF_TRUSTED_ORIGINS`, `DJANGO_SECURE_SSL_REDIRECT`, `DJANGO_TRUST_PROXY_SSL_HEADER`, `DJANGO_STATIC_ROOT`, `RB_DB_CONN_MAX_AGE`, `RB_LOG_LEVEL`. |
+| S-S1: few block comments in tests | Arrange/act/assert comments in the longer tests; comments in `corpus_stats()` and the worker tasks. |
+| S-H1: build evidence | See "Final verification". |
+| C-C8: no root `.dockerignore` | Not changed: `backend/Dockerfile.dockerignore` is the ignore file BuildKit uses for `-f backend/Dockerfile` (it takes precedence over a root `.dockerignore`), and it already excludes `.venv`, `data`, `.worktrees`, caches, tests and `backend/staticfiles` by allow-listing only `requirements/backend.txt`, `libs/rbcore/` and `backend/`. The rebuild in this round sent a 122 kB context (the local `.venv` alone is 266 MB) and the image has no `/src/backend/tests`. |
+
+`corpus_stats` also reports content states and withdrawn versions now. Migration
+`corpus/0003_version_withdrawal_and_removed_content` adds `source_withdrawn_at` and the `removed`
+content state.
 
 ## Final verification
 
 From a fresh `.venv` (`rm -rf .venv && make setup`) with cleared caches and the `rb-phase2`
 database on port 5433: `make check` passed (ruff lint and format, docstring and lock checks, mypy
 on backend, rbcore and tools, and pytest with 252 backend cases, 257 rbcore and 11 tools).
-`docker build -f backend/Dockerfile .` succeeded, and the image ran `django-admin check --deploy` as
-the unprivileged `app` user. The database counts above were re-read from the live database with
+`docker build -f backend/Dockerfile .` succeeded on the second attempt (the first, at 04:00, timed
+out pulling the base image with `DeadlineExceeded`; the retry built all 13 steps), and the image
+ran `django-admin check --deploy` as the unprivileged `app` user. The database counts above were re-read from the live database with
 `corpus_stats` before shutdown and matched. `docker compose -p rb-phase2 down` was run at the end; the
 named volume keeps the ingested corpus locally.
+
+Fix round 1 (2026-10-13, evening): from a fresh `.venv` (`rm -rf .venv` plus every cache, then
+`make setup`), `make check` passed: ruff lint and format, docstring and lock checks, mypy on
+backend, rbcore and tools, and pytest with 260 backend cases (145 test functions), 257 rbcore and
+11 tools. `docker build -f backend/Dockerfile .` succeeded (log in the gitignored
+`data/logs/docker-build.log`, which now holds this build), and `django-admin check --deploy` in
+the image, with `DJANGO_SECURE_SSL_REDIRECT` and `DJANGO_TRUST_PROXY_SSL_HEADER` set, reported
+only the expected HSTS warning (`data/logs/docker-check-deploy.log`). On the local corpus, the new
+migration applied cleanly; `recheck_licences --offline` recomputed all 241 versions with 0
+changes, and `corpus_stats` matched the counts above; a live `recheck_licences --sync` of three
+stored articles (two approved, one TDM) reported all three `unchanged`.
+`docker compose -p rb-phase2 down` was run at the end.

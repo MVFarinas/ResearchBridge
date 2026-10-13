@@ -15,8 +15,8 @@ inserted verbatim from [validation_1_tables.md](validation_1_tables.md), both wr
 - **Readability composite:** ranks the lay summary easier in **88.8%** of eLife pairs (95% CI
   84.2-92.2) and **66.9%** of PLOS pairs (64.3-69.3); 70.1% pooled (67.9-72.3). Length-matched:
   90.5%, 65.2% and 69.0%.
-- **Burden:** **99.6%** of eLife pairs (97.7-99.9) and **70.8%** of PLOS pairs (68.3-73.1);
-  75.1% pooled. Length-matched: 97.9%, 79.6% and 82.3%.
+- **Burden:** **99.6%** of eLife pairs (97.7-99.9) and **70.9%** of PLOS pairs (68.5-73.3);
+  75.2% pooled. Length-matched: 97.9%, 79.9% and 82.6%.
 - decisions.md §2.4 expected the lay version to score easier "in nearly every pair". That holds
   for eLife digests on both scores. It does not hold for PLOS author summaries, on either score.
 - **Jargon density alone beats the composite** (82.4% vs 70.1% pooled; exact McNemar
@@ -26,10 +26,12 @@ inserted verbatim from [validation_1_tables.md](validation_1_tables.md), both wr
 - **The composite beats Flesch-Kincaid on PLOS** (66.9% vs 59.0%, p < 0.001) **but not on
   eLife** (88.8% vs 95.0%, p = 0.006).
 - **Definition detection does not help here.** Ignoring definitions makes no significant
-  difference on full texts (pooled p = 0.355) and is slightly better when length-matched (85.0%
-  vs 82.3%, p < 0.001). Abstracts define about as many terms as lay summaries, mostly
+  difference on full texts (pooled p = 0.382) and is slightly better when length-matched (85.1%
+  vs 82.6%, p < 0.001). Abstracts define about as many terms as lay summaries, mostly
   abbreviations, so this test cannot reward definition detection. Whether a defined term
-  really costs readers nothing is a question for the "terms I don't know" study.
+  really costs readers nothing is a question for the "terms I don't know" study. The
+  detector's precision was measured separately: 88.0% (95% CI 76.2-94.4) on a held-out,
+  hand-labelled sample of 50 detections ([definition_precision.md](definition_precision.md)).
 
 ## Question and comparison unit
 
@@ -73,8 +75,11 @@ the Lay Summarisation of Scientific Literature", EMNLP 2022. Checked on 2026-10-
   authors' shared-task release of the same training and validation splits (the eLife
   validation split has the same number of records, 241).
 - We rely on the CC BY 4.0 of the underlying articles and of the authors' own card. We only
-  downloaded the data for local evaluation, into the gitignored `data/` directory; no text is
-  committed. Paper titles appear in this report as attribution.
+  downloaded the data for local evaluation, into the gitignored `data/` directory. No article
+  text is committed, apart from the short term and explanation strings quoted, with
+  attribution, in [definition_precision.md](definition_precision.md). The failure examples
+  below quote paper titles as attribution; every pair's ID and title is recorded in
+  validation_1_results.json.
 
 We did not check each paper's licence at its primary source (decisions.md §1.1). That check
 matters for papers we display or rewrite. It does not matter for local scoring.
@@ -131,8 +136,8 @@ incorrect.
 | Passive-voice rate | 33.2% [27.6, 39.4]; 5 ties | 48.5% [45.9, 51.2]; 65 ties | 46.3% [43.8, 48.7]; 70 ties |
 | Jargon density | 99.6% [97.7, 99.9] | 79.4% [77.2, 81.5] | 82.4% [80.5, 84.2] |
 | **Composite readability** | 88.8% [84.2, 92.2] | 66.9% [64.3, 69.3] | 70.1% [67.9, 72.3] |
-| **Burden** | 99.6% [97.7, 99.9] | 70.8% [68.3, 73.1] | 75.1% [72.9, 77.1] |
-| Burden, definitions ignored (ablation) | 100.0% [98.4, 100.0] | 71.5% [69.1, 73.8] | 75.8% [73.6, 77.8] |
+| **Burden** | 99.6% [97.7, 99.9] | 70.9% [68.5, 73.3] | 75.2% [73.0, 77.2] |
+| Burden, definitions ignored (ablation) | 100.0% [98.4, 100.0] | 71.6% [69.1, 73.9] | 75.8% [73.7, 77.8] |
 | Flesch-Kincaid grade (baseline, not ours) | 95.0% [91.5, 97.1] | 59.0% [56.4, 61.6] | 64.4% [62.0, 66.7] |
 
 ### Length-matched (longer text cut to whole sentences)
@@ -145,8 +150,8 @@ incorrect.
 | Passive-voice rate | 33.2% [27.6, 39.4]; 21 ties | 48.2% [45.6, 50.8]; 136 ties | 45.9% [43.5, 48.4]; 157 ties |
 | Jargon density | 99.6% [97.7, 99.9] | 80.8% [78.6, 82.8]; 3 ties | 83.6% [81.7, 85.3]; 3 ties |
 | **Composite readability** | 90.5% [86.1, 93.6] | 65.2% [62.6, 67.7] | 69.0% [66.7, 71.2] |
-| **Burden** | 97.9% [95.2, 99.1] | 79.6% [77.4, 81.6] | 82.3% [80.4, 84.1] |
-| Burden, definitions ignored (ablation) | 97.9% [95.2, 99.1] | 82.8% [80.7, 84.7] | 85.0% [83.2, 86.7] |
+| **Burden** | 97.9% [95.2, 99.1] | 79.9% [77.7, 82.0] | 82.6% [80.7, 84.4] |
+| Burden, definitions ignored (ablation) | 97.9% [95.2, 99.1] | 82.8% [80.8, 84.7] | 85.1% [83.3, 86.7] |
 | Flesch-Kincaid grade (baseline, not ours) | 96.7% [93.6, 98.3] | 57.3% [54.6, 59.9]; 2 ties | 63.1% [60.8, 65.5]; 2 ties |
 
 ### Paired comparisons (exact McNemar test on discordant pairs)
@@ -158,19 +163,19 @@ incorrect.
 | Burden vs Burden, definitions ignored (ablation), full | eLife | 240 | 0 | 1 | 0 | 1.000 |
 | Composite readability vs Flesch-Kincaid grade (baseline, not ours), full | PLOS | 705 | 215 | 107 | 349 | < 0.001 |
 | Composite readability vs Jargon density, full | PLOS | 770 | 150 | 323 | 133 | < 0.001 |
-| Burden vs Burden, definitions ignored (ablation), full | PLOS | 921 | 53 | 63 | 339 | 0.403 |
+| Burden vs Burden, definitions ignored (ablation), full | PLOS | 928 | 48 | 57 | 343 | 0.435 |
 | Composite readability vs Flesch-Kincaid grade (baseline, not ours), full | Pooled | 913 | 221 | 128 | 355 | < 0.001 |
 | Composite readability vs Jargon density, full | Pooled | 984 | 150 | 349 | 134 | < 0.001 |
-| Burden vs Burden, definitions ignored (ablation), full | Pooled | 1161 | 53 | 64 | 339 | 0.355 |
+| Burden vs Burden, definitions ignored (ablation), full | Pooled | 1168 | 48 | 58 | 343 | 0.382 |
 | Composite readability vs Flesch-Kincaid grade (baseline, not ours), matched | eLife | 213 | 5 | 20 | 3 | 0.004 |
 | Composite readability vs Jargon density, matched | eLife | 218 | 0 | 22 | 1 | < 0.001 |
 | Burden vs Burden, definitions ignored (ablation), matched | eLife | 235 | 1 | 1 | 4 | 1.000 |
 | Composite readability vs Flesch-Kincaid grade (baseline, not ours), matched | PLOS | 668 | 229 | 120 | 359 | < 0.001 |
 | Composite readability vs Jargon density, matched | PLOS | 755 | 142 | 357 | 122 | < 0.001 |
-| Burden vs Burden, definitions ignored (ablation), matched | PLOS | 1067 | 28 | 72 | 209 | < 0.001 |
+| Burden vs Burden, definitions ignored (ablation), matched | PLOS | 1082 | 18 | 58 | 218 | < 0.001 |
 | Composite readability vs Flesch-Kincaid grade (baseline, not ours), matched | Pooled | 881 | 234 | 140 | 362 | < 0.001 |
 | Composite readability vs Jargon density, matched | Pooled | 973 | 142 | 379 | 123 | < 0.001 |
-| Burden vs Burden, definitions ignored (ablation), matched | Pooled | 1302 | 29 | 73 | 213 | < 0.001 |
+| Burden vs Burden, definitions ignored (ablation), matched | Pooled | 1317 | 19 | 59 | 222 | < 0.001 |
 
 ### Median word counts
 
@@ -185,8 +190,8 @@ incorrect.
 | Group | Lay undefined | Abstract undefined | Lay defined | Abstract defined |
 |---|---|---|---|---|
 | eLife | 14 | 20 | 3 | 1 |
-| PLOS | 16 | 25 | 1 | 3 |
-| Pooled | 16 | 24 | 2 | 2 |
+| PLOS | 17 | 25 | 1 | 2 |
+| Pooled | 16 | 24 | 1 | 2 |
 
 ### Median values (full texts)
 
@@ -198,7 +203,7 @@ incorrect.
 | Passive-voice rate | 0.32 | 0.22 | 0.29 | 0.29 |
 | Jargon density | 0.10 | 0.20 | 0.14 | 0.17 |
 | **Composite readability** | -0.51 | 0.00 | -0.04 | 0.11 |
-| **Burden** | 13.48 | 60.31 | 40.58 | 50.64 |
+| **Burden** | 13.67 | 62.31 | 41.75 | 51.55 |
 | Burden, definitions ignored (ablation) | 18.49 | 68.41 | 45.12 | 55.80 |
 | Flesch-Kincaid grade (baseline, not ours) | 13.15 | 16.94 | 16.73 | 17.11 |
 
@@ -213,9 +218,12 @@ lower on jargon density (−0.93) and nominalisation (−0.48). None of the 27 f
 These digests are plainly worded but written in longer, more passive sentences than their
 abstracts, which are terse. The worst cases are:
 
-- elife-validation-59, the Suv39 H3K9 binding paper;
-- elife-validation-123, the sodium taurocholate cotransporting polypeptide receptor paper;
-- elife-validation-13, the potato famine pathogen effector paper.
+- elife-validation-59, "Impact of nucleic acid and methylated H3K9 binding activities of
+  Suv39h1 on its heterochromatin assembly";
+- elife-validation-123, "Sodium taurocholate cotransporting polypeptide is a functional receptor
+  for human hepatitis B and D virus";
+- elife-validation-13, "An effector of the Irish potato famine pathogen antagonizes a host
+  autophagy cargo receptor".
 
 Within each corpus, the length ratio does not predict how wrong the composite is (Spearman
 0.01 for eLife, 0.02 for PLOS). The pooled −0.19 reflects the difference between the corpora,
@@ -224,13 +232,15 @@ not a length effect.
 **PLOS: 456 composite failures out of 1,376.** Only 72 of these have a lay text longer than
 the abstract. The failures are spread across the syntactic features: in the median failure the
 lay text is higher on depth (+0.61 SD), sentence length (+0.36), passive rate (+0.35) and
-nominalisation (+0.26), and only jargon (−0.30) points the right way. Burden also fails on 162
+nominalisation (+0.26), and only jargon (−0.30) points the right way. Burden also fails on 163
 of the 456. PLOS author summaries are written by the authors, and Goldsack et al. (2022)
 describe them as shorter and more technical than eLife digests; these results agree. In the
 worst failures the author summary is denser than the abstract on the syntactic features. Examples:
 
-- plos-validation-1137, pneumococcal competence (lay 122 words, abstract 225);
-- plos-validation-1223, Schistosoma time-series forecasting.
+- plos-validation-1137, "Pneumococcal Competence Coordination Relies on a Cell-Contact Sensing
+  Mechanism" (lay 122 words, abstract 225);
+- plos-validation-1223, "State–Space Forecasting of Schistosoma haematobium Time-Series in
+  Niono, Mali".
 
 Some of these pairs may be ones where the lay summary really is no easier. A genre label is
 not a difficulty judgement.
@@ -244,8 +254,8 @@ not a difficulty judgement.
   avoiding jargon, which would make a refit circular. Validation 2's human pairwise judgements
   are the right data for fitting weights. Until then, report the features separately and
   treat the composite as the weakest part of the readability score.
-- **The burden score separates the genres better than the composite** (75.1% vs 70.1% pooled,
-  and 82.3% length-matched). It does so mainly through word familiarity, which overlaps with
+- **The burden score separates the genres better than the composite** (75.2% vs 70.1% pooled,
+  and 82.6% length-matched). It does so mainly through word familiarity, which overlaps with
   jargon density by design (decisions.md §2.4 lists jargon under readability and unfamiliar
   terms under burden). What keeps the two scores separable is that burden subtracts defined
   terms, counts each unfamiliar word once, and adds citations. Validation 1 gives no evidence
@@ -266,8 +276,12 @@ not a difficulty judgement.
   - a term's core now starts after a determiner.
 
   These changes were made because inspected outputs were wrong (for example, one technical term
-  "defined" by another), not to raise the scores. Even so, the validation split was not
-  strictly held out. A fresh sample, such as training-split pairs not used for calibration,
+  "defined" by another), not to raise the scores. In review fix round 1, definition detection
+  was tightened again (stock parentheticals, lists, names and clauses are no longer definitions;
+  see [definition_precision.md](definition_precision.md)) and unbracketed eLife citations
+  ("Smith et al., 2020") became citation markers. Those changes were developed on the committed
+  JATS fixtures and on 80 inspected validation-split pairs, and every number here was then
+  re-run. Even so, the validation split was not strictly held out. A fresh sample, such as training-split pairs not used for calibration,
   should confirm the numbers.
 - **Corpus artefacts.** The texts went through the corpus's tokenisation and our detokenising.
   Superscripts, italics and some symbols were lost, and stray spacing may remain.

@@ -55,6 +55,24 @@ def render_tables(results: Mapping[str, Any]) -> str:
             lines.append("| " + " | ".join(cells) + " |")
         lines.append("")
 
+    # Paired comparisons: exact McNemar tests on the same pairs.
+    lines.append("#### Paired comparisons (exact McNemar test on discordant pairs)")
+    lines.append("")
+    lines.append("| Comparison | Group | Both right | Only first | Only second | Neither | p |")
+    lines.append("|---|---|---|---|---|---|---|")
+    for comparison in COMPARISONS:
+        for group in groups:
+            for row in results["paired"][comparison][group]:
+                label = (
+                    f"{_plain(row['first'])} vs {_plain(row['second'])}, "
+                    f"{'full' if comparison == 'full' else 'matched'}"
+                )
+                counts = [row[k] for k in ("both", "only_first", "only_second", "neither")]
+                cells = [label, _GROUP_LABELS[group], *map(str, counts)]
+                cells.append(_p_value(row["mcnemar_exact_p"]))
+                lines.append("| " + " | ".join(cells) + " |")
+    lines.append("")
+
     # Median word counts, to show what length matching did.
     lines.append("#### Median word counts")
     lines.append("")
@@ -72,6 +90,20 @@ def render_tables(results: Mapping[str, Any]) -> str:
             )
         ]
         lines.append(f"| {_GROUP_LABELS[group]} | " + " | ".join(counts) + " |")
+    lines.append("")
+
+    # How many terms the burden pipeline counts and removes as defined.
+    lines.append("#### Median term counts per text (full texts)")
+    lines.append("")
+    lines.append("| Group | Lay undefined | Abstract undefined | Lay defined | Abstract defined |")
+    lines.append("|---|---|---|---|---|")
+    for group in groups:
+        terms = results["terms"][group]
+        values = [
+            _number(terms[key], 0)
+            for key in ("lay_undefined", "technical_undefined", "lay_defined", "technical_defined")
+        ]
+        lines.append(f"| {_GROUP_LABELS[group]} | " + " | ".join(values) + " |")
     lines.append("")
     return "\n".join(lines)
 
@@ -116,6 +148,30 @@ def _share_cell(row: Mapping[str, Any]) -> str:
     if row["ties"]:
         cell += f"; {row['ties']} ties"
     return cell
+
+
+def _plain(metric: str) -> str:
+    """Return a metric's label without markdown emphasis.
+
+    Args:
+        metric: Metric name.
+
+    Returns:
+        The label, e.g. "Composite readability".
+    """
+    return _METRIC_LABELS[metric].replace("**", "")
+
+
+def _p_value(value: float) -> str:
+    """Format a p-value compactly.
+
+    Args:
+        value: The p-value.
+
+    Returns:
+        "< 0.001" for small values, else three decimals.
+    """
+    return "< 0.001" if value < 0.001 else f"{value:.3f}"
 
 
 def _number(value: float | None, places: int) -> str:

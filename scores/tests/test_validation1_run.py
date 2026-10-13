@@ -22,6 +22,7 @@ from rbscores.validation1.run import (
     compare,
     evaluate_pair,
     failure_analysis,
+    paired_comparison,
     summarise,
     truncate_to_words,
 )
@@ -146,6 +147,7 @@ def test_failure_analysis_and_summary() -> None:
     assert "| **Composite readability** | 100.0% [" in tables
     assert "Pooled (n = 2)" in tables
     assert "| eLife | 100 | 100 | 100 | 100 |" in tables
+    assert "| eLife | 0 | 0 | 0 | 0 |" in tables
     assert "eLife lay | eLife abstract" in render_medians(summary)
 
 
@@ -170,3 +172,20 @@ def test_workflow_download_calibrate_and_run(synthetic_hub: PoliteFetcher, tmp_p
     assert results["comparisons"]["full"]["elife"]["composite"]["lay_easier"] == 2
     assert results["dataset"]["elife"]["dataset"] == "BioLaySumm/BioLaySumm2025-eLife"
     assert (data_dir / "validation1" / "per-pair.jsonl").read_text().count("\n") == 2
+
+
+def test_paired_comparison_counts_discordant_pairs() -> None:
+    """McNemar counts come from pairs exactly one metric gets right."""
+    results = [
+        _result("1", "elife", _metrics(-1.0, 10), _metrics(1.0, 20)),
+        _result("2", "elife", _metrics(-1.0, 30), _metrics(1.0, 20)),
+        _result("3", "elife", _metrics(2.0, 30), _metrics(1.0, 20)),
+    ]
+    row = paired_comparison(results, "composite", "burden", "full")
+    assert (row["both"], row["only_first"], row["only_second"], row["neither"]) == (1, 1, 0, 1)
+    assert row["mcnemar_exact_p"] == 1.0
+    tables = render_tables(summarise(results, metadata={}))
+    assert (
+        "| Composite readability vs Flesch-Kincaid grade (baseline, not ours), full | eLife |"
+        in tables
+    )

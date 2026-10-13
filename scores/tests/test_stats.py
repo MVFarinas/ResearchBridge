@@ -41,6 +41,9 @@ def test_sign_test() -> None:
     assert sign_test_p(0, 10) == pytest.approx(2 / 1024)
     assert sign_test_p(8, 10) == pytest.approx(2 * (1 + 10 + 45) / 1024)
     assert sign_test_p(0, 0) == 1.0
+    # Large n (validation 1 has 1,617 pairs) must not overflow.
+    assert sign_test_p(1300, 1617) < 1e-100
+    assert sign_test_p(800, 1600) > 0.5
 
 
 def test_average_ranks_handle_ties() -> None:

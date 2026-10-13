@@ -75,7 +75,8 @@ def sign_test_p(successes: int, n: int) -> float:
         return 1.0
     extreme = min(successes, n - successes)
     tail = sum(math.comb(n, k) for k in range(extreme + 1))
-    return min(1.0, float(2 * tail) / float(2**n))
+    # Exact integer ratio: int / int division stays accurate for large n.
+    return min(1.0, 2 * tail / (1 << n))
 
 
 def average_ranks(values: Sequence[float]) -> list[float]:

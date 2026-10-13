@@ -22,6 +22,11 @@ Metrics: the five readability features, the composite, the burden score, the
 burden score with definition detection switched off (an ablation: does
 removing defined terms help?), and the Flesch-Kincaid grade as a familiar
 baseline that is not part of either score.
+
+Two metrics are compared on the same pairs with an exact McNemar test (a sign
+test on the pairs exactly one of them ranks correctly): the composite against
+Flesch-Kincaid and against jargon density alone, and the burden score against
+its no-definitions ablation (:data:`PAIRED_COMPARISONS`).
 """
 
 from __future__ import annotations
@@ -54,6 +59,11 @@ METRICS: Final = (
 """Every metric compared, each oriented so that lower means easier."""
 
 COMPARISONS: Final = ("full", "length_matched")
+PAIRED_COMPARISONS: Final = (
+    ("composite", "flesch_kincaid_grade"),
+    ("composite", "jargon_density"),
+    ("burden", "burden_no_definitions"),
+)
 _MAX_EXAMPLES: Final = 10
 
 
@@ -253,6 +263,44 @@ def compare(results: Sequence[PairResult], metric: str, comparison: str) -> dict
     }
 
 
+def paired_comparison(
+    results: Sequence[PairResult], first: str, second: str, comparison: str
+) -> dict[str, Any]:
+    """Compare two metrics on the same pairs with an exact McNemar test.
+
+    Args:
+        results: Pair results.
+        first: First metric.
+        second: Second metric.
+        comparison: "full" or "length_matched".
+
+    Returns:
+        How many pairs both, only the first, only the second, or neither rank
+        correctly (ties count as incorrect), and the two-sided exact p-value
+        on the discordant pairs.
+    """
+    counts = {"both": 0, "only_first": 0, "only_second": 0, "neither": 0}
+    for result in results:
+        lay, technical = result.texts(comparison)
+        first_right = lay.values[first] < technical.values[first]
+        second_right = lay.values[second] < technical.values[second]
+        if first_right and second_right:
+            counts["both"] += 1
+        elif first_right:
+            counts["only_first"] += 1
+        elif second_right:
+            counts["only_second"] += 1
+        else:
+            counts["neither"] += 1
+    discordant = counts["only_first"] + counts["only_second"]
+    return {
+        "first": first,
+        "second": second,
+        **counts,
+        "mcnemar_exact_p": sign_test_p(counts["only_first"], discordant),
+    }
+
+
 def failure_analysis(results: Sequence[PairResult]) -> dict[str, Any]:
     """Describe the pairs the composite gets wrong (full comparison).
 
@@ -333,7 +381,8 @@ def summarise(
 
     Returns:
         A JSON-serialisable mapping: provisional notice, metadata, per-source
-        and pooled comparisons for every metric, and the failure analysis.
+        and pooled comparisons for every metric, paired metric comparisons,
+        median word and term counts, and the failure analysis.
     """
     groups = _groups(results)
     return {
@@ -349,6 +398,13 @@ def summarise(
             }
             for comparison in COMPARISONS
         },
+        "paired": {
+            comparison: {
+                name: [paired_comparison(items, a, b, comparison) for a, b in PAIRED_COMPARISONS]
+                for name, items in groups.items()
+            }
+            for comparison in COMPARISONS
+        },
         "words": {
             name: {
                 "lay_median": median([float(r.lay.words) for r in items]),
@@ -357,6 +413,15 @@ def summarise(
                 "matched_technical_median": median(
                     [float(r.technical_matched.words) for r in items]
                 ),
+            }
+            for name, items in groups.items()
+        },
+        "terms": {
+            name: {
+                "lay_undefined": median([float(r.lay.undefined_terms) for r in items]),
+                "technical_undefined": median([float(r.technical.undefined_terms) for r in items]),
+                "lay_defined": median([float(r.lay.defined_terms) for r in items]),
+                "technical_defined": median([float(r.technical.defined_terms) for r in items]),
             }
             for name, items in groups.items()
         },

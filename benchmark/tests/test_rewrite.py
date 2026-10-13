@@ -5,13 +5,14 @@ Model outputs here are SYNTHETIC strings written for the tests.
 
 from __future__ import annotations
 
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
 
 from rbbench.clients import ClientKind, LiveCallsNotAllowedError, make_client
 from rbbench.fakes import SYNTHETIC_ADDITION, SYNTHETIC_REWRITE_PREFIX
-from rbbench.ingest import Passage, SourceUnit
+from rbbench.ingest import LicenceGateError, Passage, SourceUnit
 from rbbench.paths import CONFIG_DIR
 from rbbench.rewrite.harness import MatrixError, load_matrix, run_rewrites
 from rbbench.rewrite.markup import format_source_paragraphs, parse_rewrite
@@ -210,6 +211,54 @@ def test_harness_records_failed_and_invalid_calls() -> None:
     assert "call failed" in records[0].errors[0]
     assert any("missing paragraph id" in e for e in records[1].errors)
     assert records[1].raw_output.startswith("<rewrite")
+
+
+def _counting_client() -> FakeLLMClient:
+    """A fake client that records calls and answers with a SYNTHETIC aligned output."""
+    text = '<rewrite id="sec1-p1">A.</rewrite><rewrite id="sec1-p2">B.</rewrite>'
+    return FakeLLMClient(lambda _request: text)
+
+
+@pytest.mark.parametrize("refused", ["sec1-p1", "sec1-p2"])
+def test_passage_over_a_non_rewritable_unit_makes_no_call(refused: str) -> None:
+    """One gate-refused paragraph anywhere in the batch stops the run before any call."""
+    passage, units = _synthetic_passage()
+    key = f"synthetic-paper#{refused}"
+    units[key] = replace(units[key], can_rewrite=False)
+    # A second, clean passage first: it must not be sent either.
+    clean_units = {
+        k.replace("synthetic-paper", "synthetic-clean"): replace(
+            u, unit_id=k.replace("synthetic-paper", "synthetic-clean"), paper_key="synthetic-clean"
+        )
+        for k, u in _synthetic_passage()[1].items()
+    }
+    clean = replace(passage, passage_id="synthetic-clean:discussion", paper_key="synthetic-clean")
+    client = _counting_client()
+    matrix = load_matrix(CONFIG_DIR / "rewrite_matrix_v1.yaml")
+    with pytest.raises(LicenceGateError, match=f"paragraph {key} may not be rewritten"):
+        run_rewrites(
+            [clean, passage], {**clean_units, **units}, {}, matrix, client, requested_model="m"
+        )
+    assert client.calls == []
+
+
+def test_passage_with_unknown_paragraph_or_unusable_paper_is_refused() -> None:
+    """A paragraph with no unit, or a paper outside the usable set, fails closed."""
+    passage, units = _synthetic_passage()
+    matrix = load_matrix(CONFIG_DIR / "rewrite_matrix_v1.yaml")
+    client = _counting_client()
+    edited = replace(passage, paragraph_ids=(*passage.paragraph_ids, "sec9-p9"))
+    with pytest.raises(LicenceGateError, match="synthetic-paper#sec9-p9 has no ingested unit"):
+        run_rewrites([edited], units, {}, matrix, client, requested_model="m")
+    with pytest.raises(LicenceGateError, match="paper synthetic-paper is not usable"):
+        run_rewrites([passage], units, {}, matrix, client, requested_model="m", usable_papers=set())
+    assert client.calls == []
+    # With the paper in the usable set, the same passage is rewritten.
+    records = run_rewrites(
+        [passage], units, {}, matrix, client, requested_model="m", usable_papers={"synthetic-paper"}
+    )
+    assert all(r.valid for r in records)
+    assert len(client.calls) == len(matrix.arms)
 
 
 def test_truncated_output_is_invalid() -> None:

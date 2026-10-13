@@ -10,14 +10,18 @@ rated (decisions.md §1.4: about 20-30 claims per rewrite, so roughly 350-650
 words). Passages are proposed by a deterministic strategy and recorded as
 PROPOSED, so the owner can adjust them before any rewrite is generated.
 
-The §1.1 gate runs twice: per paper (:func:`rbbench.papers.benchmark_licence`)
+The §1.1 gate runs twice at ingest: per paper
+(:func:`rbbench.papers.benchmark_licence`, plus a refusal of retracted papers)
 and per paragraph (:func:`rbcore.licences.decide_part`), and a paragraph that
-may not be rewritten never enters a passage.
+may not be rewritten never enters a proposed passage. Because the owner may
+edit ``passages.jsonl`` afterwards, every later step that sends source text
+anywhere re-checks it with :func:`gate_violations` /
+:func:`require_rewritable`, which fail closed.
 """
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Sequence
+from collections.abc import Collection, Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
@@ -35,6 +39,7 @@ from rbcore.jats import Article, Paragraph, parse_jats
 from rbcore.licences import LicenceDecision, LicenceEvidence, LicenceField, decide_part
 
 PROPOSED = "PROPOSED"
+RETRACTED_REASON = "retracted (PMC is_retracted)"
 DEFAULT_STRATEGIES = ("discussion", "results", "body")
 MIN_PARAGRAPH_WORDS = 20
 
@@ -72,6 +77,8 @@ class PaperSource:
         paper_key: Version-qualified key, e.g. "PMC7853715.1".
         jats: The JATS bytes (untrusted; parsed by rbcore.jats).
         evidence: Primary-source licence evidence.
+        retracted: Whether the primary source marks the paper retracted
+            (PMC ``is_retracted``); a retracted paper is never usable.
         metadata: Extra fields carried into the paper record (slot, study
             type, journal, ...).
     """
@@ -79,6 +86,7 @@ class PaperSource:
     paper_key: str
     jats: bytes
     evidence: tuple[EvidenceRecord, ...]
+    retracted: bool = False
     metadata: dict[str, Any] = field(default_factory=dict)
 
 
@@ -214,7 +222,9 @@ class IngestedPaper:
         journal: Journal title.
         article_type: JATS ``@article-type``.
         licence: Licence label from the decision.
-        usable: Whether the §1.1 gate allows benchmark use.
+        usable: Whether the §1.1 gate allows benchmark use (and the paper is
+            not retracted).
+        retracted: Whether the primary source marks the paper retracted.
         licence_reasons: The decision's reasons and any refusal reasons.
         evidence: Primary-source evidence used.
         lay_summaries: Expert lay summaries as (title, text) pairs.
@@ -230,6 +240,7 @@ class IngestedPaper:
     article_type: str | None
     licence: str
     usable: bool
+    retracted: bool
     licence_reasons: tuple[str, ...]
     evidence: tuple[EvidenceRecord, ...]
     lay_summaries: tuple[tuple[str, str], ...]
@@ -252,6 +263,7 @@ class IngestedPaper:
             "article_type": self.article_type,
             "licence": self.licence,
             "usable": self.usable,
+            "retracted": self.retracted,
             "licence_reasons": list(self.licence_reasons),
             "evidence": [evidence_dict(e) for e in self.evidence],
             "lay_summaries": [{"title": t, "text": x} for t, x in self.lay_summaries],
@@ -296,16 +308,24 @@ def ingest_paper(
     Returns:
         The ingested paper. Units are produced even when the paper is not
         usable, each marked ``can_rewrite=False``, so the refusal is visible.
+        A retracted paper is refused whatever its licence.
 
     Raises:
         rbcore.jats.JatsParseError: If the JATS is malformed or unsafe.
     """
     article = parse_jats(source.jats)
     gate = benchmark_licence(article, [e.evidence() for e in source.evidence], today=today)
-    units = _units(source.paper_key, article, gate.usable, gate.decision)
+
+    # Retraction is checked here, not only at selection: a paper can be
+    # retracted after the shortlist was built, and ingest feeds the rewrite.
+    refusals = (*gate.reasons, *((RETRACTED_REASON,) if source.retracted else ()))
+    usable = not refusals
+
+    # Units carry the paper-level result, so a refused paper has no rewritable unit.
+    units = _units(source.paper_key, article, usable, gate.decision)
     passage = (
         propose_passage(source.paper_key, article, units, min_words=min_words, max_words=max_words)
-        if gate.usable
+        if usable
         else None
     )
     return IngestedPaper(
@@ -315,8 +335,9 @@ def ingest_paper(
         journal=article.journal.title,
         article_type=article.article_type,
         licence=gate.decision.licence.label,
-        usable=gate.usable,
-        licence_reasons=(*gate.decision.reasons, *gate.reasons),
+        usable=usable,
+        retracted=source.retracted,
+        licence_reasons=(*gate.decision.reasons, *refusals),
         evidence=source.evidence,
         lay_summaries=tuple((s.title or s.abstract_type, s.text) for s in lay_summaries(article)),
         units=units,
@@ -498,6 +519,81 @@ def load_passages(out_dir: Path) -> list[Passage]:
         Passages in file order.
     """
     return [Passage.from_record(r) for r in read_jsonl(out_dir / PASSAGES_FILE)]
+
+
+def load_usable_papers(out_dir: Path) -> set[str]:
+    """Return the keys of the papers the ingest gate found usable.
+
+    Args:
+        out_dir: The ingest directory.
+
+    Returns:
+        Paper keys whose ``papers.jsonl`` record says ``usable`` true.
+    """
+    return {str(r["paper_key"]) for r in read_jsonl(out_dir / PAPERS_FILE) if r.get("usable")}
+
+
+class LicenceGateError(ValueError):
+    """Raised when source text that the §1.1 gate refused would be rewritten or shown."""
+
+
+def gate_violations(
+    paper_key: str,
+    paragraph_ids: Sequence[str],
+    units: Mapping[str, SourceUnit],
+    usable_papers: Collection[str] | None = None,
+) -> list[str]:
+    """Check that every paragraph of a passage may be rewritten (§1.1).
+
+    Fails closed: a paragraph without a unit, a unit with ``can_rewrite``
+    false, or (when ``usable_papers`` is given) a paper the ingest gate did
+    not find usable is a violation.
+
+    Args:
+        paper_key: The paper.
+        paragraph_ids: The paragraphs to be rewritten or shown.
+        units: Units by unit ID, from ingest.
+        usable_papers: Keys of usable papers, or None to rely on the units.
+
+    Returns:
+        One message per violation; empty when everything may be rewritten.
+    """
+    violations: list[str] = []
+    if usable_papers is not None and paper_key not in usable_papers:
+        violations.append(f"paper {paper_key} is not usable (licence gate or retraction)")
+    for paragraph_id in paragraph_ids:
+        unit = units.get(f"{paper_key}#{paragraph_id}")
+        if unit is None:
+            violations.append(f"paragraph {paper_key}#{paragraph_id} has no ingested unit")
+        elif not unit.can_rewrite:
+            violations.append(f"paragraph {unit.unit_id} may not be rewritten")
+    return violations
+
+
+def require_rewritable(
+    passages: Sequence[Passage],
+    units: Mapping[str, SourceUnit],
+    usable_papers: Collection[str] | None = None,
+) -> None:
+    """Refuse the whole batch if any passage touches text the gate refused.
+
+    Args:
+        passages: Passages about to be rewritten.
+        units: Units by unit ID.
+        usable_papers: Keys of usable papers, or None to rely on the units.
+
+    Raises:
+        LicenceGateError: Listing every violation, before anything is sent.
+    """
+    violations = [
+        f"{passage.passage_id}: {message}"
+        for passage in passages
+        for message in gate_violations(
+            passage.paper_key, passage.paragraph_ids, units, usable_papers
+        )
+    ]
+    if violations:
+        raise LicenceGateError("licence gate (§1.1) refused: " + "; ".join(violations))
 
 
 def passage_units(passage: Passage, units: dict[str, SourceUnit]) -> list[SourceUnit]:

@@ -6,18 +6,23 @@ timestamp, token counts, whether the output was synthetic, the parse result
 (valid or the list of errors), and the raw output for audit. A failed call is
 recorded too, with its error, so a run never silently drops a cell of the
 matrix.
+
+Before any call, every passage is re-checked against the §1.1 gate
+(:func:`rbbench.ingest.require_rewritable`): the owner may edit
+``passages.jsonl``, so a passage over a paragraph or paper the ingest gate
+refused stops the whole run and nothing is sent.
 """
 
 from __future__ import annotations
 
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Collection, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 import yaml
 
-from rbbench.ingest import Passage, SourceUnit, passage_units
+from rbbench.ingest import Passage, SourceUnit, passage_units, require_rewritable
 from rbbench.jsonl import utc_now_iso
 from rbbench.prompts import PromptTemplate, load_prompt
 from rbbench.rewrite.markup import (
@@ -223,6 +228,7 @@ def run_rewrites(
     repeats: int = 1,
     prompt: PromptTemplate | None = None,
     progress: Callable[[str], None] | None = None,
+    usable_papers: Collection[str] | None = None,
 ) -> list[RewriteRecord]:
     """Rewrite every passage once per arm (and per repeat).
 
@@ -236,19 +242,31 @@ def run_rewrites(
         repeats: Rewrites per (passage, arm), for run-to-run variation.
         prompt: The prompt; loaded from the matrix's version when None.
         progress: Optional callback for one-line progress messages.
+        usable_papers: Keys of the papers the ingest gate found usable; when
+            given, a passage of any other paper is refused too.
 
     Returns:
         One record per attempt, including failed ones.
+
+    Raises:
+        rbbench.ingest.LicenceGateError: If any passage includes a paragraph
+            that may not be rewritten, has no unit, or belongs to an unusable
+            paper. Raised before any call is made.
     """
+    # The §1.1 gate again, for the whole batch, before a single call.
+    require_rewritable(passages, units, usable_papers)
+
     template = prompt or load_prompt(matrix.prompt)
     report = progress or (lambda _message: None)
     records: list[RewriteRecord] = []
     for passage in passages:
+        # One rendered prompt per passage, shared by every arm and repeat.
         source = tuple((u.paragraph_id, u.text) for u in passage_units(passage, units))
         system, user = template.render(
             title=titles.get(passage.paper_key, ""),
             source_paragraphs=format_source_paragraphs(source),
         )
+        # Every arm x repeat is one cell of the matrix, recorded even when it fails.
         for arm in matrix.arms:
             for repeat in range(1, repeats + 1):
                 request = LLMRequest.from_prompt(
@@ -336,6 +354,7 @@ def _attempt(
             input_tokens=0,
             output_tokens=0,
         )
+    # Validate the alignment contract; a truncated answer is never valid.
     parsed = parse_rewrite(
         response.text, [pid for pid, _ in source], max_added_sentences=max_added_sentences
     )

@@ -43,6 +43,7 @@ def candidate_sources(candidates: Sequence[Candidate], fetcher: PoliteFetcher) -
     """
     sources: list[PaperSource] = []
     for candidate in candidates:
+        # The metadata JSON is the primary source for both licence and retraction.
         record = pmc.fetch_record(fetcher, candidate.pmcid, candidate.pmc_version)
         evidence = (
             EvidenceRecord(
@@ -57,13 +58,14 @@ def candidate_sources(candidates: Sequence[Candidate], fetcher: PoliteFetcher) -
                 paper_key=record.key,
                 jats=pmc.fetch_jats(fetcher, record),
                 evidence=evidence if record.license_code else (),
+                retracted=record.is_retracted,
                 metadata={
                     "slot": candidate.slot,
                     "option": candidate.option,
                     "study_type": candidate.study_type,
                     "pmid": candidate.pmid,
                     "pmcid": candidate.pmcid,
-                    "is_retracted": record.is_retracted,
+                    "source_url": record.json_url,
                 },
             )
         )
@@ -89,11 +91,13 @@ def fixture_sources(
     Raises:
         KeyError: If a name is not in the manifest.
     """
+    # The manifest records where each fixture came from and its licence code.
     manifest_path = fixtures_dir / "manifest.json"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     entries = {entry["file"]: entry for entry in manifest["fixtures"]}
     sources: list[PaperSource] = []
     for name in names:
+        # Only a PMC Cloud Service copy has PMC licence evidence to carry over.
         entry = entries[name]
         from_pmc = "pmc-oa-opendata" in entry["source_url"]
         evidence = (

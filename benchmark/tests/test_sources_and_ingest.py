@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from dataclasses import replace
 from pathlib import Path
 
 import httpx
@@ -23,9 +24,10 @@ from rbbench.ingest import (
     passage_units,
     write_ingest,
 )
-from rbbench.paths import RBCORE_FIXTURES_DIR
+from rbbench.paths import RBCORE_FIXTURES_DIR, SELECTION_DIR
+from rbbench.selection.shortlist import read_candidates
 from rbbench.sources import pmc
-from rbbench.sources.papers import fixture_sources
+from rbbench.sources.papers import candidate_sources, fixture_sources
 from rbbench.sources.safexml import UnsafeXmlError, parse_untrusted_xml
 from rbcore.http import PoliteFetcher, RateLimiter
 
@@ -162,3 +164,51 @@ def test_ingest_outputs_round_trip(tmp_path: Path) -> None:
     first = json.loads(records[0])
     assert first["evidence"][0]["field"] == "pmc:license_code"
     assert first["evidence"][0]["retrieved"] == "2026-10-13"
+
+
+def test_retracted_paper_is_refused_whatever_its_licence() -> None:
+    """A source marked retracted is unusable: no passage and no rewritable unit."""
+    source = next(s for s in fixture_sources(RBCORE_FIXTURES_DIR) if "65180" in s.paper_key)
+    assert ingest_paper(source).usable
+    retracted = PaperSource(source.paper_key, source.jats, source.evidence, retracted=True)
+    paper = ingest_paper(retracted)
+    assert not paper.usable
+    assert paper.retracted
+    assert paper.passage is None
+    assert not any(u.can_rewrite for u in paper.units)
+    assert "retracted (PMC is_retracted)" in paper.licence_reasons
+    record = paper.to_record()
+    assert record["retracted"] is True
+    assert record["usable"] is False
+
+
+def test_candidate_sources_carry_pmc_retraction(tmp_path: Path) -> None:
+    """candidate_sources sets PaperSource.retracted from the metadata's is_retracted."""
+    fixture = (RBCORE_FIXTURES_DIR / "elife-65180-pmc-s3.xml").read_bytes()
+    md5 = hashlib.md5(fixture, usedforsecurity=False).hexdigest()
+    metadata = {
+        "pmcid": "PMC7853715",
+        "version": 1,
+        "title": "Synthetic metadata title",
+        "doi": "10.7554/eLife.65180",
+        "license_code": "CC BY",
+        "is_retracted": True,
+        "is_manuscript": False,
+        "is_pmc_openaccess": True,
+        "xml_url": f"s3://pmc-oa-opendata/PMC7853715.1/PMC7853715.1.xml?md5={md5}",
+    }
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        """Serve the SYNTHETIC metadata and the real fixture JATS."""
+        if request.url.path.endswith(".json"):
+            return httpx.Response(200, json=metadata)
+        return httpx.Response(200, content=fixture)
+
+    # Any committed candidate row, pointed at the fixture's PMC ID.
+    candidate = replace(
+        read_candidates(SELECTION_DIR / "candidates.csv")[0], pmcid="PMC7853715", pmc_version=1
+    )
+    with _fetcher(httpx.MockTransport(handler), tmp_path) as fetcher:
+        (source,) = candidate_sources([candidate], fetcher)
+    assert source.retracted
+    assert not ingest_paper(source).usable

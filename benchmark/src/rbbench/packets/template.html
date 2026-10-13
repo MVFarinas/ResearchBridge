@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- No network access at all: the packet is self-contained and its text is untrusted. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:">
+<title>Faithfulness rating packet</title>
+<style>
+  :root {
+    --bg: #fbfbf8; --fg: #1d1d1b; --muted: #5c5c57; --line: #d9d8d0; --panel: #ffffff;
+    --accent: #1f5f8b; --added-bg: #fff1c2; --added-line: #b8860b; --warn: #8a1c1c; --ok: #1d6b3a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161614; --fg: #ecebe6; --muted: #a9a89f; --line: #3a3a36; --panel: #20201d;
+      --accent: #7fb6dc; --added-bg: #4a3d12; --added-line: #e0b54a; --warn: #ff8f8f; --ok: #7fd49a;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg);
+         font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header, main { max-width: 1200px; margin: 0 auto; padding: 16px; }
+  header { border-bottom: 1px solid var(--line); }
+  h1 { font-size: 1.4rem; margin: 0 0 4px; }
+  .banner { background: var(--added-bg); border-left: 4px solid var(--added-line);
+            padding: 8px 12px; margin: 8px 0; font-weight: 600; }
+  .meta { color: var(--muted); font-size: 0.9rem; }
+  .toolbar { position: sticky; top: 0; z-index: 2; background: var(--bg);
+             display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+             padding: 8px 16px; border-bottom: 1px solid var(--line); }
+  button { font: inherit; padding: 6px 12px; border: 1px solid var(--accent);
+           background: var(--panel); color: var(--accent); border-radius: 4px; cursor: pointer; }
+  button.primary { background: var(--accent); color: var(--panel); }
+  .progress { margin-left: auto; color: var(--muted); }
+  section.item { margin: 24px 0; }
+  section.item > h2 { font-size: 1.15rem; border-bottom: 2px solid var(--accent); padding-bottom: 4px; }
+  details.passage { margin: 8px 0 16px; }
+  details.passage p { color: var(--muted); font-size: 0.92rem; }
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0 8px; }
+  @media (max-width: 760px) { .pair { grid-template-columns: 1fr; } }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 12px; }
+  .panel h3 { margin: 0 0 6px; font-size: 0.95rem; color: var(--muted); font-weight: 600; }
+  mark.added { background: var(--added-bg); color: inherit; border-bottom: 2px solid var(--added-line); }
+  .claim, .para-codes { background: var(--panel); border: 1px solid var(--line); border-radius: 6px;
+                        padding: 12px; margin: 8px 0; }
+  .claim.done, .para-codes.done { border-left: 4px solid var(--ok); }
+  .claim-text { font-weight: 600; margin-bottom: 8px; }
+  .tag { display: inline-block; font-size: 0.8rem; padding: 0 6px; border-radius: 3px;
+         background: var(--added-bg); border: 1px solid var(--added-line); margin-left: 6px; font-weight: 400; }
+  fieldset { border: 0; padding: 4px 0; margin: 0; display: grid;
+             grid-template-columns: minmax(200px, 2fr) 3fr; gap: 4px 12px; align-items: start; }
+  @media (max-width: 760px) { fieldset { grid-template-columns: 1fr; } }
+  legend { float: left; padding: 0; font-size: 0.92rem; }
+  .options { display: flex; flex-wrap: wrap; gap: 4px 14px; }
+  .options label { white-space: nowrap; font-size: 0.92rem; }
+  textarea { width: 100%; font: inherit; font-size: 0.9rem; margin-top: 6px; min-height: 2.2em;
+             background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: 4px; }
+  .missing { color: var(--warn); }
+  #status { margin: 8px 16px; }
+</style>
+</head>
+<body>
+<header>
+  <h1 id="title">Faithfulness rating packet</h1>
+  <div id="banner"></div>
+  <p class="meta" id="meta"></p>
+  <p class="meta">Read the rater guide first. Answer every question for every claim, and the
+    paragraph question for every paragraph. Answers are saved in this browser as you go.
+    When finished, press <strong>Export ratings</strong> and send the downloaded file back.</p>
+</header>
+<div class="toolbar">
+  <button type="button" class="primary" id="export">Export ratings</button>
+  <button type="button" id="next-missing">Go to next unanswered</button>
+  <span class="progress" id="progress"></span>
+</div>
+<p id="status" role="status" aria-live="polite"></p>
+<main id="items"></main>
+
+<script type="application/json" id="packet-data">__PACKET_JSON__</script>
+
+<script id="rbbench-logic">
+/*
+ * Pure functions (no DOM), kept separate so tests can run them under Node.
+ */
+
+/** Return every unit of a packet: each claim, then each paragraph, in packet order. */
+function listUnits(packet) {
+  const units = [];
+  for (const item of packet.items) {
+    for (const paragraph of item.paragraphs) {
+      for (const claim of paragraph.claims) units.push({ unit: "claim", unitId: claim.unit_id });
+      units.push({ unit: "paragraph", unitId: paragraph.unit_id });
+    }
+  }
+  return units;
+}
+
+/** Return the rubric codes that apply to one unit type, in rubric order. */
+function codesFor(packet, unit) {
+  return packet.rubric.codes.filter((code) => code.unit === unit);
+}
+
+/** List the unit IDs that still lack an answer for at least one code. */
+function missingUnits(packet, state) {
+  return listUnits(packet)
+    .filter(({ unit, unitId }) => {
+      const answers = (state[unitId] && state[unitId].labels) || {};
+      return codesFor(packet, unit).some((code) => !answers[code.id]);
+    })
+    .map(({ unitId }) => unitId);
+}
+
+/** Build the export document from the packet and the saved answers. */
+function buildExport(packet, state, exportedAt) {
+  const ratings = listUnits(packet).map(({ unit, unitId }) => {
+    const saved = state[unitId] || {};
+    const labels = {};
+    for (const code of codesFor(packet, unit)) {
+      if (saved.labels && saved.labels[code.id]) labels[code.id] = saved.labels[code.id];
+    }
+    return { unit, unit_id: unitId, labels, comment: saved.comment || "" };
+  });
+  return {
+    format: "rbbench-ratings/1",
+    packet_id: packet.packet_id,
+    rater_id: packet.rater_id,
+    rubric_id: packet.rubric.id,
+    rubric_sha256: packet.rubric.sha256,
+    synthetic: packet.synthetic,
+    exported_at: exportedAt,
+    complete: missingUnits(packet, state).length === 0,
+    ratings,
+  };
+}
+
+if (typeof module !== "undefined") module.exports = { listUnits, codesFor, missingUnits, buildExport };
+</script>
+
+<script>
+/*
+ * DOM code. Every piece of packet text is inserted with textContent, never as HTML,
+ * because it comes from papers and model outputs.
+ */
+(function () {
+  const packet = JSON.parse(document.getElementById("packet-data").textContent);
+  const storageKey = "rbbench:" + packet.packet_id + ":" + packet.rater_id;
+  let state = {};
+
+  // Saved answers survive reloads; storage may be unavailable (private mode), so guard it.
+  try { state = JSON.parse(window.localStorage.getItem(storageKey) || "{}"); } catch (e) { state = {}; }
+  function save() {
+    try { window.localStorage.setItem(storageKey, JSON.stringify(state)); } catch (e) { /* ignore */ }
+    refresh();
+  }
+
+  function el(tag, attrs, text) {
+    const node = document.createElement(tag);
+    for (const [name, value] of Object.entries(attrs || {})) node.setAttribute(name, value);
+    if (text !== undefined) node.textContent = text;
+    return node;
+  }
+
+  // Render rewritten text with the marked additions highlighted.
+  function renderRewritten(paragraph) {
+    const box = el("p");
+    let cursor = 0;
+    for (const add of paragraph.additions) {
+      box.appendChild(document.createTextNode(paragraph.rewritten_text.slice(cursor, add.start)));
+      const mark = el("mark", { class: "added", title: "Marked addition" },
+        paragraph.rewritten_text.slice(add.start, add.end));
+      box.appendChild(mark);
+      cursor = add.end;
+    }
+    box.appendChild(document.createTextNode(paragraph.rewritten_text.slice(cursor)));
+    return box;
+  }
+
+  // One fieldset of radio buttons per code; answers go into state immediately.
+  function renderCodes(container, unit, unitId) {
+    const saved = state[unitId] || (state[unitId] = { labels: {}, comment: "" });
+    for (const code of codesFor(packet, unit)) {
+      const fieldset = el("fieldset");
+      const legend = el("legend", { title: code.help }, code.question);
+      fieldset.appendChild(legend);
+      const options = el("div", { class: "options" });
+      for (const value of code.values) {
+        const id = unitId + "::" + code.id + "::" + value.id;
+        const label = el("label", { title: value.definition || "" });
+        const input = el("input", { type: "radio", name: unitId + "::" + code.id, value: value.id, id });
+        if (saved.labels[code.id] === value.id) input.checked = true;
+        input.addEventListener("change", () => { saved.labels[code.id] = value.id; save(); });
+        label.appendChild(input);
+        label.appendChild(document.createTextNode(" " + value.label));
+        options.appendChild(label);
+      }
+      fieldset.appendChild(options);
+      container.appendChild(fieldset);
+    }
+    const comment = el("textarea", { "aria-label": "Comment (optional)", placeholder: "Comment (optional)" });
+    comment.value = saved.comment || "";
+    comment.addEventListener("input", () => { saved.comment = comment.value; save(); });
+    container.appendChild(comment);
+  }
+
+  function render() {
+    document.getElementById("title").textContent = "Faithfulness rating packet " + packet.packet_id;
+    document.getElementById("meta").textContent =
+      "Rater: " + packet.rater_id + " · Rubric: " + packet.rubric.id + " (" + packet.rubric.status + ")";
+    if (packet.banner) {
+      document.getElementById("banner").appendChild(el("div", { class: "banner" }, packet.banner));
+    }
+    const root = document.getElementById("items");
+    packet.items.forEach((item, index) => {
+      const section = el("section", { class: "item" });
+      section.appendChild(el("h2", {}, "Rewrite " + (index + 1) + " of " + packet.items.length + ": " + item.paper_title));
+      section.appendChild(el("p", { class: "meta" }, item.attribution));
+      const passage = el("details", { class: "passage" });
+      passage.appendChild(el("summary", {}, "Whole source passage (for context)"));
+      for (const source of item.source_passage) passage.appendChild(el("p", {}, source.text));
+      section.appendChild(passage);
+      for (const paragraph of item.paragraphs) {
+        const pair = el("div", { class: "pair" });
+        const left = el("div", { class: "panel" });
+        left.appendChild(el("h3", {}, "Source paragraph"));
+        left.appendChild(el("p", {}, paragraph.source_text));
+        const right = el("div", { class: "panel" });
+        right.appendChild(el("h3", {}, "Rewritten paragraph (highlighted: marked additions)"));
+        right.appendChild(renderRewritten(paragraph));
+        pair.appendChild(left);
+        pair.appendChild(right);
+        section.appendChild(pair);
+        for (const claim of paragraph.claims) {
+          const box = el("div", { class: "claim", id: "unit-" + claim.unit_id });
+          const text = el("div", { class: "claim-text" }, claim.text);
+          if (claim.in_addition) text.appendChild(el("span", { class: "tag" }, "from a marked addition"));
+          box.appendChild(text);
+          renderCodes(box, "claim", claim.unit_id);
+          section.appendChild(box);
+        }
+        const para = el("div", { class: "para-codes", id: "unit-" + paragraph.unit_id });
+        para.appendChild(el("div", { class: "claim-text" }, "This paragraph as a whole"));
+        renderCodes(para, "paragraph", paragraph.unit_id);
+        section.appendChild(para);
+      }
+      root.appendChild(section);
+    });
+  }
+
+  function refresh() {
+    const missing = new Set(missingUnits(packet, state));
+    const total = listUnits(packet).length;
+    document.getElementById("progress").textContent = (total - missing.size) + " of " + total + " done";
+    for (const { unitId } of listUnits(packet)) {
+      const node = document.getElementById("unit-" + unitId);
+      if (node) node.classList.toggle("done", !missing.has(unitId));
+    }
+  }
+
+  document.getElementById("export").addEventListener("click", () => {
+    const doc = buildExport(packet, state, new Date().toISOString());
+    const blob = new Blob([JSON.stringify(doc, null, 2)], { type: "application/json" });
+    const link = el("a", { href: URL.createObjectURL(blob), download: packet.rater_id + ".ratings.json" });
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    const status = document.getElementById("status");
+    status.textContent = doc.complete
+      ? "Exported. Thank you: please send the downloaded file back."
+      : "Exported, but " + missingUnits(packet, state).length + " item(s) are unanswered. You can keep going and export again.";
+    status.className = doc.complete ? "" : "missing";
+  });
+
+  document.getElementById("next-missing").addEventListener("click", () => {
+    const [first] = missingUnits(packet, state);
+    const node = first && document.getElementById("unit-" + first);
+    if (node) node.scrollIntoView({ behavior: "smooth", block: "center" });
+  });
+
+  render();
+  refresh();
+})();
+</script>
+</body>
+</html>

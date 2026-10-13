@@ -16,10 +16,11 @@ from rbcore.jats import Article, parse_jats_file
 from rbcore.licences import (
     NO_PERMISSIONS,
     Licence,
+    LicenceEvidence,
     LicenceFamily,
     LicenceField,
     decide,
-    decide_figure,
+    decide_part,
 )
 
 Loader = Callable[[str], Article]
@@ -142,6 +143,18 @@ def test_elife_insight_from_pmc(load_article: Loader) -> None:
     assert decision.source is not None
     assert decision.source.specific_use == "textmining"
     assert decision.permissions.can_rewrite
+    # The only machine-readable value is scoped to text mining, so a human (or an
+    # agreeing unscoped value such as PMC's license_code) must confirm it.
+    assert decision.needs_review
+    assert "@specific-use (textmining)" in decision.reasons[-1]
+    confirmed = decide(
+        [
+            *article.permissions.evidence(),
+            LicenceEvidence(LicenceField.PMC_LICENSE_CODE, "CC BY"),
+        ]
+    )
+    assert confirmed.permissions.can_rewrite
+    assert not confirmed.needs_review
     assert article.coi_statements == ("No competing interests declared.",)
 
 
@@ -152,9 +165,9 @@ def test_elife_insight_figure_inherits_article_licence(load_article: Loader) -> 
     (figure,) = article.figures
     assert figure.id == "fig1"
     assert figure.label == "Figure 1."
-    assert figure.permissions is None
+    assert figure.permissions == ()
     assert "elife-93719-fig1.jpg" in figure.graphics
-    decision = decide_figure(decide(article.permissions.evidence()), figure.permissions)
+    decision = decide_part(decide(article.permissions.evidence()), figure.permissions)
     assert decision.inherited
     assert decision.permissions.can_rewrite
 
@@ -176,25 +189,42 @@ def test_europe_pmc_copy_is_prose_only_and_fails_closed(load_article: Loader) ->
     assert article.coi_statements == ("No competing interests declared.",)
 
 
-def test_elife_review_figure_with_its_own_nc_licence(load_article: Loader) -> None:
-    """Figure 1 of eLife 65180 is CC BY-NC inside a CC BY article."""
+def test_elife_review_figure_with_several_panel_licences_fails_closed(load_article: Loader) -> None:
+    """Figure 1 of eLife 65180 has three permissions blocks, one per reproduced panel.
+
+    Panel 1a (top) is CC BY-NC; panels 1a (bottom) and 1b are reproduced with
+    permission and not covered by any licence. All three blocks are kept, and
+    the figure as a whole fails closed rather than taking the first block's
+    CC BY-NC licence.
+    """
     article = load_article("elife-65180-pmc-s3.xml")
     assert article.permissions is not None
     article_decision = decide(article.permissions.evidence())
     assert article_decision.licence == Licence(LicenceFamily.CC_BY, "4.0")
 
     fig1, fig2 = article.figures
-    assert fig1.permissions is not None
-    assert fig1.permissions.copyright_holders == ("Pandey et al",)
-    fig1_decision = decide_figure(article_decision, fig1.permissions)
-    assert fig1_decision.licence == Licence(LicenceFamily.CC_BY_NC, "4.0")
-    assert fig1_decision.permissions.non_commercial
-    assert fig1_decision.permissions.can_display
+    assert [block.copyright_holders for block in fig1.permissions] == [
+        ("Pandey et al",),
+        ("Cheena Kapoor",),
+        ("Friederike Ebner",),
+    ]
+    assert {block.context for block in fig1.permissions} == {"fig"}
+    fig1_decision = decide_part(article_decision, fig1.permissions)
+    assert fig1_decision.permissions == NO_PERMISSIONS
+    assert fig1_decision.needs_review
     assert not fig1_decision.inherited
+    assert "3 permissions blocks" in fig1_decision.reasons[0]
 
-    fig2_decision = decide_figure(article_decision, fig2.permissions)
+    # The first panel's own block, judged alone, is CC BY-NC.
+    panel_decision = decide_part(article_decision, fig1.permissions[:1])
+    assert panel_decision.licence == Licence(LicenceFamily.CC_BY_NC, "4.0")
+    assert panel_decision.permissions.non_commercial
+    assert panel_decision.permissions.can_display
+
+    fig2_decision = decide_part(article_decision, fig2.permissions)
     assert fig2_decision.inherited
     assert not fig2_decision.permissions.non_commercial
+    assert article.unattached_permissions == ()
 
 
 def test_elife_review_figure_with_prose_only_permissions_fails_closed(load_article: Loader) -> None:
@@ -203,19 +233,19 @@ def test_elife_review_figure_with_prose_only_permissions_fails_closed(load_artic
     assert article.permissions is not None
     article_decision = decide(article.permissions.evidence())
     fig1 = article.figures[0]
-    assert fig1.permissions is not None
-    assert fig1.permissions.copyright_holders == ("USA TODAY NETWORK",)
-    assert fig1.permissions.licences[0].prose is not None
-    assert "not covered by the CC-BY 4.0 licence" in fig1.permissions.licences[0].prose
-    decision = decide_figure(article_decision, fig1.permissions)
+    (fig1_block,) = fig1.permissions
+    assert fig1_block.copyright_holders == ("USA TODAY NETWORK",)
+    assert fig1_block.licences[0].prose is not None
+    assert "not covered by the CC-BY 4.0 licence" in fig1_block.licences[0].prose
+    decision = decide_part(article_decision, fig1.permissions)
     assert decision.permissions == NO_PERMISSIONS
     assert decision.needs_review
     # The other figure and the table still inherit the article's CC BY licence.
-    assert decide_figure(article_decision, article.figures[1].permissions).permissions.can_rewrite
+    assert decide_part(article_decision, article.figures[1].permissions).permissions.can_rewrite
     (table,) = article.tables
     assert table.id == "table1"
     assert table.kind == "table"
-    assert decide_figure(article_decision, table.permissions).inherited
+    assert decide_part(article_decision, table.permissions).inherited
 
 
 def test_elife_review_sections_nest_and_figures_know_their_section(load_article: Loader) -> None:

@@ -9,6 +9,11 @@ malformed XML raises :class:`JatsParseError` rather than being silently
 
 Only the main article (``front``, ``body``, ``back``) is parsed;
 ``sub-article`` elements (eLife peer-review material and similar) are skipped.
+
+Licence safety: every ``<permissions>`` block in the main article is either
+attached to the part it covers (the article, a figure or table, or a
+paragraph block) or reported in :attr:`Article.unattached_permissions`, so
+no block is ever silently dropped.
 """
 
 from __future__ import annotations
@@ -32,17 +37,23 @@ from rbcore.jats.model import (
     Section,
 )
 from rbcore.jats.text import flatten, local_name, normalise_whitespace
-from rbcore.licences.model import LicenceStatement, PermissionsBlock
+from rbcore.licences.model import AliLicenceRef, LicenceStatement, PermissionsBlock
 
 DEFAULT_MAX_BYTES = 50 * 1024 * 1024
 
 _XLINK_HREF = "{http://www.w3.org/1999/xlink}href"
 _XML_LANG = "{http://www.w3.org/XML/1998/namespace}lang"
+_ALI_NS = "http://www.niso.org/schemas/ali/1.0/"
 
 # Root containers get "sec{n}" children; sections nest as "sec1.2".
 _ROOT_KINDS = frozenset({"body", "abstract", "back"})
 # Back-matter children that are kept as sections (ref-list and fn-group are not).
 _BACK_SECTION_KINDS = frozenset({"sec", "ack", "app", "notes"})
+# Floating objects (and their groups) that are parsed as Figure records.
+_FLOAT_NAMES = frozenset({"fig", "fig-group", "table-wrap", "table-wrap-group"})
+# Ancestors at which the search for enclosing permissions stops: the article
+# licence lives in article-meta and is never a part-level override.
+_PERMISSIONS_SEARCH_STOP = frozenset({"article", "sub-article", "front", "article-meta"})
 
 _COI_FN_TYPES = frozenset(
     {
@@ -250,39 +261,122 @@ def parse_permissions(element: etree._Element) -> PermissionsBlock:
         element: A JATS ``permissions`` element.
 
     Returns:
-        The raw permissions block; nothing is interpreted here.
+        The raw permissions block; nothing is interpreted here. Its
+        ``context`` names the element it is attached to (the parent, or the
+        section for a block inside ``sec-meta``).
     """
     statements: list[LicenceStatement] = []
     for licence in _children(element, "license"):
-        refs = list(_children(licence, "license_ref"))
         prose = [flatten(p) for p in _children(licence, "license-p")]
         statements.append(
             LicenceStatement(
                 xlink_href=(licence.get(_XLINK_HREF) or licence.get("href") or "").strip() or None,
-                ali_license_refs=tuple(normalise_whitespace("".join(r.itertext())) for r in refs),
-                ali_specific_uses=tuple(r.get("specific-use") for r in refs),
+                ali_license_refs=_ali_refs(licence),
                 license_type=licence.get("license-type"),
                 prose=" ".join(p for p in prose if p) or None,
             )
         )
     # ali:license_ref may also sit directly in <permissions> (JATS 1.1+).
-    direct_refs = list(_children(element, "license_ref"))
+    direct_refs = _ali_refs(element)
     if direct_refs:
-        statements.append(
-            LicenceStatement(
-                ali_license_refs=tuple(
-                    normalise_whitespace("".join(r.itertext())) for r in direct_refs
-                ),
-                ali_specific_uses=tuple(r.get("specific-use") for r in direct_refs),
-            )
-        )
+        statements.append(LicenceStatement(ali_license_refs=direct_refs))
+    free_to_read = _child(element, "free_to_read")
     return PermissionsBlock(
         copyright_statement=_text(_child(element, "copyright-statement")),
         copyright_years=_dedupe([flatten(e) for e in _children(element, "copyright-year")]),
         copyright_holders=_dedupe([flatten(e) for e in _children(element, "copyright-holder")]),
         licences=tuple(statements),
-        free_to_read=_child(element, "free_to_read") is not None,
+        free_to_read=free_to_read is not None,
+        free_to_read_start_date=_ali_attribute(free_to_read, "start_date"),
+        free_to_read_end_date=_ali_attribute(free_to_read, "end_date"),
+        context=_permissions_context(element),
     )
+
+
+def _ali_refs(element: etree._Element) -> tuple[AliLicenceRef, ...]:
+    """Read the ``ali:license_ref`` children of an element.
+
+    Args:
+        element: A ``license`` or ``permissions`` element.
+
+    Returns:
+        One reference per child, with its ``@specific-use`` and ALI dates.
+    """
+    return tuple(
+        AliLicenceRef(
+            value=normalise_whitespace("".join(ref.itertext())),
+            specific_use=ref.get("specific-use"),
+            start_date=_ali_attribute(ref, "start_date"),
+            end_date=_ali_attribute(ref, "end_date"),
+        )
+        for ref in _children(element, "license_ref")
+    )
+
+
+def _ali_attribute(element: etree._Element | None, name: str) -> str | None:
+    """Read an ALI attribute, which feeds write with or without the ALI namespace.
+
+    Args:
+        element: The element, or None.
+        name: Attribute local name, e.g. "start_date".
+
+    Returns:
+        The stripped value, or None if absent or empty.
+    """
+    if element is None:
+        return None
+    value = element.get(name) or element.get(f"{{{_ALI_NS}}}{name}") or ""
+    return value.strip() or None
+
+
+def _permissions_context(element: etree._Element) -> str | None:
+    """Name the element a ``<permissions>`` block is attached to.
+
+    Args:
+        element: A ``permissions`` element.
+
+    Returns:
+        The parent's local name ("sec" for a block inside ``sec-meta``), or
+        None for a detached block.
+    """
+    parent = element.getparent()
+    if parent is not None and local_name(parent) == "sec-meta":
+        parent = parent.getparent()
+    return local_name(parent) if parent is not None else None
+
+
+def _direct_permissions(element: etree._Element) -> list[etree._Element]:
+    """Return the permissions blocks attached directly to an element.
+
+    Args:
+        element: Any element.
+
+    Returns:
+        Its ``permissions`` children, then those inside its ``sec-meta``.
+    """
+    return [
+        *_children(element, "permissions"),
+        *_children(_child(element, "sec-meta"), "permissions"),
+    ]
+
+
+def _inside_nested_float(node: etree._Element, root: etree._Element) -> bool:
+    """Whether ``node`` sits inside a figure or table nested within ``root``.
+
+    Args:
+        node: A descendant of ``root``.
+        root: The part being examined.
+
+    Returns:
+        True if an ancestor of ``node`` below ``root`` is a float or float
+        group (those blocks belong to that float, not to ``root``).
+    """
+    for ancestor in node.iterancestors():
+        if ancestor is root:
+            return False
+        if local_name(ancestor) in _FLOAT_NAMES:
+            return True
+    return False
 
 
 class _ArticleParser:
@@ -302,6 +396,9 @@ class _ArticleParser:
         # Maps each parsed section element to its stable ID, so figures can
         # find the section they sit in.
         self._section_ids: dict[etree._Element, str] = {}
+        # Every <permissions> element attached to a part of the model; the
+        # rest are reported as unattached so none is silently dropped.
+        self._attached: set[etree._Element] = set()
 
     def parse(self) -> Article:
         """Parse the whole article.
@@ -322,6 +419,8 @@ class _ArticleParser:
         back = self._parse_back()
         figures, tables = self._parse_floats()
         permissions_element = _child(self._meta, "permissions")
+        if permissions_element is not None:
+            self._attached.add(permissions_element)
         return Article(
             identifiers=self._identifiers(),
             title=_text(_child(_child(self._meta, "title-group"), "article-title")),
@@ -341,7 +440,60 @@ class _ArticleParser:
             ),
             coi_statements=self._coi_statements(),
             funding=self._funding(),
+            unattached_permissions=self._unattached_permissions(),
         )
+
+    # ----- part-level permissions --------------------------------------
+
+    def _part_permissions(self, element: etree._Element) -> tuple[PermissionsBlock, ...]:
+        """Collect every permissions block that applies to one part.
+
+        A block applies if it is attached to an enclosing element (a
+        ``fig-group``, ``disp-quote``, ``boxed-text``, section ``sec-meta``,
+        ...) or sits anywhere inside the part itself (on a ``graphic``,
+        ``media``, inline quotation, or directly), except inside a nested
+        figure or table, which owns its blocks.
+
+        Args:
+            element: The figure, table or paragraph-block element.
+
+        Returns:
+            Parsed blocks, outermost first, then those inside the part.
+        """
+        # Enclosing blocks, walking up to (not into) the article-level metadata.
+        enclosing: list[etree._Element] = []
+        for ancestor in element.iterancestors():
+            if local_name(ancestor) in _PERMISSIONS_SEARCH_STOP:
+                break
+            enclosing[:0] = _direct_permissions(ancestor)
+        # Blocks inside the part itself, wherever they are nested.
+        inside = [
+            node
+            for node in element.iter()
+            if local_name(node) == "permissions" and not _inside_nested_float(node, element)
+        ]
+        found = [*enclosing, *inside]
+        self._attached.update(found)
+        return tuple(parse_permissions(node) for node in found)
+
+    def _unattached_permissions(self) -> tuple[PermissionsBlock, ...]:
+        """Report permissions blocks in the main article that no part claimed.
+
+        Must run after every part has been parsed.
+
+        Returns:
+            The unclaimed blocks in document order (``sub-article`` excluded).
+        """
+        unattached: list[PermissionsBlock] = []
+        for container in self._article:
+            if local_name(container) == "sub-article":
+                continue
+            unattached.extend(
+                parse_permissions(node)
+                for node in container.iter()
+                if local_name(node) == "permissions" and node not in self._attached
+            )
+        return tuple(unattached)
 
     # ----- front matter -------------------------------------------------
 
@@ -548,6 +700,7 @@ class _ArticleParser:
                 id=f"{section_id}-p{n}",
                 text=text,
                 kind=block_kind,
+                permissions=self._part_permissions(source),
                 source_xml=etree.tostring(source, encoding="unicode", with_tail=False),
             )
             for n, (source, block_kind, text) in enumerate(blocks, start=1)
@@ -613,15 +766,13 @@ class _ArticleParser:
             kind: "figure" or "table".
 
         Returns:
-            The parsed object, with its own permissions block if present.
+            The parsed object, with every permissions block that applies to it.
         """
         # Captions normally hold <p> elements; some publishers put text directly in <caption>.
         caption = _child(element, "caption")
         caption_paragraphs = [flatten(p) for p in _children(caption, "p")]
         if not caption_paragraphs and caption is not None:
             caption_paragraphs = [flatten(caption, skip=("title",))]
-        # Only a direct <permissions> child belongs to this object (JATS4R).
-        permissions = _child(element, "permissions")
         # Table footnotes: one entry per <fn>, or the whole foot when it has none.
         footnotes: list[str] = []
         for foot in _children(element, "table-wrap-foot"):
@@ -635,7 +786,7 @@ class _ArticleParser:
             caption="\n\n".join(p for p in caption_paragraphs if p),
             section_id=self._enclosing_section(element),
             xml_id=element.get("id"),
-            permissions=parse_permissions(permissions) if permissions is not None else None,
+            permissions=self._part_permissions(element),
             graphics=tuple(
                 href
                 for g in element.iter()

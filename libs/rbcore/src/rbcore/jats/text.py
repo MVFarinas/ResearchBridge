@@ -11,6 +11,8 @@ Rules:
   else the flattened MathML text.
 * Floating objects (figures, tables, graphics, media) are skipped: they are
   extracted separately with their own captions and permissions.
+* ``permissions`` blocks are skipped wherever they appear, so copyright and
+  licence prose never enters running text; the parser records them as data.
 * For ``alternatives`` only the first rendering is used, to avoid duplicates.
 * Whitespace (including no-break spaces) collapses to single spaces.
 """
@@ -22,9 +24,11 @@ from collections.abc import Iterable
 
 from lxml import etree
 
-# Floating or non-textual objects whose content never belongs in running text.
+# Floating or non-textual objects, and licence metadata, whose content never
+# belongs in running text.
 SKIPPED = frozenset(
     {
+        "permissions",
         "fig",
         "fig-group",
         "table-wrap",

@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+from datetime import date
+
 import pytest
 
 from rbcore.licences import (
     NO_PERMISSIONS,
+    AliLicenceRef,
     Licence,
     LicenceEvidence,
     LicenceFamily,
@@ -13,7 +16,7 @@ from rbcore.licences import (
     LicenceStatement,
     PermissionsBlock,
     decide,
-    decide_figure,
+    decide_part,
     derive_permissions,
 )
 
@@ -236,14 +239,16 @@ def test_decide_per_source_codes(
     )
 
 
-# ----- decide_figure(): figure-level overrides -------------------------------
+# ----- decide_part(): figure, table and paragraph overrides -------------------------------
 
 
 def _article_cc_by() -> PermissionsBlock:
     """Synthetic article permissions block with a CC BY 4.0 ali:license_ref."""
     return PermissionsBlock(
         licences=(
-            LicenceStatement(ali_license_refs=("https://creativecommons.org/licenses/by/4.0/",)),
+            LicenceStatement(
+                ali_license_refs=(AliLicenceRef("https://creativecommons.org/licenses/by/4.0/"),)
+            ),
         )
     )
 
@@ -251,7 +256,7 @@ def _article_cc_by() -> PermissionsBlock:
 def test_figure_without_permissions_inherits_article_decision() -> None:
     """Objects without their own block take the article licence (JATS4R)."""
     article = decide(_article_cc_by().evidence())
-    figure = decide_figure(article, None)
+    figure = decide_part(article, ())
     assert figure.inherited
     assert figure.licence == article.licence
     assert figure.permissions == article.permissions
@@ -263,10 +268,12 @@ def test_figure_with_more_restrictive_licence_overrides_article() -> None:
     block = PermissionsBlock(
         copyright_holders=("Pandey et al",),
         licences=(
-            LicenceStatement(ali_license_refs=("https://creativecommons.org/licenses/by-nc/4.0/",)),
+            LicenceStatement(
+                ali_license_refs=(AliLicenceRef("https://creativecommons.org/licenses/by-nc/4.0/"),)
+            ),
         ),
     )
-    figure = decide_figure(article, block)
+    figure = decide_part(article, (block,))
     assert not figure.inherited
     assert figure.licence == Licence(F.CC_BY_NC, "4.0")
     assert figure.permissions.non_commercial
@@ -278,7 +285,7 @@ def test_figure_with_no_derivatives_licence_cannot_be_rewritten() -> None:
     block = PermissionsBlock(
         licences=(LicenceStatement(xlink_href="https://creativecommons.org/licenses/by-nd/4.0/"),)
     )
-    figure = decide_figure(article, block)
+    figure = decide_part(article, (block,))
     assert figure.permissions.can_display
     assert not figure.permissions.can_rewrite
 
@@ -291,7 +298,7 @@ def test_figure_with_copyright_only_block_fails_closed() -> None:
         copyright_holders=("Springer Nature",),
         licences=(LicenceStatement(prose="It is not covered by the CC-BY 4.0 licence."),),
     )
-    figure = decide_figure(article, block)
+    figure = decide_part(article, (block,))
     assert figure.permissions == NO_PERMISSIONS
     assert figure.needs_review
     assert "Springer Nature" in figure.reasons[0]
@@ -303,7 +310,7 @@ def test_figure_licence_can_be_more_permissive_than_article() -> None:
     block = PermissionsBlock(
         licences=(LicenceStatement(xlink_href="http://creativecommons.org/publicdomain/zero/1.0/"),)
     )
-    figure = decide_figure(article, block)
+    figure = decide_part(article, (block,))
     assert figure.permissions.can_rewrite
     assert not article.permissions.can_rewrite
 
@@ -312,10 +319,175 @@ def test_statement_evidence_order_is_machine_readable_first() -> None:
     """LicenceStatement.evidence lists ali refs, then href, then type, then prose."""
     statement = LicenceStatement(
         xlink_href="http://creativecommons.org/licenses/by/4.0/",
-        ali_license_refs=("https://creativecommons.org/licenses/by/4.0/",),
-        ali_specific_uses=("textmining",),
+        ali_license_refs=(
+            AliLicenceRef(
+                "https://creativecommons.org/licenses/by/4.0/", specific_use="textmining"
+            ),
+        ),
         license_type="open-access",
         prose="Some prose.",
     )
     assert [e.field for e in statement.evidence()] == [ALI, HREF, LTYPE, PROSE]
     assert statement.evidence()[0].specific_use == "textmining"
+
+
+# ----- NISO ALI dates ---------------------------------------------------------
+
+TODAY = date(2026, 10, 13)
+CC_BY_URI = "https://creativecommons.org/licenses/by/4.0/"
+
+
+def test_future_start_date_fails_closed_with_review() -> None:
+    """An embargoed licence (start_date in the future) is not in force yet."""
+    decision = decide([LicenceEvidence(ALI, CC_BY_URI, start_date="2027-01-01")], today=TODAY)
+    assert decision.permissions == NO_PERMISSIONS
+    assert decision.needs_review
+    assert "applies only from 2027-01-01" in decision.reasons[0]
+
+
+def test_past_start_date_is_in_force() -> None:
+    """A licence whose start_date has passed applies normally."""
+    decision = decide([LicenceEvidence(ALI, CC_BY_URI, start_date="2020-01-01")], today=TODAY)
+    assert decision.permissions.can_rewrite
+    assert not decision.needs_review
+
+
+def test_start_date_today_is_in_force() -> None:
+    """The start date itself is the first day the licence applies."""
+    decision = decide([LicenceEvidence(ALI, CC_BY_URI, start_date="2026-10-13")], today=TODAY)
+    assert decision.permissions.can_rewrite
+
+
+def test_default_today_still_honours_far_future_embargo() -> None:
+    """Without an injected date the real date is used; 2099 is still in the future."""
+    decision = decide([LicenceEvidence(ALI, CC_BY_URI, start_date="2099-01-01")])
+    assert decision.permissions == NO_PERMISSIONS
+
+
+@pytest.mark.parametrize("raw", ["soon", "2026-13-01", "01/02/2026"])
+def test_unparsable_dates_fail_closed(raw: str) -> None:
+    """A date the gate cannot read is treated as not in force."""
+    decision = decide([LicenceEvidence(ALI, CC_BY_URI, start_date=raw)], today=TODAY)
+    assert decision.permissions == NO_PERMISSIONS
+    assert decision.needs_review
+    assert repr(raw) in decision.reasons[0]
+
+
+def test_date_time_values_use_their_date_part() -> None:
+    """ISO date-times such as 2020-01-01T00:00:00Z are accepted."""
+    decision = decide(
+        [LicenceEvidence(ALI, CC_BY_URI, start_date="2020-01-01T00:00:00Z")], today=TODAY
+    )
+    assert decision.permissions.can_rewrite
+
+
+def test_embargo_transition_between_two_dated_references() -> None:
+    """Publisher licence until the embargo ends, then CC BY-NC-ND: the later start wins."""
+    evidence = [
+        LicenceEvidence(
+            ALI, "https://www.elsevier.com/tdm/userlicense/1.0/", start_date="2025-01-01"
+        ),
+        LicenceEvidence(
+            ALI, "https://creativecommons.org/licenses/by-nc-nd/4.0/", start_date="2026-06-01"
+        ),
+    ]
+    before = decide(evidence, today=date(2026, 1, 1))
+    assert before.permissions == NO_PERMISSIONS
+    assert before.needs_review
+
+    after = decide(evidence, today=date(2026, 7, 1))
+    assert after.licence == Licence(F.CC_BY_NC_ND, "4.0")
+    assert after.permissions.can_display
+    assert not after.permissions.can_rewrite
+    assert not after.needs_review
+    assert any("superseded" in reason for reason in after.reasons)
+
+
+def test_end_date_in_the_past_fails_closed() -> None:
+    """A licence that has ended no longer grants anything."""
+    decision = decide([LicenceEvidence(ALI, CC_BY_URI, end_date="2025-12-31")], today=TODAY)
+    assert decision.permissions == NO_PERMISSIONS
+    assert decision.needs_review
+    assert "ended on 2025-12-31" in decision.reasons[0]
+
+
+def test_end_date_in_the_future_grants_but_needs_review() -> None:
+    """A licence that will end still applies today, but a human should know."""
+    decision = decide([LicenceEvidence(ALI, CC_BY_URI, end_date="2030-01-01")], today=TODAY)
+    assert decision.permissions.can_rewrite
+    assert decision.needs_review
+    assert "ends on 2030-01-01" in decision.reasons[-1]
+
+
+# ----- @specific-use and @license-type signals --------------------------------
+
+
+def test_scoped_only_evidence_keeps_licence_but_needs_review() -> None:
+    """A sole text-mining-scoped CC reference grants as before but is flagged."""
+    decision = decide([LicenceEvidence(ALI, CC_BY_URI, specific_use="textmining")])
+    assert decision.permissions.can_rewrite
+    assert decision.needs_review
+    assert "@specific-use (textmining)" in decision.reasons[-1]
+
+
+def test_scoped_evidence_confirmed_by_an_unscoped_value_needs_no_review() -> None:
+    """An agreeing unscoped value (xlink:href or a PMC license_code) clears the flag."""
+    scoped = LicenceEvidence(ALI, CC_BY_URI, specific_use="textmining")
+    for confirming in (
+        LicenceEvidence(HREF, "http://creativecommons.org/licenses/by/4.0/"),
+        LicenceEvidence(LicenceField.PMC_LICENSE_CODE, "CC BY"),
+    ):
+        decision = decide([scoped, confirming])
+        assert decision.permissions.can_rewrite
+        assert not decision.needs_review
+
+
+def test_version_of_record_scope_is_not_a_narrowing_scope() -> None:
+    """specific-use="vor" names the article itself, so it needs no review."""
+    decision = decide([LicenceEvidence(ALI, CC_BY_URI, specific_use="VoR")])
+    assert not decision.needs_review
+
+
+def test_contradicting_license_type_needs_review() -> None:
+    """A closed @license-type next to an open href is a signal a human should see."""
+    decision = decide(
+        [LicenceEvidence(HREF, CC_BY_URI), LicenceEvidence(LTYPE, "all-rights-reserved")]
+    )
+    assert decision.permissions.can_display
+    assert decision.needs_review
+    assert "all-rights-reserved" in decision.reasons[-1]
+
+
+def test_uninformative_license_type_needs_no_review() -> None:
+    """Common uncontrolled values such as "open-access" say nothing about the licence."""
+    decision = decide([LicenceEvidence(HREF, CC_BY_URI), LicenceEvidence(LTYPE, "open-access")])
+    assert not decision.needs_review
+
+
+# ----- decide_part(): several blocks ------------------------------------------
+
+
+def test_part_with_several_blocks_fails_closed_even_if_all_are_open() -> None:
+    """With two blocks the gate never chooses; a human resolves which applies where."""
+    article = decide(_article_cc_by().evidence())
+    open_block = PermissionsBlock(
+        licences=(LicenceStatement(xlink_href=CC_BY_URI),), context="fig-group"
+    )
+    decision = decide_part(article, (open_block, open_block))
+    assert decision.permissions == NO_PERMISSIONS
+    assert decision.needs_review
+    assert "(fig-group, fig-group)" in decision.reasons[0]
+
+
+def test_part_block_with_embargoed_licence_is_reported_as_a_date_problem() -> None:
+    """A part's own embargoed licence fails closed with the date reason, not a prose reason."""
+    article = decide(_article_cc_by().evidence())
+    block = PermissionsBlock(
+        licences=(
+            LicenceStatement(ali_license_refs=(AliLicenceRef(CC_BY_URI, start_date="2099-01-01"),)),
+        ),
+        context="fig",
+    )
+    decision = decide_part(article, (block,), today=TODAY)
+    assert decision.permissions == NO_PERMISSIONS
+    assert "start_date in the future" in decision.reasons[0]

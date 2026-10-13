@@ -7,8 +7,9 @@ Three layers, each usable on its own:
 * :func:`decide` turns the licence evidence found in one source document into
   a single :class:`LicenceDecision`, failing closed on missing, prose-only or
   conflicting evidence.
-* :func:`decide_figure` applies a figure's or table's own ``<permissions>``
-  block over the article decision.
+* :func:`decide_part` applies the ``<permissions>`` blocks attached to one
+  part of an article (a figure, table or text block) over the article
+  decision.
 
 Precedence *across* sources (PMC JSON vs Europe PMC vs JATS vs arXiv) belongs
 to the ingestion layer (Phase 2), which can call :func:`decide` per source.
@@ -18,6 +19,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
+from datetime import UTC, date, datetime
 
 from rbcore.licences.model import (
     UNKNOWN_LICENCE,
@@ -108,11 +110,13 @@ class LicenceDecision:
         source: The evidence the licence came from, or None when no usable
             machine-readable evidence existed.
         needs_review: True when a human should look: prose-only licences,
-            conflicting values, unrecognised licence URIs, or a figure with
-            its own permissions but no machine-readable licence.
+            conflicting values, unrecognised licence URIs, embargo or expiry
+            dates, use-scoped evidence, a contradicting ``@license-type``, or
+            a part with its own permissions but no machine-readable licence.
+            A decision may grant permissions and still need review.
         reasons: Human-readable explanation, for logs and the review queue.
-        inherited: True for a figure or table that has no permissions block
-            of its own and so takes the article's decision.
+        inherited: True for a part (figure, table, text block) that has no
+            permissions block of its own and so takes the article's decision.
     """
 
     licence: Licence
@@ -128,7 +132,29 @@ class LicenceDecision:
         return self.source.field if self.source else None
 
 
-def decide(evidence: Sequence[LicenceEvidence]) -> LicenceDecision:
+# @specific-use values that do not narrow a licence to one use ("vor" is the
+# version of record itself). Compared lower-cased; None counts as unscoped.
+_UNSCOPED_USES = frozenset({"", "vor"})
+
+
+@dataclass(frozen=True, slots=True)
+class _DateCheck:
+    """The result of checking licence evidence against its ALI dates.
+
+    Attributes:
+        in_force: Evidence that applies today, superseded items removed.
+        notes: Informational reasons (superseded licence references).
+        review: Reasons a human should look although the licence applies.
+        failure: Why no decision can be made today, or None.
+    """
+
+    in_force: tuple[LicenceEvidence, ...]
+    notes: tuple[str, ...] = ()
+    review: tuple[str, ...] = ()
+    failure: str | None = None
+
+
+def decide(evidence: Sequence[LicenceEvidence], *, today: date | None = None) -> LicenceDecision:
     """Choose one licence from the evidence found in a single source document.
 
     Rules, all failing closed:
@@ -138,16 +164,34 @@ def decide(evidence: Sequence[LicenceEvidence]) -> LicenceDecision:
        never aggregator fields (:attr:`LicenceField.is_secondary`).
     2. No machine-readable evidence: ``UNKNOWN``, sent to review if any prose
        or licence type exists.
-    3. Machine-readable values that normalise to different licence families
+    3. NISO ALI dates: a ``start_date`` in the future (an embargo), an
+       ``end_date`` in the past, or a date that cannot be parsed means the
+       licence is not in force today: ``UNKNOWN`` and review. When several
+       dated references are in force, the one with the latest ``start_date``
+       supersedes the earlier ones (the ALI pattern for delayed open
+       access); undated values always count.
+    4. Machine-readable values that normalise to different licence families
        conflict: ``UNKNOWN`` and review. Versions may differ (by/3.0 and by/4.0
        agree), since versions do not change the gate.
-    4. A single agreed family wins; the first item in the given order is
+    5. A single agreed family wins; the first item in the given order is
        recorded as the source. An unrecognised value is ``UNKNOWN`` and goes
        to review.
+    6. The licence stands but ``needs_review`` is set when: every value in
+       force is scoped by a ``@specific-use`` other than "vor" (for example
+       "textmining") so nothing unscoped agrees; a value carries a future
+       ``end_date``; or an ``@license-type`` names a different recognised
+       licence family. ``@specific-use`` never widens or narrows the
+       permissions by itself. PMC tags its own CC references
+       ``specific-use="textmining"``, so a caller holding an unscoped value
+       from another field of the same paper (for example the PMC
+       ``license_code``) should pass it in the same call: when it agrees,
+       no review is needed.
 
     Args:
         evidence: Licence evidence from one source, in precedence order (for
             JATS, :meth:`PermissionsBlock.evidence` order).
+        today: The date to judge ALI dates against; defaults to today in UTC.
+            Injectable for tests and for re-checking at a later date.
 
     Returns:
         The decision.
@@ -163,52 +207,183 @@ def decide(evidence: Sequence[LicenceEvidence]) -> LicenceDecision:
             reasons.append(f"only non-authoritative evidence present ({', '.join(fields)})")
         return _closed(reasons, needs_review=bool(unusable))
 
-    normalised = [(item, normalise_licence(item.value)) for item in usable]
+    # Rule 3: a licence that is not in force today cannot approve anything.
+    dates = _check_dates(usable, today or datetime.now(UTC).date())
+    if dates.failure is not None:
+        return _closed([dates.failure], needs_review=True)
+
+    normalised = [(item, normalise_licence(item.value)) for item in dates.in_force]
     families = {licence.family for _, licence in normalised}
 
-    # Rule 3: disagreement between machine-readable values goes to a human.
+    # Rule 4: disagreement between machine-readable values goes to a human.
     if len(families) > 1:
         listed = "; ".join(f"{item.field.value}={item.value!r}" for item, _ in normalised)
         return _closed([f"conflicting licence values: {listed}"], needs_review=True)
 
     source, licence = normalised[0]
-    # Rule 4: an unrecognised URI or code fails closed but deserves a look.
+    # Rule 5: an unrecognised URI or code fails closed but deserves a look.
     if licence.family is LicenceFamily.UNKNOWN:
         return _closed(
-            [f"unrecognised licence value {source.value!r} in {source.field.value}"],
+            [f"unrecognised licence value {source.value!r} in {source.field.value}", *dates.notes],
             needs_review=True,
             source=source,
         )
+
+    # Rule 6: signals that do not change the permissions but a human should see.
+    review = (
+        *dates.review,
+        *_scope_review(dates.in_force),
+        *_licence_type_review(unusable, licence.family),
+    )
     return LicenceDecision(
         licence=licence,
         permissions=derive_permissions(licence),
         source=source,
-        needs_review=False,
-        reasons=(f"{licence.label} from {source.field.value}",),
+        needs_review=bool(review),
+        reasons=(f"{licence.label} from {source.field.value}", *dates.notes, *review),
     )
 
 
-def decide_figure(
-    article: LicenceDecision, figure_permissions: PermissionsBlock | None
-) -> LicenceDecision:
-    """Decide the licence of a figure or table from its own permissions block.
+def _check_dates(usable: Sequence[LicenceEvidence], today: date) -> _DateCheck:
+    """Check machine-readable evidence against its ALI start and end dates.
 
-    JATS4R: an object reproduced under a different licence carries its own
-    ``<permissions>``, which overrides the article licence; objects without
-    one inherit the article licence (§1.1 addendum).
+    Args:
+        usable: Machine-readable evidence, in precedence order.
+        today: The date to judge against.
+
+    Returns:
+        The evidence in force today, or a failure reason.
+    """
+    starts: dict[LicenceEvidence, date] = {}
+    review: list[str] = []
+    for item in usable:
+        described = f"{item.field.value}={item.value!r}"
+        # Any unreadable, future-start or past-end date makes the evidence unusable.
+        for label, raw in (("start_date", item.start_date), ("end_date", item.end_date)):
+            if raw is None:
+                continue
+            parsed = _parse_date(raw)
+            if parsed is None:
+                return _DateCheck((), failure=f"unparsable {label} {raw!r} on {described}")
+            if label == "start_date" and parsed > today:
+                return _DateCheck(
+                    (), failure=f"{described} applies only from {raw} (start_date in the future)"
+                )
+            if label == "end_date" and parsed < today:
+                return _DateCheck((), failure=f"{described} ended on {raw} (end_date has passed)")
+            if label == "end_date":
+                review.append(f"{described} ends on {raw}")
+            else:
+                starts[item] = parsed
+
+    # The latest start date in force supersedes earlier dated references.
+    latest = max(starts.values(), default=None)
+    superseded = [item for item, start in starts.items() if start != latest]
+    notes = tuple(
+        f"{item.field.value}={item.value!r} (start_date {item.start_date}) superseded by a "
+        "later start_date"
+        for item in superseded
+    )
+    in_force = tuple(item for item in usable if item not in superseded)
+    return _DateCheck(in_force, notes=notes, review=tuple(review))
+
+
+def _parse_date(raw: str) -> date | None:
+    """Parse an ALI date (ISO 8601 date, or a date-time whose date part is used).
+
+    Args:
+        raw: The attribute value.
+
+    Returns:
+        The date, or None if it is not ISO 8601.
+    """
+    text = raw.strip()
+    try:
+        return date.fromisoformat(text)
+    except ValueError:
+        pass
+    try:
+        return datetime.fromisoformat(text).date()
+    except ValueError:
+        return None
+
+
+def _scope_review(in_force: Sequence[LicenceEvidence]) -> tuple[str, ...]:
+    """Flag a decision that rests only on use-scoped licence references.
+
+    Args:
+        in_force: The machine-readable evidence the decision rests on.
+
+    Returns:
+        One reason if every item has a narrowing ``@specific-use``, else none.
+    """
+    uses = [(item.specific_use or "").strip().lower() for item in in_force]
+    if not uses or any(use in _UNSCOPED_USES for use in uses):
+        return ()
+    listed = ", ".join(sorted(set(uses)))
+    return (
+        f"every machine-readable licence value is scoped by @specific-use ({listed}) and "
+        "no unscoped value agrees",
+    )
+
+
+def _licence_type_review(
+    unusable: Sequence[LicenceEvidence], decided: LicenceFamily
+) -> tuple[str, ...]:
+    """Flag ``@license-type`` values that name a different licence family.
+
+    Args:
+        unusable: Evidence the gate does not use (prose, licence types, ...).
+        decided: The family the decision rests on.
+
+    Returns:
+        One reason per contradicting ``@license-type`` value.
+    """
+    reasons: list[str] = []
+    for item in unusable:
+        if item.field is not LicenceField.JATS_LICENSE_TYPE:
+            continue
+        # Uncontrolled values such as "open-access" normalise to UNKNOWN and say nothing.
+        family = normalise_licence(item.value).family
+        if family not in {LicenceFamily.UNKNOWN, decided}:
+            reasons.append(
+                f"@license-type {item.value!r} names {family.value}, contradicting {decided.value}"
+            )
+    return tuple(reasons)
+
+
+def decide_part(
+    article: LicenceDecision,
+    part_permissions: Sequence[PermissionsBlock],
+    *,
+    today: date | None = None,
+) -> LicenceDecision:
+    """Decide the licence of one part of an article from its own permissions.
+
+    A part is a figure, a table or a text block (paragraph, quotation, boxed
+    text). JATS4R: an object reproduced under a different licence carries its
+    own ``<permissions>``, which overrides the article licence; parts without
+    one inherit the article licence (§1.1 addendum). The parser collects
+    every block that applies to a part (its own, an enclosing ``fig-group``,
+    ``disp-quote``, ``boxed-text`` or section, and blocks on its ``graphic``
+    or ``media``), see :attr:`rbcore.jats.Figure.permissions` and
+    :attr:`rbcore.jats.Paragraph.permissions`.
 
     Args:
         article: The article-level decision.
-        figure_permissions: The figure's or table's own ``<permissions>``
-            block, or None if it has none.
+        part_permissions: Every ``<permissions>`` block that applies to the
+            part; empty if it has none.
+        today: Passed to :func:`decide` for ALI dates.
 
     Returns:
-        The article decision marked as inherited when there is no block;
-        otherwise a decision from the block's own machine-readable licence,
-        failing closed (with review) when the block has none, for example a
+        The article decision marked as inherited when there is no block; a
+        decision from the block's own machine-readable licence when there is
+        exactly one; otherwise a fail-closed decision with review: when
+        several blocks apply (choosing one could widen access), or when the
+        single block has no machine-readable licence, for example a
         copyright line plus "not covered by the CC-BY licence" prose.
     """
-    if figure_permissions is None:
+    if not part_permissions:
         return LicenceDecision(
             licence=article.licence,
             permissions=article.permissions,
@@ -218,20 +393,29 @@ def decide_figure(
             inherited=True,
         )
 
-    decision = decide(figure_permissions.evidence())
-    if decision.source is None:
-        # A permissions block exists precisely because the object is licensed
+    # Never pick one of several blocks: the most permissive might be the wrong one.
+    if len(part_permissions) > 1:
+        contexts = ", ".join(block.context or "unknown" for block in part_permissions)
+        return _closed(
+            [f"{len(part_permissions)} permissions blocks apply ({contexts}); not choosing one"],
+            needs_review=True,
+        )
+
+    (block,) = part_permissions
+    evidence = block.evidence()
+    if not any(item.field.is_machine_readable for item in evidence):
+        # A permissions block exists precisely because the part is licensed
         # differently; without a machine-readable licence we cannot know how.
-        holders = ", ".join(figure_permissions.copyright_holders) or "unstated"
+        holders = ", ".join(block.copyright_holders) or "unstated"
         return _closed(
             [
-                "figure/table has its own permissions block without a "
+                f"{block.context or 'part'} has its own permissions block without a "
                 f"machine-readable licence (copyright holder: {holders})",
-                *decision.reasons,
+                *decide(evidence, today=today).reasons,
             ],
             needs_review=True,
         )
-    return decision
+    return decide(evidence, today=today)
 
 
 def _closed(

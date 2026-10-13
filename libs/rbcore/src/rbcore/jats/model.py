@@ -131,12 +131,20 @@ class Paragraph:
         text: Plain text with inline markup flattened and whitespace
             normalised; citations and cross-references kept as their text.
         kind: "p", "list-item", "quote", "boxed", "def" or "formula".
+        permissions: Every ``<permissions>`` block that applies to this block
+            rather than the article licence: blocks on an enclosing
+            ``disp-quote``, ``boxed-text``, ``statement`` or section
+            (``sec-meta``), and blocks inside the paragraph itself (for
+            example an inline quotation or graphic). Empty when it inherits
+            the article licence. Pass to
+            :func:`rbcore.licences.decide_part`.
         source_xml: The block's original XML, for rendering.
     """
 
     id: str
     text: str
     kind: str = "p"
+    permissions: tuple[PermissionsBlock, ...] = ()
     source_xml: str = field(default="", repr=False, compare=False)
 
 
@@ -201,8 +209,12 @@ class Figure:
         caption: Caption paragraph text (title excluded), blank-line separated.
         section_id: ID of the section the object appears in.
         xml_id: The publisher's ``@id``, if any.
-        permissions: The object's own ``<permissions>`` block, or None when
-            it inherits the article licence.
+        permissions: Every ``<permissions>`` block that applies to the
+            object: its own, one on an enclosing ``fig-group``,
+            ``table-wrap-group``, box or section, and blocks on its
+            ``graphic``, ``media`` or other content. Empty when it inherits
+            the article licence. Pass to :func:`rbcore.licences.decide_part`,
+            which fails closed when more than one applies.
         graphics: ``xlink:href`` of each ``graphic`` in the object.
         footnotes: Table footnote text (``table-wrap-foot``), tables only.
         source_xml: The object's original XML.
@@ -215,7 +227,7 @@ class Figure:
     caption: str = ""
     section_id: str | None = None
     xml_id: str | None = None
-    permissions: PermissionsBlock | None = None
+    permissions: tuple[PermissionsBlock, ...] = ()
     graphics: tuple[str, ...] = ()
     footnotes: tuple[str, ...] = ()
     source_xml: str = field(default="", repr=False, compare=False)
@@ -275,6 +287,12 @@ class Article:
         permissions: The article's ``<permissions>`` block, if any.
         coi_statements: Conflict-of-interest statements, raw text.
         funding: Funding information, raw text.
+        unattached_permissions: ``<permissions>`` blocks found in the main
+            article that belong to nothing this model represents (for
+            example on ``supplementary-material`` or a stray ``media``).
+            Each one means part of the article is licensed differently in a
+            way the parsed model cannot show, so any non-empty value should
+            send the article to licence review.
     """
 
     identifiers: Identifiers
@@ -293,6 +311,7 @@ class Article:
     permissions: PermissionsBlock | None
     coi_statements: tuple[str, ...]
     funding: Funding
+    unattached_permissions: tuple[PermissionsBlock, ...] = ()
 
     @property
     def abstract(self) -> Section | None:

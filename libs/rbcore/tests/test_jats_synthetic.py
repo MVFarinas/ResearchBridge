@@ -10,7 +10,14 @@ from __future__ import annotations
 import pytest
 
 from rbcore.jats import Article, JatsParseError, parse_jats
-from rbcore.licences import LicenceField, decide
+from rbcore.licences import (
+    NO_PERMISSIONS,
+    AliLicenceRef,
+    LicenceDecision,
+    LicenceField,
+    decide,
+    decide_part,
+)
 
 XLINK = 'xmlns:xlink="http://www.w3.org/1999/xlink"'
 ALI = 'xmlns:ali="http://www.niso.org/schemas/ali/1.0/"'
@@ -230,14 +237,14 @@ def test_figure_permissions_fields_are_kept_separately() -> None:
         "<ext-link xlink:href='https://example.org'>CC BY-ND</ext-link>.</license-p>"
         "</license></permissions></fig>"
     )
-    permissions = article.figures[0].permissions
-    assert permissions is not None
+    (permissions,) = article.figures[0].permissions
     assert permissions.copyright_statement == "© 2010 Example Press"
     assert permissions.copyright_years == ("2010",)
     (statement,) = permissions.licences
     assert statement.xlink_href == "http://creativecommons.org/licenses/by-nd/4.0/"
-    assert statement.ali_license_refs == ("https://creativecommons.org/licenses/by-nd/4.0/",)
-    assert statement.ali_specific_uses == ("vor",)
+    assert statement.ali_license_refs == (
+        AliLicenceRef("https://creativecommons.org/licenses/by-nd/4.0/", specific_use="vor"),
+    )
     assert statement.license_type == "open-access"
     assert statement.prose == "Reproduced under CC BY-ND."
     assert [e.field for e in permissions.evidence()] == [
@@ -391,3 +398,225 @@ def test_non_article_root_is_rejected() -> None:
     """Documents that are not JATS articles raise JatsParseError."""
     with pytest.raises(JatsParseError, match="expected <article>"):
         parse_jats(b"<html><body/></html>")
+
+
+# ----- permissions blocks wherever JATS allows them (all SYNTHETIC) ----------
+
+CC_BY_BLOCK = (
+    "<permissions><license xlink:href='https://creativecommons.org/licenses/by/4.0/'/>"
+    "</permissions>"
+)
+CLOSED_BLOCK = (
+    "<permissions><copyright-statement>(c) 1960 Synthetic Newspaper</copyright-statement>"
+    "<copyright-holder>Synthetic Newspaper</copyright-holder>"
+    "<license><license-p>Not covered by CC BY. All rights reserved.</license-p></license>"
+    "</permissions>"
+)
+ARTICLE_CC_BY = (
+    "<permissions><license>"
+    "<ali:license_ref>https://creativecommons.org/licenses/by/4.0/</ali:license_ref>"
+    "</license></permissions>"
+)
+
+
+def _article_decision(article: Article) -> LicenceDecision:
+    """Decide the article-level licence of a synthetic article (must be CC BY)."""
+    assert article.permissions is not None
+    decision = decide(article.permissions.evidence())
+    assert decision.permissions.can_rewrite
+    return decision
+
+
+def test_permissions_on_a_figure_graphic_apply_to_the_figure() -> None:
+    """A closed block on the fig's <graphic> fails the figure closed instead of inheriting."""
+    article = synthetic(
+        f"<fig><caption><p>C.</p></caption><graphic xlink:href='g.tif'>{CLOSED_BLOCK}</graphic>"
+        "</fig>",
+        meta=ARTICLE_CC_BY,
+    )
+    (figure,) = article.figures
+    assert [block.context for block in figure.permissions] == ["graphic"]
+    decision = decide_part(_article_decision(article), figure.permissions)
+    assert decision.permissions == NO_PERMISSIONS
+    assert decision.needs_review
+    assert not decision.inherited
+
+
+def test_permissions_inside_alternatives_are_found() -> None:
+    """A block on a graphic inside <alternatives> still applies to its figure."""
+    article = synthetic(
+        "<fig><alternatives><graphic xlink:href='a.tif'/>"
+        f"<graphic xlink:href='b.tif'>{CLOSED_BLOCK}</graphic></alternatives></fig>",
+        meta=ARTICLE_CC_BY,
+    )
+    assert [block.context for block in article.figures[0].permissions] == ["graphic"]
+
+
+def test_fig_group_permissions_apply_to_every_member() -> None:
+    """Both figures in a closed fig-group carry the group's block and fail closed."""
+    article = synthetic(
+        f"<sec><fig-group>{CLOSED_BLOCK}<fig><caption><p>A.</p></caption></fig>"
+        "<fig><caption><p>B.</p></caption></fig></fig-group></sec>",
+        meta=ARTICLE_CC_BY,
+    )
+    article_decision = _article_decision(article)
+    assert len(article.figures) == 2
+    for figure in article.figures:
+        assert [block.context for block in figure.permissions] == ["fig-group"]
+        assert decide_part(article_decision, figure.permissions).permissions == NO_PERMISSIONS
+    assert article.unattached_permissions == ()
+
+
+def test_table_wrap_group_permissions_apply_to_member_tables() -> None:
+    """A table-wrap-group's own block applies to the tables inside it."""
+    article = synthetic(
+        f"<table-wrap-group>{CLOSED_BLOCK}<table-wrap><caption><p>T.</p></caption>"
+        "</table-wrap></table-wrap-group>",
+        meta=ARTICLE_CC_BY,
+    )
+    (table,) = article.tables
+    assert [block.context for block in table.permissions] == ["table-wrap-group"]
+
+
+def test_several_blocks_on_one_figure_fail_closed() -> None:
+    """An open block on the fig plus a closed one on its graphic: never pick one."""
+    article = synthetic(
+        f"<fig>{CC_BY_BLOCK}<graphic xlink:href='g.tif'>{CLOSED_BLOCK}</graphic></fig>",
+        meta=ARTICLE_CC_BY,
+    )
+    (figure,) = article.figures
+    assert [block.context for block in figure.permissions] == ["fig", "graphic"]
+    decision = decide_part(_article_decision(article), figure.permissions)
+    assert decision.permissions == NO_PERMISSIONS
+    assert decision.needs_review
+    assert "2 permissions blocks apply (fig, graphic)" in decision.reasons[0]
+
+
+@pytest.mark.parametrize("wrapper", ["disp-quote", "boxed-text", "statement"])
+def test_quote_and_box_permissions_apply_to_their_paragraphs(wrapper: str) -> None:
+    """Paragraphs inside a closed quote, box or statement carry its block; prose never leaks."""
+    article = synthetic(
+        f"<sec><p>Before.</p><{wrapper}>{CLOSED_BLOCK}<p>Intro Poem.</p></{wrapper}></sec>",
+        meta=ARTICLE_CC_BY,
+    )
+    before, quoted = article.body.sections[0].paragraphs
+    assert before.permissions == ()
+    assert quoted.text == "Intro Poem."
+    assert [block.context for block in quoted.permissions] == [wrapper]
+    decision = decide_part(_article_decision(article), quoted.permissions)
+    assert not decision.permissions.can_display
+    assert not decision.permissions.can_rewrite
+    assert decide_part(_article_decision(article), before.permissions).inherited
+
+
+def test_quote_without_paragraphs_keeps_its_block_out_of_the_text() -> None:
+    """A disp-quote with bare text is one block; its licence prose is not part of the text."""
+    article = synthetic(f"<disp-quote>Bare quote.{CLOSED_BLOCK}</disp-quote>", meta=ARTICLE_CC_BY)
+    (quote,) = article.iter_paragraphs()
+    assert quote.text == "Bare quote."
+    assert [block.context for block in quote.permissions] == ["disp-quote"]
+
+
+def test_permissions_inside_a_paragraph_never_leak_into_its_text() -> None:
+    """Inline quotes and bare blocks inside <p> are recorded on the paragraph, not read as text."""
+    article = synthetic(
+        f"<p>Intro <disp-quote><p>Poem.</p>{CLOSED_BLOCK}</disp-quote> after.</p>"
+        f"<p>Second {CLOSED_BLOCK}para.</p>",
+        meta=ARTICLE_CC_BY,
+    )
+    first, second = article.iter_paragraphs()
+    assert first.text == "Intro Poem. after."
+    assert second.text == "Second para."
+    assert [block.context for block in first.permissions] == ["disp-quote"]
+    assert [block.context for block in second.permissions] == ["p"]
+    assert "All rights reserved" not in first.text + second.text
+    assert article.unattached_permissions == ()
+
+
+def test_section_meta_permissions_apply_to_nested_paragraphs() -> None:
+    """sec-meta permissions cover the section's paragraphs and its subsections."""
+    article = synthetic(
+        f"<sec><sec-meta>{CLOSED_BLOCK}</sec-meta><title>Reprinted</title><p>A.</p>"
+        "<sec><p>B.</p></sec></sec><sec><p>C.</p></sec>",
+        meta=ARTICLE_CC_BY,
+    )
+    contexts = {p.id: [block.context for block in p.permissions] for p in article.iter_paragraphs()}
+    assert contexts == {"sec1-p1": ["sec"], "sec1.1-p1": ["sec"], "sec2-p1": []}
+    assert article.body.sections[0].title == "Reprinted"
+
+
+def test_figure_inside_a_paragraph_owns_its_block() -> None:
+    """A fig nested in <p> keeps its block; the paragraph does not inherit it."""
+    article = synthetic(
+        f"<p>Text <fig><caption><p>F.</p></caption>{CLOSED_BLOCK}</fig> more.</p>",
+        meta=ARTICLE_CC_BY,
+    )
+    (paragraph,) = article.iter_paragraphs()
+    assert paragraph.permissions == ()
+    assert [block.context for block in article.figures[0].permissions] == ["fig"]
+
+
+def test_abstract_paragraphs_do_not_take_the_article_block_as_an_override() -> None:
+    """The article-meta block is the article licence, never a per-paragraph override."""
+    article = synthetic(meta=f"{ARTICLE_CC_BY}<abstract><p>Summary.</p></abstract>")
+    assert article.paragraph("abs1-p1").permissions == ()
+    assert article.unattached_permissions == ()
+
+
+def test_unclaimed_permissions_are_reported_not_dropped() -> None:
+    """A block on supplementary material is reported as unattached for review."""
+    article = synthetic(
+        "<sec><p>Text.</p><supplementary-material><media xlink:href='s1.pdf'/>"
+        f"{CLOSED_BLOCK}</supplementary-material></sec>",
+        meta=ARTICLE_CC_BY,
+        extra=f"<sub-article><front-stub>{CLOSED_BLOCK}</front-stub></sub-article>",
+    )
+    (unattached,) = article.unattached_permissions
+    assert unattached.context == "supplementary-material"
+    assert unattached.copyright_holders == ("Synthetic Newspaper",)
+
+
+# ----- NISO ALI dates (SYNTHETIC) ---------------------------------------------
+
+
+def test_ali_dates_and_specific_use_are_recorded() -> None:
+    """start_date (plain or ALI-namespaced) and free_to_read dates are kept for the gate."""
+    article = synthetic(
+        meta=(
+            "<permissions><ali:free_to_read start_date='2099-01-01' end_date='2100-01-01'/>"
+            "<license><ali:license_ref start_date='2099-01-01' specific-use='vor'>"
+            "https://creativecommons.org/licenses/by/4.0/</ali:license_ref>"
+            "<ali:license_ref ali:start_date='2020-01-01'>"
+            "https://www.example.org/publisher-licence</ali:license_ref></license></permissions>"
+        )
+    )
+    assert article.permissions is not None
+    assert article.permissions.free_to_read_start_date == "2099-01-01"
+    assert article.permissions.free_to_read_end_date == "2100-01-01"
+    assert article.permissions.context == "article-meta"
+    (statement,) = article.permissions.licences
+    assert statement.ali_license_refs == (
+        AliLicenceRef(
+            "https://creativecommons.org/licenses/by/4.0/",
+            specific_use="vor",
+            start_date="2099-01-01",
+        ),
+        AliLicenceRef("https://www.example.org/publisher-licence", start_date="2020-01-01"),
+    )
+
+
+def test_embargoed_article_is_not_opened_before_its_start_date() -> None:
+    """A CC BY licence that starts in the future on an all-rights-reserved article stays closed."""
+    article = synthetic(
+        meta=(
+            "<permissions><copyright-statement>All rights reserved.</copyright-statement>"
+            "<ali:free_to_read start_date='2099-01-01'/><license>"
+            "<ali:license_ref start_date='2099-01-01'>https://creativecommons.org/licenses/by/4.0/"
+            "</ali:license_ref></license></permissions>"
+        )
+    )
+    assert article.permissions is not None
+    decision = decide(article.permissions.evidence())
+    assert decision.permissions == NO_PERMISSIONS
+    assert decision.needs_review
+    assert "2099-01-01" in decision.reasons[0]

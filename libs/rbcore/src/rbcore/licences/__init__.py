@@ -2,17 +2,20 @@
 
 Typical use with a parsed JATS article::
 
-    from rbcore.licences import decide, decide_figure
+    from rbcore.licences import decide, decide_part
 
     article_decision = decide(article.permissions.evidence())
     if article_decision.permissions.can_rewrite:
         ...
     for figure in article.figures:
-        figure_decision = decide_figure(article_decision, figure.permissions)
+        figure_decision = decide_part(article_decision, figure.permissions)
+    for paragraph in article.iter_paragraphs():
+        paragraph_decision = decide_part(article_decision, paragraph.permissions)
 """
 
 from rbcore.licences.model import (
     UNKNOWN_LICENCE,
+    AliLicenceRef,
     Licence,
     LicenceEvidence,
     LicenceFamily,
@@ -26,13 +29,14 @@ from rbcore.licences.permissions import (
     LicenceDecision,
     Permissions,
     decide,
-    decide_figure,
+    decide_part,
     derive_permissions,
 )
 
 __all__ = [
     "NO_PERMISSIONS",
     "UNKNOWN_LICENCE",
+    "AliLicenceRef",
     "Licence",
     "LicenceDecision",
     "LicenceEvidence",
@@ -42,7 +46,7 @@ __all__ = [
     "Permissions",
     "PermissionsBlock",
     "decide",
-    "decide_figure",
+    "decide_part",
     "derive_permissions",
     "normalise_licence",
 ]

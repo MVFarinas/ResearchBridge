@@ -189,12 +189,37 @@ class LicenceEvidence:
         field: The source field.
         value: The raw value exactly as found (URI, code or prose).
         specific_use: JATS ``@specific-use`` on the element, if any (e.g.
-            "textmining"), kept for reviewers.
+            "textmining"). A value other than "vor" scopes the licence to one
+            use, so :func:`rbcore.licences.decide` sends a decision resting
+            only on scoped evidence to review.
+        start_date: NISO ALI ``@start_date``: the raw date (ISO 8601) from
+            which the licence applies, if given. Delayed open access uses it.
+        end_date: Raw ``@end_date``, if given (not part of ALI 1.0, but kept
+            when a feed supplies one).
     """
 
     field: LicenceField
     value: str
     specific_use: str | None = None
+    start_date: str | None = None
+    end_date: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class AliLicenceRef:
+    """One NISO ALI ``<ali:license_ref>`` element.
+
+    Attributes:
+        value: The licence URI text.
+        specific_use: ``@specific-use``, if any (e.g. "textmining", "vor").
+        start_date: ``@start_date``: the raw date the licence applies from.
+        end_date: ``@end_date``, if any.
+    """
+
+    value: str
+    specific_use: str | None = None
+    start_date: str | None = None
+    end_date: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -203,17 +228,15 @@ class LicenceStatement:
 
     Attributes:
         xlink_href: ``license/@xlink:href``, if present.
-        ali_license_refs: Text of each ``ali:license_ref`` inside the licence
-            (or directly in the permissions block), in document order.
-        ali_specific_uses: ``@specific-use`` of each ``ali:license_ref``,
-            aligned with ``ali_license_refs``.
+        ali_license_refs: Each ``ali:license_ref`` inside the licence (or
+            directly in the permissions block), in document order, with its
+            own ``@specific-use`` and dates.
         license_type: ``license/@license-type``, if present.
         prose: Flattened text of the ``license-p`` paragraphs, if any.
     """
 
     xlink_href: str | None = None
-    ali_license_refs: tuple[str, ...] = ()
-    ali_specific_uses: tuple[str | None, ...] = ()
+    ali_license_refs: tuple[AliLicenceRef, ...] = ()
     license_type: str | None = None
     prose: str | None = None
 
@@ -224,12 +247,16 @@ class LicenceStatement:
             Evidence in the order ali:license_ref, @xlink:href,
             @license-type, license-p.
         """
-        items: list[LicenceEvidence] = []
-        uses: tuple[str | None, ...] = self.ali_specific_uses or (None,) * len(
-            self.ali_license_refs
-        )
-        for ref, use in zip(self.ali_license_refs, uses, strict=True):
-            items.append(LicenceEvidence(LicenceField.JATS_ALI_LICENSE_REF, ref, use))
+        items = [
+            LicenceEvidence(
+                LicenceField.JATS_ALI_LICENSE_REF,
+                ref.value,
+                specific_use=ref.specific_use,
+                start_date=ref.start_date,
+                end_date=ref.end_date,
+            )
+            for ref in self.ali_license_refs
+        ]
         if self.xlink_href:
             items.append(LicenceEvidence(LicenceField.JATS_LICENSE_XLINK_HREF, self.xlink_href))
         if self.license_type:
@@ -241,7 +268,7 @@ class LicenceStatement:
 
 @dataclass(frozen=True, slots=True)
 class PermissionsBlock:
-    """A raw JATS ``<permissions>`` block, for an article or a figure/table.
+    """A raw JATS ``<permissions>`` block, for an article or any part of it.
 
     Attributes:
         copyright_statement: ``copyright-statement`` text.
@@ -251,6 +278,13 @@ class PermissionsBlock:
             ``ali:license_ref`` placed directly in the block).
         free_to_read: Whether ``ali:free_to_read`` is present. This is an
             access flag, not a reuse licence, and never affects the gate.
+        free_to_read_start_date: ``ali:free_to_read/@start_date``, kept for
+            reviewers (an embargo often shows here too).
+        free_to_read_end_date: ``ali:free_to_read/@end_date``, kept for
+            reviewers.
+        context: Local name of the element the block is attached to, e.g.
+            "article-meta", "fig", "graphic", "fig-group", "disp-quote" or
+            "sec" (for ``sec-meta``), so reviewers know what it covers.
     """
 
     copyright_statement: str | None = None
@@ -258,6 +292,9 @@ class PermissionsBlock:
     copyright_holders: tuple[str, ...] = ()
     licences: tuple[LicenceStatement, ...] = field(default=())
     free_to_read: bool = False
+    free_to_read_start_date: str | None = None
+    free_to_read_end_date: str | None = None
+    context: str | None = None
 
     def evidence(self) -> tuple[LicenceEvidence, ...]:
         """Return every licence value in the block as evidence.

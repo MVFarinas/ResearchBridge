@@ -6,8 +6,11 @@ import { CredibilityPanel } from "@/components/CredibilityPanel";
 import { apiGet } from "@/lib/api/client";
 import type { Credibility } from "@/lib/api/types";
 
-/** Seconds the signals may be reused (the backend caches them too, with dates). */
-const CREDIBILITY_REVALIDATE = 600;
+/**
+ * Seconds the signals may be reused. Short, because the panel reports
+ * retraction notices; the backend caches the sources itself, with "as of" dates.
+ */
+export const CREDIBILITY_REVALIDATE = 60;
 
 /** Props of {@link CredibilitySlot}. */
 export interface CredibilitySlotProps {

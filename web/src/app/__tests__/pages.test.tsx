@@ -77,7 +77,8 @@ describe("paper page", () => {
     expect(screen.getByRole("region", { name: "Licence and attribution" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Not generated yet" })).toBeInTheDocument();
     expect(screen.getByText("Synthetic credibility slot")).toBeInTheDocument();
-    expect(apiGet).toHaveBeenCalledWith("papers/PMC900000001/", {}, 300);
+    // Never from the data cache, so a paper the gate withdraws disappears at once.
+    expect(apiGet).toHaveBeenCalledWith("papers/PMC900000001/");
   });
 
   it("shows an empty state, not invented text, in the plain-English view", async () => {

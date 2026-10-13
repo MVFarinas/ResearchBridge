@@ -6,7 +6,7 @@
  */
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Suspense } from "react";
+import { cache, Suspense } from "react";
 
 import { AnnotationLayer } from "@/components/AnnotationLayer";
 import { CredibilitySlot } from "@/components/CredibilitySlot";
@@ -21,9 +21,6 @@ import type { PaperDetail } from "@/lib/api/types";
 import { formatAuthors, formatDate } from "@/lib/format";
 import { chooseView, withheldMessage } from "@/lib/paper-view";
 
-/** Seconds a paper's content may be reused before it is fetched again. */
-const PAPER_REVALIDATE = 300;
-
 /** Props Next.js passes to the page. */
 interface PaperPageProps {
   /** Route parameters. */
@@ -35,14 +32,19 @@ interface PaperPageProps {
 /**
  * Fetch a paper, or show the 404 page.
  *
+ * Never served from Next.js's data cache: a paper the licence gate stops
+ * displaying (re-check, review hold, takedown) must disappear on the next
+ * request, not minutes later. React's `cache` makes `generateMetadata` and
+ * the page share one fetch per request.
+ *
  * @param key - The paper key from the URL.
  * @returns The paper.
  */
-async function loadPaper(key: string): Promise<PaperDetail> {
-  const paper = await apiGet<PaperDetail>(`papers/${encodeURIComponent(key)}/`, {}, PAPER_REVALIDATE);
+const loadPaper = cache(async (key: string): Promise<PaperDetail> => {
+  const paper = await apiGet<PaperDetail>(`papers/${encodeURIComponent(key)}/`);
   if (paper === null) notFound();
   return paper;
-}
+});
 
 /**
  * The first abstract paragraph, shortened, for the page description.

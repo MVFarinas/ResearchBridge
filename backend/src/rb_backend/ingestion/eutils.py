@@ -5,8 +5,9 @@ then the bucket for the files. Requests go through
 :class:`rbcore.http.PoliteFetcher`, which limits ``eutils.ncbi.nlm.nih.gov``
 to about 3 requests per second (NCBI's limit without a key). An
 ``NCBI_API_KEY``, when set in the environment, is sent as ``api_key``; it is
-never logged. The ``tool`` parameter names the project; no e-mail address or
-other personal identifier is ever sent.
+never logged, and it is redacted from the errors :func:`search_pmc` raises
+(the fetcher's messages embed the full request URL). The ``tool`` parameter
+names the project; no e-mail address or other personal identifier is ever sent.
 """
 
 from __future__ import annotations
@@ -15,10 +16,12 @@ import json
 from dataclasses import dataclass
 from urllib.parse import urlencode
 
-from rbcore.http import PoliteFetcher
+from rbcore.http import FetchError, PoliteFetcher
 
 ESEARCH_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi"
 TOOL_NAME = "researchbridge"
+# Replaces an API key in error messages.
+REDACTED = "[redacted]"
 # ESearch returns at most 10,000 IDs per request.
 MAX_RETMAX = 10_000
 
@@ -158,7 +161,7 @@ def search_pmc(
 
     Raises:
         EsearchError: If ESearch reports an error.
-        rbcore.http.FetchError: If a request fails.
+        rbcore.http.FetchError: If a request fails (with the API key redacted).
     """
     found: list[str] = []
     seen: set[str] = set()
@@ -167,7 +170,7 @@ def search_pmc(
         # Results change daily, so pages are never served from the cache.
         page_size = min(limit - len(found), MAX_RETMAX)
         url = esearch_url(term, retmax=page_size, retstart=retstart, api_key=api_key)
-        page = parse_esearch(fetcher.get(url, use_cache=False))
+        page = parse_esearch(_get_redacted(fetcher, url, api_key))
         for pmcid in page.pmcids:
             if pmcid not in seen:
                 seen.add(pmcid)
@@ -176,3 +179,27 @@ def search_pmc(
         if not page.pmcids or retstart >= page.count:
             break
     return found[:limit]
+
+
+def _get_redacted(fetcher: PoliteFetcher, url: str, api_key: str | None) -> bytes:
+    """Fetch an ESearch URL without caching, keeping the API key out of any error.
+
+    Args:
+        fetcher: The polite fetcher.
+        url: The ESearch URL (it may contain ``api_key``).
+        api_key: The key to redact, if one was sent.
+
+    Returns:
+        The response body.
+
+    Raises:
+        rbcore.http.FetchError: If the request fails. The message has the key
+            replaced by :data:`REDACTED`, and the original exception is not
+            chained, because its message (and its cause's) carries the URL.
+    """
+    try:
+        return fetcher.get(url, use_cache=False)
+    except FetchError as exc:
+        if not api_key:
+            raise
+        raise FetchError(str(exc).replace(api_key, REDACTED)) from None

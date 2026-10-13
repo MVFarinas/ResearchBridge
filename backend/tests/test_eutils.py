@@ -12,13 +12,14 @@ from support import PMC_FIXTURES
 
 from rb_backend.ingestion.eutils import (
     IN_BUCKET_FILTER,
+    REDACTED,
     EsearchError,
     build_term,
     esearch_url,
     parse_esearch,
     search_pmc,
 )
-from rbcore.http import PoliteFetcher, RateLimiter
+from rbcore.http import FetchError, PoliteFetcher, RateLimiter
 
 
 def test_build_term_adds_bucket_and_licence_filters() -> None:
@@ -110,3 +111,34 @@ def test_search_stops_when_results_run_out(tmp_path: Path) -> None:
         rate_limiter=RateLimiter({}, default_interval=0.0),
     ) as fetcher:
         assert search_pmc(fetcher, "synthetic", limit=50) == ["PMC1", "PMC2"]
+
+
+def test_search_failure_never_reveals_the_api_key(tmp_path: Path) -> None:
+    """A failing request raises FetchError whose text and chain omit the (synthetic) key."""
+    synthetic_key = "synthetic0key0abc123"
+    sent: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        """Record the request and answer with a server error every time."""
+        sent.append(str(request.url))
+        return httpx.Response(503)
+
+    with (
+        PoliteFetcher(
+            cache_dir=None,
+            transport=httpx.MockTransport(handler),
+            rate_limiter=RateLimiter({}, default_interval=0.0),
+            max_retries=1,
+            sleep=lambda _: None,
+        ) as fetcher,
+        pytest.raises(FetchError) as caught,
+    ):
+        search_pmc(fetcher, "synthetic", limit=5, api_key=synthetic_key)
+
+    # The key was really sent, but appears nowhere in what a caller could print.
+    assert synthetic_key in sent[0]
+    assert synthetic_key not in str(caught.value)
+    assert REDACTED in str(caught.value)
+    assert "HTTP 503" in str(caught.value)
+    assert caught.value.__cause__ is None
+    assert caught.value.__suppress_context__

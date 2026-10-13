@@ -170,9 +170,13 @@ inter-rater agreement; a few hundred binary claim judgements is enough. Narrow y
 agree far better than an overall faithfulness rating (κ 0.79–0.95 in Peters & Chin-Yee 2025 vs
 Krippendorff's α 0.20–0.64 for holistic crowd ratings in Devaraj 2022).
 
-**Selection.** Spread across fields and study types. Draw from the PLOS and eLife lay-summary
-datasets (CC-BY; each paper has an expert lay summary to compare against) and PLABA (CC0,
-biomedical abstracts with plain-language adaptations). All selected papers must pass §1.1.
+**Selection — biomedical first.** All 12 come from biomedicine and the life sciences, spread
+across study types (randomised trials, observational studies, lab/mechanistic work, reviews).
+That is where the licence-gated corpus mostly lies (§1.1 addendum) and where the open evaluation
+data is: the PLOS and eLife lay-summary datasets (CC-BY; each paper has an expert lay summary to
+compare against), PLABA (CC0, biomedical abstracts with plain-language adaptations), and FactPICO
+(CC BY 4.0, expert-rated LLM lay summaries of trials, for calibrating the judge). Other fields
+get their own round once the corpus extends to them. All selected papers must pass §1.1.
 
 **Rubric, per claim:**
 
@@ -199,7 +203,9 @@ prompting the model to "be accurate" *increased* overgeneralisation.
 
 **Alternatives rejected:** a few dozen holistic passage ratings (the original §2.2 sketch — more
 rater time for weaker statistics); automatic metrics only (they miss inserted and substituted
-facts, which is the failure that matters most here).
+facts, which is the failure that matters most here); spreading the 12 across all fields (the
+first draft of this decision — too few rewrites per field to say anything about any of them, and
+most fields would have no reference data or corpus behind them).
 
 ### 1.5 Form factor and entry points (2026-10-13)
 

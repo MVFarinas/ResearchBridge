@@ -18,7 +18,7 @@ to the ingestion layer (Phase 2), which can call :func:`decide` per source.
 from __future__ import annotations
 
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, date, datetime
 
 from rbcore.licences.model import (
@@ -369,6 +369,14 @@ def decide_part(
     or ``media``), see :attr:`rbcore.jats.Figure.permissions` and
     :attr:`rbcore.jats.Paragraph.permissions`.
 
+    Blocks marked :attr:`PermissionsBlock.inner` license a separate object
+    nested inside the part (an inline media item, quotation or supplementary
+    file), not the part's own text, so they never replace its decision. The
+    decision from the covering blocks stands only if every inner block
+    allows at least as much (display, rewrite, and no added non-commercial,
+    share-alike or attribution condition); otherwise the part fails closed
+    with review, because one decision cannot express the mix.
+
     Args:
         article: The article-level decision.
         part_permissions: Every ``<permissions>`` block that applies to the
@@ -376,14 +384,60 @@ def decide_part(
         today: Passed to :func:`decide` for ALI dates.
 
     Returns:
-        The article decision marked as inherited when there is no block; a
-        decision from the block's own machine-readable licence when there is
-        exactly one; otherwise a fail-closed decision with review: when
-        several blocks apply (choosing one could widen access), or when the
-        single block has no machine-readable licence, for example a
-        copyright line plus "not covered by the CC-BY licence" prose.
+        From the covering (non-inner) blocks: the article decision marked as
+        inherited when there is none; a decision from the block's own
+        machine-readable licence when there is exactly one; otherwise a
+        fail-closed decision with review: when several blocks apply
+        (choosing one could widen access), or when the single block has no
+        machine-readable licence, for example a copyright line plus "not
+        covered by the CC-BY licence" prose. Inner blocks then either leave
+        that decision unchanged (with a note) or close it with review.
     """
-    if not part_permissions:
+    covering = [block for block in part_permissions if not block.inner]
+    inner = [block for block in part_permissions if block.inner]
+    decision = _decide_covering(article, covering, today=today)
+
+    # Inner blocks may only narrow: keep the decision if each allows at least as much.
+    reasons = list(decision.reasons)
+    needs_review = decision.needs_review
+    for block in inner:
+        label = block.context or "nested object"
+        nested = _decide_block(block, today=today)
+        if not _allows_at_least(nested.permissions, decision.permissions):
+            return _closed(
+                [
+                    f"{label} inside the part has its own permissions ({nested.licence.label}) "
+                    "that allow less than the part's own licence; not choosing one",
+                    *nested.reasons,
+                ],
+                needs_review=True,
+            )
+        reasons.append(
+            f"{label} inside the part has its own licence ({nested.licence.label}); "
+            "it does not change the part's decision"
+        )
+        needs_review = needs_review or nested.needs_review
+    return replace(decision, needs_review=needs_review, reasons=tuple(reasons))
+
+
+def _decide_covering(
+    article: LicenceDecision,
+    covering: Sequence[PermissionsBlock],
+    *,
+    today: date | None,
+) -> LicenceDecision:
+    """Decide a part from the permissions blocks that cover it.
+
+    Args:
+        article: The article-level decision.
+        covering: The part's non-inner permissions blocks.
+        today: Passed to :func:`decide` for ALI dates.
+
+    Returns:
+        The inherited article decision, the single block's decision, or a
+        fail-closed decision with review when several blocks apply.
+    """
+    if not covering:
         return LicenceDecision(
             licence=article.licence,
             permissions=article.permissions,
@@ -394,17 +448,29 @@ def decide_part(
         )
 
     # Never pick one of several blocks: the most permissive might be the wrong one.
-    if len(part_permissions) > 1:
-        contexts = ", ".join(block.context or "unknown" for block in part_permissions)
+    if len(covering) > 1:
+        contexts = ", ".join(block.context or "unknown" for block in covering)
         return _closed(
-            [f"{len(part_permissions)} permissions blocks apply ({contexts}); not choosing one"],
+            [f"{len(covering)} permissions blocks apply ({contexts}); not choosing one"],
             needs_review=True,
         )
+    return _decide_block(covering[0], today=today)
 
-    (block,) = part_permissions
+
+def _decide_block(block: PermissionsBlock, *, today: date | None) -> LicenceDecision:
+    """Decide the licence stated by one part-level permissions block.
+
+    Args:
+        block: The block.
+        today: Passed to :func:`decide` for ALI dates.
+
+    Returns:
+        The block's decision; fail-closed with review when it has no
+        machine-readable licence.
+    """
     evidence = block.evidence()
     if not any(item.field.is_machine_readable for item in evidence):
-        # A permissions block exists precisely because the part is licensed
+        # A permissions block exists precisely because the object is licensed
         # differently; without a machine-readable licence we cannot know how.
         holders = ", ".join(block.copyright_holders) or "unstated"
         return _closed(
@@ -416,6 +482,34 @@ def decide_part(
             needs_review=True,
         )
     return decide(evidence, today=today)
+
+
+def _allows_at_least(nested: Permissions, part: Permissions) -> bool:
+    """Whether a nested object's permissions cover everything the part allows.
+
+    Args:
+        nested: Permissions of an object nested inside the part.
+        part: Permissions decided for the part itself.
+
+    Returns:
+        True if every use ``part`` grants is also granted by ``nested``
+        without a condition ``part`` lacks (non-commercial, attribution, or
+        share-alike under a different licence family).
+    """
+    # Nothing granted means nothing to narrow.
+    if not part.can_display:
+        return True
+    if not nested.can_display or (part.can_rewrite and not nested.can_rewrite):
+        return False
+    if (nested.non_commercial and not part.non_commercial) or (
+        nested.attribution_required and not part.attribution_required
+    ):
+        return False
+    # A rewrite released under the part's licence must also satisfy a nested share-alike.
+    if part.can_rewrite and nested.share_alike:
+        ours, theirs = part.output_licence, nested.output_licence
+        return ours is not None and theirs is not None and ours.family is theirs.family
+    return True
 
 
 def _closed(

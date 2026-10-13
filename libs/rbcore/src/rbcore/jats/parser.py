@@ -14,7 +14,9 @@ skipped.
 Licence safety: every ``<permissions>`` block in the main article is either
 attached to the part it covers (the article, a figure or table, or a
 paragraph block) or reported in :attr:`Article.unattached_permissions`, so
-no block is ever silently dropped.
+no block is ever silently dropped. A block on an object nested inside a part
+(an inline media item in a paragraph, say) is marked
+:attr:`PermissionsBlock.inner` so it can narrow, but never widen, that part.
 """
 
 from __future__ import annotations
@@ -55,6 +57,10 @@ _FLOAT_NAMES = frozenset({"fig", "fig-group", "table-wrap", "table-wrap-group"})
 # Ancestors at which the search for enclosing permissions stops: the article
 # licence lives in article-meta and is never a part-level override.
 _PERMISSIONS_SEARCH_STOP = frozenset({"article", "sub-article", "front", "article-meta"})
+# Elements inside a figure or table through which a permissions block still
+# covers the object itself (the image it shows); a block reached through any
+# other element, such as the caption, belongs to a separate nested object.
+_FLOAT_COVERING_PATH = frozenset({"graphic", "media", "alternatives"})
 
 _COI_FN_TYPES = frozenset(
     {
@@ -255,11 +261,14 @@ def _dedupe(items: list[str]) -> tuple[str, ...]:
     return tuple(dict.fromkeys(item for item in items if item))
 
 
-def parse_permissions(element: etree._Element) -> PermissionsBlock:
+def parse_permissions(element: etree._Element, *, inner: bool = False) -> PermissionsBlock:
     """Parse a ``<permissions>`` block, keeping each licence field separate.
 
     Args:
         element: A JATS ``permissions`` element.
+        inner: Whether the block belongs to an object nested inside the part
+            it is recorded on, rather than covering that part (see
+            :attr:`PermissionsBlock.inner`).
 
     Returns:
         The raw permissions block; nothing is interpreted here. Its
@@ -291,6 +300,7 @@ def parse_permissions(element: etree._Element) -> PermissionsBlock:
         free_to_read_start_date=_ali_attribute(free_to_read, "start_date"),
         free_to_read_end_date=_ali_attribute(free_to_read, "end_date"),
         context=_permissions_context(element),
+        inner=inner,
     )
 
 
@@ -359,6 +369,31 @@ def _direct_permissions(element: etree._Element) -> list[etree._Element]:
         *_children(element, "permissions"),
         *_children(_child(element, "sec-meta"), "permissions"),
     ]
+
+
+def _is_inner_block(
+    node: etree._Element, part: etree._Element, covering_path: frozenset[str]
+) -> bool:
+    """Whether a permissions block inside a part belongs to a nested object.
+
+    Args:
+        node: A ``permissions`` element below ``part``.
+        part: The figure, table or paragraph-block element.
+        covering_path: Local names of the elements a block may sit inside and
+            still cover the part itself (empty for paragraph blocks, whose
+            own blocks are direct children).
+
+    Returns:
+        True if any element between ``node`` and ``part`` is outside
+        ``covering_path``: the block then licenses that nested object (an
+        inline media item, quotation or supplementary file), not the part.
+    """
+    for ancestor in node.iterancestors():
+        if ancestor is part:
+            return False
+        if local_name(ancestor) not in covering_path:
+            return True
+    return False
 
 
 def _inside_nested_float(node: etree._Element, root: etree._Element) -> bool:
@@ -447,17 +482,26 @@ class _ArticleParser:
 
     # ----- part-level permissions --------------------------------------
 
-    def _part_permissions(self, element: etree._Element) -> tuple[PermissionsBlock, ...]:
+    def _part_permissions(
+        self, element: etree._Element, covering_path: frozenset[str] = frozenset()
+    ) -> tuple[PermissionsBlock, ...]:
         """Collect every permissions block that applies to one part.
 
         A block applies if it is attached to an enclosing element (a
         ``fig-group``, ``disp-quote``, ``boxed-text``, section ``sec-meta``,
-        ...) or sits anywhere inside the part itself (on a ``graphic``,
-        ``media``, inline quotation, or directly), except inside a nested
-        figure or table, which owns its blocks.
+        ...) or sits anywhere inside the part itself, except inside a nested
+        figure or table, which owns its blocks. Enclosing blocks, the part's
+        own blocks and blocks reached only through ``covering_path`` cover
+        the part; any other block inside it (on an inline ``media``,
+        ``disp-quote`` or ``supplementary-material``) is marked
+        :attr:`PermissionsBlock.inner`, so the gate never lets it widen the
+        part's own text.
 
         Args:
             element: The figure, table or paragraph-block element.
+            covering_path: Elements inside the part through which a block
+                still covers the part (for figures and tables, the
+                ``graphic``, ``media`` and ``alternatives`` they show).
 
         Returns:
             Parsed blocks, outermost first, then those inside the part.
@@ -474,9 +518,16 @@ class _ArticleParser:
             for node in element.iter()
             if local_name(node) == "permissions" and not _inside_nested_float(node, element)
         ]
-        found = [*enclosing, *inside]
-        self._attached.update(found)
-        return tuple(parse_permissions(node) for node in found)
+        self._attached.update(enclosing)
+        self._attached.update(inside)
+        # Classify each inner block by the path from the part down to it.
+        return (
+            *(parse_permissions(node) for node in enclosing),
+            *(
+                parse_permissions(node, inner=_is_inner_block(node, element, covering_path))
+                for node in inside
+            ),
+        )
 
     def _unattached_permissions(self) -> tuple[PermissionsBlock, ...]:
         """Report permissions blocks in the main article that no part claimed.
@@ -789,7 +840,7 @@ class _ArticleParser:
             caption="\n\n".join(p for p in caption_paragraphs if p),
             section_id=self._enclosing_section(element) or self._citing_section(element.get("id")),
             xml_id=element.get("id"),
-            permissions=self._part_permissions(element),
+            permissions=self._part_permissions(element, _FLOAT_COVERING_PATH),
             graphics=tuple(
                 href
                 for g in element.iter()

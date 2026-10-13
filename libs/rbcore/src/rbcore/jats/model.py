@@ -134,10 +134,12 @@ class Paragraph:
         permissions: Every ``<permissions>`` block that applies to this block
             rather than the article licence: blocks on an enclosing
             ``disp-quote``, ``boxed-text``, ``statement`` or section
-            (``sec-meta``), and blocks inside the paragraph itself (for
-            example an inline quotation or graphic). Empty when it inherits
-            the article licence. Pass to
-            :func:`rbcore.licences.decide_part`.
+            (``sec-meta``), and blocks inside the paragraph itself. A block
+            that is a direct child covers the paragraph; one on a nested
+            object (an inline quotation, media item, graphic or
+            supplementary file) is marked ``inner`` and can only narrow the
+            paragraph's decision. Empty when it inherits the article
+            licence. Pass to :func:`rbcore.licences.decide_part`.
         source_xml: The block's original XML, for rendering.
     """
 
@@ -214,9 +216,11 @@ class Figure:
         permissions: Every ``<permissions>`` block that applies to the
             object: its own, one on an enclosing ``fig-group``,
             ``table-wrap-group``, box or section, and blocks on its
-            ``graphic``, ``media`` or other content. Empty when it inherits
-            the article licence. Pass to :func:`rbcore.licences.decide_part`,
-            which fails closed when more than one applies.
+            ``graphic``, ``media`` or ``alternatives``. Blocks elsewhere
+            inside it (for example in the caption) are marked ``inner`` and
+            can only narrow its decision. Empty when it inherits the article
+            licence. Pass to :func:`rbcore.licences.decide_part`, which fails
+            closed when more than one covering block applies.
         graphics: ``xlink:href`` of each ``graphic`` in the object.
         footnotes: Table footnote text (``table-wrap-foot``), tables only.
         source_xml: The object's original XML.

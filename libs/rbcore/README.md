@@ -49,7 +49,9 @@ NISO ALI dates are honoured: a licence whose `start_date` is in the future (an e
 `end_date` has passed is not in force. A decision can grant permissions and still set
 `needs_review` (use-scoped `@specific-use` evidence with nothing unscoped agreeing, a
 contradicting `@license-type`, a future `end_date`). A part (figure, table, paragraph) with
-several permissions blocks fails closed. Precedence *across* sources (PMC JSON vs Europe PMC vs JATS vs arXiv vs bioRxiv) is Phase 2's job.
+several covering permissions blocks fails closed; a block on an object nested inside it (an
+inline media item, quotation or supplementary file, or anything in a figure caption) can only
+narrow the part, never widen it. Precedence *across* sources (PMC JSON vs Europe PMC vs JATS vs arXiv vs bioRxiv) is Phase 2's job.
 
 Tests: `make test` (or `cd libs/rbcore && ../../.venv/bin/pytest`). Fixture attribution:
 [tests/fixtures/jats/README.md](tests/fixtures/jats/README.md).

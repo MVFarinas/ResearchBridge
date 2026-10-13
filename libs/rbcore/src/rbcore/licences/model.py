@@ -285,6 +285,12 @@ class PermissionsBlock:
         context: Local name of the element the block is attached to, e.g.
             "article-meta", "fig", "graphic", "fig-group", "disp-quote" or
             "sec" (for ``sec-meta``), so reviewers know what it covers.
+        inner: True when the block belongs to a separate object nested
+            inside the part (an inline ``media``, ``supplementary-material``,
+            ``disp-quote`` or ``graphic`` inside a paragraph, or anything in
+            a figure caption) rather than covering the part itself. Such a
+            block can only narrow the part's decision, never widen it (see
+            :func:`rbcore.licences.decide_part`).
     """
 
     copyright_statement: str | None = None
@@ -295,6 +301,7 @@ class PermissionsBlock:
     free_to_read_start_date: str | None = None
     free_to_read_end_date: str | None = None
     context: str | None = None
+    inner: bool = False
 
     def evidence(self) -> tuple[LicenceEvidence, ...]:
         """Return every licence value in the block as evidence.

@@ -491,3 +491,80 @@ def test_part_block_with_embargoed_licence_is_reported_as_a_date_problem() -> No
     decision = decide_part(article, (block,), today=TODAY)
     assert decision.permissions == NO_PERMISSIONS
     assert "start_date in the future" in decision.reasons[0]
+
+
+# ----- decide_part(): blocks on objects nested inside a part ------------------
+
+ND_URI = "https://creativecommons.org/licenses/by-nd/4.0/"
+
+
+def _inner(uri: str | None, context: str = "media") -> PermissionsBlock:
+    """Synthetic inner permissions block with an xlink:href licence (or copyright only)."""
+    if uri is None:
+        return PermissionsBlock(
+            copyright_holders=("Synthetic Holder",),
+            licences=(LicenceStatement(prose="All rights reserved."),),
+            context=context,
+            inner=True,
+        )
+    return PermissionsBlock(
+        licences=(LicenceStatement(xlink_href=uri),), context=context, inner=True
+    )
+
+
+def test_inner_block_never_widens_a_no_derivatives_part() -> None:
+    """A CC BY media item inside a paragraph of a CC BY-ND article keeps the paragraph ND."""
+    article = decide([LicenceEvidence(ALI, ND_URI)])
+    decision = decide_part(article, (_inner(CC_BY_URI),))
+    assert decision.licence == Licence(F.CC_BY_ND, "4.0")
+    assert decision.permissions.can_display
+    assert not decision.permissions.can_rewrite
+    assert decision.inherited
+    assert "media inside the part has its own licence (CC BY 4.0)" in decision.reasons[-1]
+
+
+@pytest.mark.parametrize(
+    ("article_uri", "inner_uri"),
+    [
+        (CC_BY_URI, "https://creativecommons.org/licenses/by-nc/4.0/"),
+        (CC_BY_URI, ND_URI),
+        (CC_BY_URI, "https://creativecommons.org/licenses/by-sa/4.0/"),
+        ("https://creativecommons.org/publicdomain/zero/1.0/", CC_BY_URI),
+        (CC_BY_URI, None),
+    ],
+)
+def test_inner_block_that_allows_less_closes_the_part(
+    article_uri: str, inner_uri: str | None
+) -> None:
+    """Non-commercial, no-derivatives, share-alike, attribution or closed inner objects close it."""
+    article = decide([LicenceEvidence(ALI, article_uri)])
+    decision = decide_part(article, (_inner(inner_uri),))
+    assert decision.permissions == NO_PERMISSIONS
+    assert decision.needs_review
+    assert "allow less than the part's own licence" in decision.reasons[0]
+
+
+def test_inner_block_under_the_same_licence_changes_nothing() -> None:
+    """A CC BY inline object in a CC BY paragraph leaves the decision and review flag as is."""
+    article = decide(_article_cc_by().evidence())
+    decision = decide_part(article, (_inner("http://creativecommons.org/licenses/by/3.0/"),))
+    assert decision.permissions == article.permissions
+    assert not decision.needs_review
+
+
+def test_inner_block_in_a_closed_part_keeps_it_closed() -> None:
+    """Nothing granted means an open inner object cannot open the part."""
+    article = decide([LicenceEvidence(ALI, "https://www.example.org/all-rights-reserved")])
+    decision = decide_part(article, (_inner(CC_BY_URI),))
+    assert decision.permissions == NO_PERMISSIONS
+
+
+def test_inner_blocks_combine_with_a_covering_block() -> None:
+    """A covering block decides the part; an inner block may still narrow it."""
+    article = decide(_article_cc_by().evidence())
+    covering = PermissionsBlock(licences=(LicenceStatement(xlink_href=ND_URI),), context="p")
+    kept = decide_part(article, (covering, _inner(CC_BY_URI)))
+    assert kept.licence == Licence(F.CC_BY_ND, "4.0")
+    assert not kept.inherited
+    closed = decide_part(article, (covering, _inner(None)))
+    assert closed.permissions == NO_PERMISSIONS

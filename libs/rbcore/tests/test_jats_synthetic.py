@@ -527,8 +527,8 @@ def test_permissions_inside_a_paragraph_never_leak_into_its_text() -> None:
     first, second = article.iter_paragraphs()
     assert first.text == "Intro Poem. after."
     assert second.text == "Second para."
-    assert [block.context for block in first.permissions] == ["disp-quote"]
-    assert [block.context for block in second.permissions] == ["p"]
+    assert [(block.context, block.inner) for block in first.permissions] == [("disp-quote", True)]
+    assert [(block.context, block.inner) for block in second.permissions] == [("p", False)]
     assert "All rights reserved" not in first.text + second.text
     assert article.unattached_permissions == ()
 
@@ -649,3 +649,61 @@ def test_embargoed_article_is_not_opened_before_its_start_date() -> None:
     assert decision.permissions == NO_PERMISSIONS
     assert decision.needs_review
     assert "2099-01-01" in decision.reasons[0]
+
+
+# ----- blocks on objects nested inside a paragraph (SYNTHETIC) ---------------
+
+ARTICLE_CC_BY_ND = (
+    "<permissions><license>"
+    "<ali:license_ref>https://creativecommons.org/licenses/by-nd/4.0/</ali:license_ref>"
+    "</license></permissions>"
+)
+
+
+@pytest.mark.parametrize(
+    ("paragraph", "context"),
+    [
+        (
+            f"<p>Article text <media xlink:href='v.mp4'>{CC_BY_BLOCK}</media> more text.</p>",
+            "media",
+        ),
+        (
+            f"<p>Article text <disp-quote><p>Quoted.</p>{CC_BY_BLOCK}</disp-quote> more.</p>",
+            "disp-quote",
+        ),
+        (
+            "<p>Article text <supplementary-material xlink:href='s1.pdf'>"
+            f"{CC_BY_BLOCK}</supplementary-material> more.</p>",
+            "supplementary-material",
+        ),
+    ],
+)
+def test_open_inline_object_never_lets_a_no_derivatives_paragraph_be_rewritten(
+    paragraph: str, context: str
+) -> None:
+    """Review probes P1, P2, P13: a CC BY object inside <p> of a CC BY-ND article stays ND."""
+    article = synthetic(f"<sec>{paragraph}</sec>", meta=ARTICLE_CC_BY_ND)
+    (block,) = article.iter_paragraphs()
+    assert [(b.context, b.inner) for b in block.permissions] == [(context, True)]
+    assert article.permissions is not None
+    decision = decide_part(decide(article.permissions.evidence()), block.permissions)
+    assert decision.permissions.can_display
+    assert not decision.permissions.can_rewrite
+    assert article.unattached_permissions == ()
+
+
+def test_figure_caption_blocks_are_inner_but_graphic_blocks_cover_the_figure() -> None:
+    """A block in a caption licenses a nested object; one on the graphic covers the figure."""
+    article = synthetic(
+        f"<fig><caption><p>See <media xlink:href='m.mp4'>{CC_BY_BLOCK}</media>.</p></caption>"
+        f"<graphic xlink:href='g.tif'>{CC_BY_BLOCK}</graphic></fig>",
+        meta=ARTICLE_CC_BY_ND,
+    )
+    (figure,) = article.figures
+    assert [(b.context, b.inner) for b in figure.permissions] == [
+        ("media", True),
+        ("graphic", False),
+    ]
+    assert article.permissions is not None
+    decision = decide_part(decide(article.permissions.evidence()), figure.permissions)
+    assert decision.permissions.can_rewrite

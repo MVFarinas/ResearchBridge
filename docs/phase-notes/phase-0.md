@@ -15,7 +15,7 @@ shared core library (`libs/rbcore`) that Phase 1, Phase 2 and Track R build on i
 | CI | GitHub Actions: Python job (`make setup/packages/lint/typecheck/test`), web job gated on `web/package.json` via a detect job (job-level `if` cannot use `hashFiles`). Actions pinned to commit SHAs. | `.github/workflows/ci.yml` |
 | Docs | `docs/conventions.md` (coding, docstrings, comments, tests, commits without trailers, data safety, licence and reuse rules); `docs/licence-inventory.md` (seeded from the report's tiers, every dependency added, two pending reviews with evidence); `CLAUDE.md`; root `README.md`. | `docs/`, root |
 | `rbcore.jats` | Safe JATS parser (PMC, Europe PMC, PLOS, eLife) → frozen dataclasses: identifiers, title, authors, journal, dates, article type, all abstracts (incl. digests), nested sections and paragraph blocks with stable positional IDs and flattened text (plus each block's source XML), figures and tables (body, back and `floats-group`), every `<permissions>` block attached to the part it covers (article, figure/table, paragraph) or reported as unattached, raw licence fields kept per field with ALI dates and `@specific-use`, COI statements and funding as raw text. Entity references that cannot be resolved fail loudly. | `libs/rbcore/src/rbcore/jats/` |
-| `rbcore.licences` | Normaliser for CC URLs (all versions, ports, `legalcode`/`deed` suffixes, `licences` spelling), CC0, public domain, arXiv URIs (non-exclusive and "assumed"), PMC/Europe PMC/bioRxiv/SPDX codes. `derive_permissions` (the §1.1 table + addendum), `decide` (evidence → decision, fail closed, honours ALI `start_date`/`end_date`), `decide_part` (figure-, table- and paragraph-level override; several blocks fail closed). `LicenceField` is the shared provenance vocabulary for every source. | `libs/rbcore/src/rbcore/licences/` |
+| `rbcore.licences` | Normaliser for CC URLs (all versions, ports, `legalcode`/`deed` suffixes, `licences` spelling), CC0, public domain, arXiv URIs (non-exclusive and "assumed"), PMC/Europe PMC/bioRxiv/SPDX codes. `derive_permissions` (the §1.1 table + addendum), `decide` (evidence → decision, fail closed, honours ALI `start_date`/`end_date`), `decide_part` (figure-, table- and paragraph-level override; several covering blocks fail closed; blocks on nested objects only narrow). `LicenceField` is the shared provenance vocabulary for every source. | `libs/rbcore/src/rbcore/licences/` |
 | `rbcore.config` | `Settings.from_env()`: keys and model IDs from the environment only; secrets hidden from `repr`; judge must differ from generator (§1.4). | `libs/rbcore/src/rbcore/config.py` |
 | `rbcore.llm` | `LLMClient` protocol, `FakeLLMClient` (deterministic, output labelled `[SYNTHETIC FAKE LLM OUTPUT …]`, `synthetic=True`), `AnthropicClient` (official SDK, key from `ANTHROPIC_API_KEY`, model from config; **never called** in this run). | `libs/rbcore/src/rbcore/llm/` |
 | `rbcore.http` | `PoliteFetcher`: per-host intervals (arXiv 3 s, E-utilities 0.34 s, default 1 s), neutral User-Agent, atomic on-disk cache through unique temporary files (resumable, safe across processes), redirects followed by hand with each hop rate-limited, retries honouring `Retry-After`, size and `Content-Length` checks, http(s) only. | `libs/rbcore/src/rbcore/http.py` |
@@ -133,6 +133,20 @@ article.unattached_permissions  # non-empty: send the article to licence review
     `textmining`) and nothing unscoped agrees, the licence still stands but `needs_review=True`.
     An `@license-type` that normalises to a different recognised family also sets review.
     License-p prose is still never consulted, not even to clear a flag (§1.1 addendum).
+
+### Added in fix round 2 (after independent review)
+
+18. **Blocks on objects nested inside a part never widen it.** Fix round 1 let a single
+    `<permissions>` block anywhere inside a paragraph replace the article decision, so a CC BY
+    block on an inline `<media>`, `<disp-quote>` or `<supplementary-material>` inside a `<p>` of a
+    CC BY-ND article made the paragraph rewritable (fail open). The parser now marks such blocks
+    `PermissionsBlock.inner=True`: for a paragraph block, every block that is not its direct child
+    (or on an enclosing element); for a figure or table, every block not reached only through its
+    `graphic`, `media` or `alternatives` (so caption blocks are inner). `decide_part` decides the
+    part from its covering blocks as before, then keeps that decision only if every inner block
+    allows at least as much (display, rewrite, and no added non-commercial, attribution, or
+    different share-alike condition); otherwise the part fails closed with review, because one
+    decision cannot express the mix. An inner block therefore never widens a part.
 18. **Unresolvable entity references fail the parse** (`JatsParseError`) instead of silently
     dropping their text. Entities are never expanded, so `&nbsp;`-style references (internal
     DTD subset, or left for an external DTD) cannot be read safely. None of 60 real PMC, Europe

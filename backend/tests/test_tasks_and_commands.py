@@ -75,6 +75,16 @@ def test_defer_ingest_queues_once_per_article(queue: tuple[App, InMemoryConnecto
     assert tasks.defer_many(["PMC1", "PMC1", "PMC2"]) == (2, 1)
 
 
+@pytest.mark.django_db
+def test_queue_ingest_returns_the_waiting_job() -> None:
+    """On-demand lookups get the job ID, and the same ID while that job waits (Postgres queue)."""
+    first = tasks.queue_ingest("PMC10718527")
+    assert first is not None
+    assert tasks.queue_ingest("PMC10718527") == first
+    assert tasks.job_status(first) == "todo"
+    assert tasks.job_status(first + 1000) is None
+
+
 @pytest.mark.django_db(transaction=True)
 def test_worker_runs_ingestion_jobs(
     queue: tuple[App, InMemoryConnector], use_bucket: PmcBucket

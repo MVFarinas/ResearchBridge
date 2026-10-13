@@ -18,11 +18,12 @@ from datetime import timedelta
 from functools import wraps
 
 from django.conf import settings
-from django.db import connections
+from django.db import connections, transaction
 from django.db.models import F, Q
 from django.utils import timezone
 from procrastinate import RetryStrategy
 from procrastinate.contrib.django import app
+from procrastinate.contrib.django.models import ProcrastinateJob
 from procrastinate.exceptions import AlreadyEnqueued
 
 from rb_backend.corpus.models import PaperVersion, Source
@@ -98,6 +99,44 @@ def defer_ingest(pmcid: str) -> bool:
     except AlreadyEnqueued:
         return False
     return True
+
+
+def queue_ingest(pmcid: str) -> int | None:
+    """Queue one article and return the job that will ingest it.
+
+    Used by on-demand lookups, which report the job's progress.
+
+    Args:
+        pmcid: The PMC ID (normalised by the caller).
+
+    Returns:
+        The ID of the new job, or of the job already waiting for the
+        article; None if that job started in the meantime (rare).
+    """
+    # A savepoint, so a refused duplicate does not abort a caller's transaction.
+    try:
+        with transaction.atomic():
+            return ingest_pmc_article_task.configure(queueing_lock=pmcid).defer(pmcid=pmcid)
+    except AlreadyEnqueued:
+        # The queueing lock is only held by a job that is still waiting.
+        return (
+            ProcrastinateJob.objects.filter(queueing_lock=pmcid, status="todo")
+            .values_list("id", flat=True)
+            .first()
+        )
+
+
+def job_status(job_id: int) -> str | None:
+    """The status of a worker job.
+
+    Args:
+        job_id: The job ID.
+
+    Returns:
+        todo, doing, succeeded, failed, cancelled or aborted; None if no such
+        job exists (for example after the job table was pruned).
+    """
+    return ProcrastinateJob.objects.filter(id=job_id).values_list("status", flat=True).first()
 
 
 def defer_many(pmcids: Iterable[str]) -> tuple[int, int]:

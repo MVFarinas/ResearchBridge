@@ -1,12 +1,14 @@
-"""URL configuration: only the Django admin until the reader API (Phase 4).
+"""URL configuration: the Django admin and the reader API.
 
-Any future public view must read papers through :mod:`rb_backend.corpus.access`
-(the licence-gated access layer), never through the models directly.
+Every public view reads papers through :mod:`rb_backend.corpus.access` (the
+licence-gated access layer), never through the models directly; the access
+check in the test suite enforces it.
 """
 
 from django.contrib import admin
-from django.urls import path
+from django.urls import include, path
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path("api/v1/", include("rb_backend.api.urls")),
 ]

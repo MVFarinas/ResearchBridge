@@ -36,6 +36,10 @@ make lock       # recompile requirements/dev.txt after changing dependencies
 make db-up / make db-down   # local pgvector Postgres (RB_DB_PORT, default 5433)
 ```
 
+macOS ships GNU Make 3.81, which ignores the Makefile's `.SHELLFLAGS` (`-eu -o pipefail`). The
+targets above do not depend on them, but a new recipe that loops or pipes must fail explicitly
+(`|| exit 1`) rather than rely on them.
+
 Never install anything globally. Everything goes into `.venv` (Python) or `web/node_modules`.
 Docker works with Docker Desktop or OrbStack through the normal `docker compose` CLI.
 

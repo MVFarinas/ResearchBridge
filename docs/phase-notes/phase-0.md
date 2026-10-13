@@ -190,6 +190,12 @@ article.unattached_permissions  # non-empty: send the article to licence review
   entities stay unresolved with `resolve_entities=False`.
 - **Paragraph IDs are positional per article version.** A new version can renumber; store IDs
   with the version (Plan.md's `PaperVersion`).
+- **macOS's `/usr/bin/make` is GNU Make 3.81, which ignores `.SHELLFLAGS`** (found in Track R's
+  review, fixed on the Track R branch). So `-e -u -o pipefail` are inactive in every local
+  recipe, and before the fix a failing package other than the last did not fail `make test` or
+  `make typecheck` locally (CI's Make 4.x was unaffected). The package loops now end with
+  `|| exit 1`, which works in any Make. Recipes must not rely on `.SHELLFLAGS` for failure: keep
+  each command on its own recipe line, or exit explicitly inside loops and pipelines.
 
 ## Pending the owner (manual steps)
 

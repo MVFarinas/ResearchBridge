@@ -31,6 +31,11 @@ def _pairs(sentence: str) -> list[tuple[str, str]]:
         ),
         # "SF (long form)" when the parenthetical has more than two words.
         ("Levels of TNF (tumour necrosis factor) rose.", [("TNF", "tumour necrosis factor")]),
+        # ... or two words that are not a valid short form (too many letters).
+        (
+            "Newly added monomers are bound to the nucleotide ATP (adenosine triphosphate).",
+            [("ATP", "adenosine triphosphate")],
+        ),
     ],
 )
 def test_finds_definitions(sentence: str, expected: list[tuple[str, str]]) -> None:
@@ -47,6 +52,9 @@ def test_finds_definitions(sentence: str, expected: list[tuple[str, str]]) -> No
         "We tested the drug (X).",  # one-character short form
         "Levels of tnf (tumour necrosis factor) rose.",  # SF before parens needs a capital
         "Rates of colon cancer (CRC) fell.",  # C, R, C cannot all be matched in order
+        # A capitalised ordinary word is not an abbreviation ("SF (long form)" order).
+        "Best (but the results were inconsistent) tried it.",
+        "Pavlov (Pavlovian conditioning theory) described it.",
     ],
 )
 def test_rejects_non_definitions(sentence: str) -> None:

@@ -45,7 +45,12 @@ def _defined(nlp: Language, familiarity: Familiarity, text: str) -> list[tuple[s
         ("Allostasis is defined as stability through change.", [("explicit", "allostasis")]),
         ("We define allostasis as stability through change.", [("explicit", "allostasis")]),
         ("Allostasis refers to stability through change.", [("explicit", "allostasis")]),
+        ("Allostasis means stability through change.", [("explicit", "allostasis")]),
+        ("Allostasis denotes stability through change.", [("explicit", "allostasis")]),
+        ("Allostasis stands for stability through change.", [("explicit", "allostasis")]),
         ("Cells undergo a process known as autophagy.", [("naming", "autophagy")]),
+        ("Cells undergo a process termed autophagy.", [("naming", "autophagy")]),
+        ("Cells undergo a process referred to as autophagy.", [("naming", "autophagy")]),
         ("They found a protein called nestin in the brain.", [("naming", "nestin")]),
         ("The nephron is a structure that filters blood.", [("copular", "nephron")]),
         ("Patients had pyrexia (fever) for days.", [("gloss", "pyrexia")]),
@@ -108,3 +113,60 @@ def test_misparsed_appositive_without_determiner_defines_nothing(
     familiarity = make_familiarity({"apoptosis": 1.0, "hepatocytes": 0.5, "hepatocyte": 0.5})
     text = "Apoptosis, or programmed cell death, removed damaged hepatocytes."
     assert _defined(nlp, familiarity, text) == [("gloss", "apoptosis")]
+
+
+# Stock parentheticals, lists, names and misparses that real papers contain. Each
+# was recorded as a definition before the fix and removed a real term from the
+# burden score (review finding C-C1); real word frequencies are used, as there.
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Apoptosis was increased in hepatocytes (data not shown).",
+        "Apoptosis was increased in hepatocytes (unpublished observations).",
+        "Apoptosis was increased in hepatocytes (arrows).",
+        "Apoptosis was increased in hepatocytes (Methods).",
+        "Apoptosis was increased in hepatocytes (two-tailed t-test).",
+        "Apoptosis was increased in hepatocytes (wild type).",
+        "It was published in the Lancet, Deutsches Ärzteblatt, The BMJ, and JAMA.",
+        "Wei Mao (Université Paris-Saclay) is the first author.",
+        "The filament could match the curvature of the liposome (resulting in a sensing role).",
+        "He ran experiments on humans (he was a pioneer in the galvanic skin response).",
+        "Paramecia learned where cathodal stimulation (which exerted an attraction) was applied.",
+        "Gelber applies to Protozoa concepts (reinforcement and approach response) freely.",
+        "Small stock ownership (EUR 5000) was declared.",
+        "The results were inconsistent (Best, 1954; Mirsky and Katz, 1958).",
+        "We focus on Pavlovian conditioning (Pavlov, 1927) here.",
+        "Best (but the results were inconsistent) tried it.",
+        "Adiposity is a major source of inflammaging.",
+        "Synaptic plasticity is clearly not an option for protozoa.",
+    ],
+)
+def test_stock_phrases_lists_and_names_define_nothing(
+    nlp: Language, wordfreq_familiarity: Familiarity, text: str
+) -> None:
+    """Stock parentheticals, comma lists, names, clauses and citations are not definitions."""
+    assert _defined(nlp, wordfreq_familiarity, text) == []
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        (
+            "Nuclear material changes during conjugation (sexual reproduction) in ciliates.",
+            [("gloss", "conjugation")],
+        ),
+        ("Levels of ATP (adenosine triphosphate) rose.", [("abbreviation", "atp")]),
+        (
+            "Infection by Naegleria fowleri, a free-living amoeba, is rare.",
+            [("appositive", "naegleria fowleri")],
+        ),
+    ],
+)
+def test_real_definitions_survive_the_filters(
+    nlp: Language,
+    wordfreq_familiarity: Familiarity,
+    text: str,
+    expected: list[tuple[str, str]],
+) -> None:
+    """The stricter checks still accept ordinary glosses, abbreviations and appositives."""
+    assert _defined(nlp, wordfreq_familiarity, text) == expected

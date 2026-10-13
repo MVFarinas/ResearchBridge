@@ -6,12 +6,22 @@ text", Pacific Symposium on Biocomputing 8:451-462 (2003). No code was copied.
 
 The algorithm, per sentence:
 
-1. Find each parenthetical. If it holds at most two words and is no longer
-   than the text before it, it is a candidate short form (SF) defined by the
-   text before it, "long form (SF)". Otherwise the word just before the
-   parenthesis is the candidate SF and the parenthetical the long form (LF),
-   "SF (long form)"; that SF must contain a capital letter. Text after the
-   first ", " or "; " inside the parenthesis is ignored.
+1. Find each parenthetical. If it holds at most two words, is no longer
+   than the text before it and is a valid SF (step 2), it is a candidate
+   short form defined by the text before it, "long form (SF)". Otherwise the
+   word just before the parenthesis is the candidate SF and the
+   parenthetical the long form (LF), "SF (long form)". Text after the first
+   ", " or "; " inside the parenthesis is ignored.
+
+   One deliberate tightening of the paper: in the "SF (long form)" order the
+   SF must look like an abbreviation
+   (:func:`rbscores.burden.terms.looks_like_abbreviation`: two capitals, or
+   a capital and a digit), not merely contain a capital. The paper only asks
+   for a capital, which lets an ordinary capitalised word before a
+   parenthesis ("Best (but the results were inconsistent)") pass as an SF.
+   scispaCy's implementation applies a similar shape check. A two-word
+   parenthetical that is not a valid SF ("ATP (adenosine triphosphate)") is
+   tried in this order too.
 2. A valid SF has a letter, starts with a letter or digit, and has 2 to 10
    letters and digits.
 3. Match the SF to the LF candidate right to left: every letter or digit of
@@ -28,6 +38,8 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from typing import Final
+
+from rbscores.burden.terms import looks_like_abbreviation
 
 MAX_SHORT_FORM_CHARS: Final = 10
 _LONG_FORM_WORD_SPLIT = re.compile(r"[\s\-]+")
@@ -145,15 +157,16 @@ def _pair_at(sentence: str, open_index: int, close_index: int) -> tuple[str, int
         return None
 
     # "long form (SF)": a short parenthetical defined by the preceding text.
-    if len(inner.split()) <= 2 and len(inner) <= len(before):
-        return (inner, inner_start, before, 0) if _valid_short_form(inner) else None
+    if len(inner.split()) <= 2 and len(inner) <= len(before) and _valid_short_form(inner):
+        return inner, inner_start, before, 0
 
-    # "SF (long form)": the word before the parenthesis, which needs a capital.
+    # "SF (long form)": the word before the parenthesis, which must look like
+    # an abbreviation, so a capitalised ordinary word is not taken for one.
     trailing = _TRAILING_WORD.search(before)
     if trailing is None:
         return None
     short = trailing.group(1)
-    if not any(ch.isupper() for ch in short) or not _valid_short_form(short):
+    if not looks_like_abbreviation(short) or not _valid_short_form(short):
         return None
     return short, trailing.start(1), inner, inner_start
 

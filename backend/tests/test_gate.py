@@ -49,14 +49,18 @@ def prose_block(text: str, *, context: str, inner: bool = False) -> PermissionsB
 
 def test_agreeing_code_approves_version_and_parts_inherit() -> None:
     """A CC BY code with parsed content approves the version; parts inherit it."""
+    # Arrange: parsed synthetic content under a single agreeing CC BY code.
     version = synthetic_version()
     synthetic_content(version)
     synthetic_code(version, "CC BY")
 
+    # The version is approved with full CC BY permissions from the PMC code.
     assert evaluate_version(version, today=TODAY) == GateStatus.APPROVED
     assert (version.can_display, version.can_rewrite) == (True, True)
     assert version.output_licence_family == "cc-by"
     assert version.decision_source == LicenceField.PMC_LICENSE_CODE.value
+
+    # Parts without their own blocks inherit the article decision; nothing is queued.
     for part in [
         *Paragraph.objects.filter(version=version),
         *Figure.objects.filter(version=version),
@@ -88,13 +92,17 @@ def test_tdm_is_rejected_without_review_and_parts_wait() -> None:
 
 def test_conflict_opens_exactly_one_review_and_stays_idempotent() -> None:
     """Conflicting sources fail closed with one open review, however often re-run."""
+    # Arrange: two sources that disagree (CC BY versus CC BY-ND).
     version = synthetic_version()
     synthetic_content(version)
     synthetic_code(version, "CC BY")
     synthetic_code(version, "cc by-nd", LicenceField.EUROPE_PMC_LICENSE)
 
+    # Re-running the gate never duplicates the review.
     for _ in range(3):
         assert evaluate_version(version, today=TODAY) == GateStatus.REVIEW
+
+    # The review carries scope, a proposal and the evidence snapshot for the reviewer.
     review = LicenceReview.objects.get()
     assert review.status == ReviewStatus.OPEN
     assert review.scope == ReviewScope.VERSION
@@ -103,6 +111,8 @@ def test_conflict_opens_exactly_one_review_and_stays_idempotent() -> None:
         "pmc:license_code",
         "europepmc:license",
     }
+
+    # Meanwhile the version and its parts fail closed.
     assert not version.can_display
     assert f"awaiting licence review #{review.pk}" in version.decision_reasons
     assert set(Paragraph.objects.values_list("gate_status", flat=True)) == {GateStatus.PENDING}
@@ -110,6 +120,7 @@ def test_conflict_opens_exactly_one_review_and_stays_idempotent() -> None:
 
 def test_resolution_approves_and_survives_re_evaluation() -> None:
     """A reviewer's approval applies, and keeps applying while the evidence is unchanged."""
+    # Arrange: a conflict that opens a version review.
     version = synthetic_version()
     synthetic_content(version)
     synthetic_code(version, "CC BY")
@@ -117,9 +128,12 @@ def test_resolution_approves_and_survives_re_evaluation() -> None:
     evaluate_version(version, today=TODAY)
     review = LicenceReview.objects.get()
 
+    # Act: a reviewer approves with CC BY-ND.
     status = resolve_review(
         review, approve=True, licence_value="CC BY-ND", note="Publisher confirms ND.", reviewer=None
     )
+
+    # The reviewer's licence decides, and keeps deciding on re-evaluation.
     assert status == GateStatus.APPROVED
     version.refresh_from_db()
     assert (version.can_display, version.can_rewrite) == (True, False)
@@ -130,6 +144,7 @@ def test_resolution_approves_and_survives_re_evaluation() -> None:
 
 def test_changed_evidence_reopens_review_instead_of_reusing_the_answer() -> None:
     """A resolution is tied to its evidence: new evidence means a new review."""
+    # Arrange: a conflict resolved by a reviewer.
     version = synthetic_version()
     synthetic_content(version)
     synthetic_code(version, "CC BY")
@@ -138,6 +153,7 @@ def test_changed_evidence_reopens_review_instead_of_reusing_the_answer() -> None
     first = LicenceReview.objects.get()
     resolve_review(first, approve=True, licence_value="CC BY", note="Checked.", reviewer=None)
 
+    # New evidence arrives: the old answer no longer applies, a new review opens.
     synthetic_code(version, "cc by-nc", LicenceField.EUROPE_PMC_LICENSE)
     assert evaluate_version(version, today=TODAY) == GateStatus.REVIEW
     assert LicenceReview.objects.filter(status=ReviewStatus.OPEN).count() == 1
@@ -232,6 +248,7 @@ def test_failed_parse_sends_version_to_review() -> None:
 
 def test_figure_prose_override_fails_closed_with_its_own_review() -> None:
     """A figure with only prose in its own permissions is hidden and queued; the paper is not."""
+    # Arrange: a CC BY paper whose first figure has only prose in its permissions.
     version = synthetic_version()
     synthetic_content(version, figures=2)
     synthetic_code(version, "CC BY")
@@ -243,17 +260,21 @@ def test_figure_prose_override_fails_closed_with_its_own_review() -> None:
         figure=figure,
     )
 
+    # The paper is approved; that figure alone is held with its own review.
     assert evaluate_version(version, today=TODAY) == GateStatus.APPROVED
     figure.refresh_from_db()
     assert figure.gate_status == GateStatus.REVIEW
     assert not figure.can_display
     review = LicenceReview.objects.get()
     assert (review.scope, review.figure_id) == (ReviewScope.FIGURE, figure.pk)
+
+    # The other figure inherits the paper's licence.
     assert Figure.objects.get(version=version, stable_id="fig2").can_display
 
 
 def test_figure_licence_override_narrows_permissions() -> None:
     """A figure under CC BY-ND inside a CC BY paper may be shown, not rewritten."""
+    # Arrange: a CC BY paper with a figure under its own CC BY-ND licence.
     version = synthetic_version()
     synthetic_content(version)
     synthetic_code(version, "CC BY")
@@ -264,6 +285,8 @@ def test_figure_licence_override_narrows_permissions() -> None:
         scope=BlockScope.FIGURE,
         figure=figure,
     )
+
+    # The figure may be shown but not rewritten.
     evaluate_version(version, today=TODAY)
     figure.refresh_from_db()
     assert (figure.gate_status, figure.can_display, figure.can_rewrite) == (
@@ -276,6 +299,7 @@ def test_figure_licence_override_narrows_permissions() -> None:
 
 def test_figure_review_resolution_applies_to_that_figure() -> None:
     """Resolving a figure review opens just that figure."""
+    # Arrange: a figure with a prose-only permissions block, queued for review.
     version = synthetic_version()
     synthetic_content(version)
     synthetic_code(version, "CC BY")
@@ -287,6 +311,8 @@ def test_figure_review_resolution_applies_to_that_figure() -> None:
         figure=figure,
     )
     evaluate_version(version, today=TODAY)
+
+    # Act: the reviewer approves it under CC BY-NC; only that figure changes.
     review = LicenceReview.objects.get(scope=ReviewScope.FIGURE)
     resolve_review(
         review, approve=True, licence_value="CC BY-NC 4.0", note="Checked.", reviewer=None
@@ -297,6 +323,7 @@ def test_figure_review_resolution_applies_to_that_figure() -> None:
 
 def test_inner_block_allowing_less_closes_the_paragraph() -> None:
     """A nested object licensed more narrowly closes its paragraph for review."""
+    # Arrange: a CC BY paper with a paragraph quoting a CC BY-NC-ND object.
     version = synthetic_version()
     synthetic_content(version)
     synthetic_code(version, "CC BY")
@@ -307,10 +334,13 @@ def test_inner_block_allowing_less_closes_the_paragraph() -> None:
         scope=BlockScope.PARAGRAPH,
         paragraph=paragraph,
     )
+
+    # Mark the block as belonging to an object nested inside the paragraph.
     paragraph_block = paragraph.permission_blocks.get()
     paragraph_block.inner = True
     paragraph_block.save()
 
+    # That paragraph goes to review; its neighbours keep the paper's permissions.
     evaluate_version(version, today=TODAY)
     paragraph.refresh_from_db()
     assert paragraph.gate_status == GateStatus.REVIEW

@@ -160,14 +160,19 @@ def test_ingest_pmc_searches_and_queues(
         calls.append((term, limit))
         return ["PMC900000001", "PMC900000002"]
 
+    # Act: search with filters and add one explicit PMC ID.
     monkeypatch.setattr(ingest_pmc, "search_pmc", fake_search)
     out = run(
         "ingest_pmc", "--limit", "3", "--query", "asthma", "--licence", "cc-by", "--pmcid", "PMC1"
     )
+
+    # The search got the bucket and licence filters and only the remaining limit.
     expected_term = (
         "(asthma) AND (open_access[Filter] OR author_manuscript[Filter]) AND cc_by_license[Filter]"
     )
     assert calls == [(expected_term, 2)]
+
+    # All three IDs became worker jobs.
     assert "queued 3 job(s)" in out
     assert sorted(job["args"]["pmcid"] for job in jobs(connector)) == [
         "PMC1",

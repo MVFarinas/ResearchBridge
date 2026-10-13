@@ -21,6 +21,7 @@ from rbcore.http import PoliteFetcher
 
 def test_metadata_parses_a_recorded_document() -> None:
     """Every field the gate and pipeline use is read with the right type."""
+    # Identity fields of the recorded eLife article.
     metadata = PmcMetadata.from_json((PMC_FIXTURES / "PMC10718527.1.json").read_bytes())
     assert (metadata.pmcid, metadata.version, metadata.version_id) == (
         "PMC10718527",
@@ -29,6 +30,8 @@ def test_metadata_parses_a_recorded_document() -> None:
     )
     assert metadata.pmid == "38088194"  # a JSON number in the source
     assert metadata.doi == "10.7554/eLife.93719"
+
+    # The flags the gate and the pipeline act on, and the MD5-carrying XML URL.
     assert metadata.license_code == "CC BY"
     assert metadata.is_retracted is False
     assert metadata.is_manuscript is False
@@ -158,6 +161,7 @@ def test_xml_with_wrong_md5_is_refused_after_one_fresh_attempt(
     bucket: PmcBucket, recorded: RecordedBucket, fetcher: PoliteFetcher
 ) -> None:
     """A corrupted download is refetched once (cache discarded), then refused."""
+    # Arrange: synthetic metadata whose MD5 no served file can match.
     metadata = PmcMetadata.from_json(
         json.dumps(
             {
@@ -169,6 +173,8 @@ def test_xml_with_wrong_md5_is_refused_after_one_fresh_attempt(
     )
     assert metadata.xml_url is not None
     recorded.overrides[metadata.xml_url] = b"<synthetic/>"
+
+    # The download is retried once without the cache, then refused.
     with pytest.raises(PmcError, match="does not match its MD5"):
         bucket.article_xml(metadata)
     assert len(recorded.fetched(".xml")) == 2

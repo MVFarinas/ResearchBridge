@@ -26,6 +26,7 @@ def ev(field: LicenceField, value: str, **kwargs: str) -> LicenceEvidence:
 
 def test_precedence_order_is_the_documented_one() -> None:
     """PMC code, then Europe PMC, then JATS, then arXiv, then bioRxiv; aggregators last."""
+    # Ranks of the sources in the order the task and decisions.md give them.
     ranks = [
         SOURCE_PRECEDENCE[f]
         for f in (
@@ -37,6 +38,8 @@ def test_precedence_order_is_the_documented_one() -> None:
             F.OPENALEX_LICENSE,
         )
     ]
+
+    # Strictly increasing, and every licence field has a rank.
     assert ranks == sorted(ranks)
     assert len(set(ranks)) == len(ranks)
     assert set(SOURCE_PRECEDENCE) == set(LicenceField)

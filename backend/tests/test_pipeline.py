@@ -72,9 +72,12 @@ def serve_synthetic(
     **extra: Any,
 ) -> None:
     """Serve a synthetic article version: listing, metadata and XML with a matching MD5."""
+    # Serve the XML first: its MD5 goes into the metadata's xml_url.
     version_id = f"{SYNTHETIC_PMCID}.{version}"
     digest = recorded.add_xml(version_id, xml)
     recorded.add_listing(SYNTHETIC_PMCID, listed or [version])
+
+    # Synthetic metadata in the shape of the PMC JSON.
     recorded.add_metadata(
         {
             "pmcid": SYNTHETIC_PMCID,
@@ -147,6 +150,7 @@ def test_rerun_is_idempotent_and_does_not_refetch_xml(
     bucket: PmcBucket, recorded: RecordedBucket
 ) -> None:
     """A second run changes nothing, re-confirms the licence, and skips the XML."""
+    # Arrange: one ingestion, and the row counts it produced.
     ingest("PMC10718527", bucket)
     counts = (
         Paragraph.objects.count(),
@@ -155,6 +159,7 @@ def test_rerun_is_idempotent_and_does_not_refetch_xml(
     )
     later = NOW + timedelta(days=8)
 
+    # Act: re-check eight days later with nothing changed upstream.
     report = ingest("PMC10718527", bucket, now=later)
     assert report.outcome == IngestOutcome.UNCHANGED
     assert not report.content_parsed
@@ -164,6 +169,8 @@ def test_rerun_is_idempotent_and_does_not_refetch_xml(
         LicenceRecord.objects.count(),
         PermissionsBlockRecord.objects.count(),
     )
+
+    # The licence code is re-confirmed, not rewritten, and the check time advances.
     code = LicenceRecord.objects.get(field="pmc:license_code")
     assert (code.retrieved_at, code.last_confirmed_at) == (NOW, later)
     assert PaperVersion.objects.get().last_checked_at == later
@@ -173,12 +180,15 @@ def test_tdm_manuscript_is_rejected_and_its_text_never_downloaded(
     bucket: PmcBucket, recorded: RecordedBucket
 ) -> None:
     """TDM is refused outright: no XML request, no content, no review."""
+    # Act: ingest the recorded TDM author manuscript.
     report = ingest("PMC13641010", bucket)
     assert (report.outcome, report.gate_status, report.licence_family) == (
         IngestOutcome.CREATED,
         GateStatus.REJECTED,
         "tdm",
     )
+
+    # Nothing of the text was requested or stored, and nothing is queued for review.
     assert recorded.fetched(".xml") == []
     version = PaperVersion.objects.get()
     assert version.content_state == ContentState.SKIPPED
@@ -360,9 +370,12 @@ def test_retraction_is_recorded_blocks_rewriting_and_can_be_withdrawn(
     bucket: PmcBucket, recorded: RecordedBucket
 ) -> None:
     """A (synthetic) is_retracted flag keeps the paper readable but never rewriteable."""
+    # Arrange: the recorded article with a synthetic is_retracted flag.
     metadata = recorded_metadata("PMC10718527.1")
     recorded.add_metadata({**metadata, "is_retracted": True})
     ingest("PMC10718527", bucket)
+
+    # The retraction is recorded with its source; the paper is readable, not rewriteable.
     paper = Paper.objects.get()
     assert (paper.is_retracted, paper.retraction_source, paper.retraction_recorded_at) == (
         True,
@@ -373,6 +386,7 @@ def test_retraction_is_recorded_blocks_rewriting_and_can_be_withdrawn(
     assert not Paper.objects.rewriteable().exists()
     assert not Paragraph.objects.rewriteable().exists()
 
+    # PMC clears the flag: so do we, because PMC set it.
     recorded.add_metadata(metadata)
     ingest("PMC10718527", bucket)
     paper.refresh_from_db()
@@ -412,6 +426,7 @@ def test_code_turning_tdm_purges_stored_text(bucket: PmcBucket, recorded: Record
 
 def test_new_version_becomes_current(bucket: PmcBucket, recorded: RecordedBucket) -> None:
     """When a new version appears, it replaces the old one as the version served."""
+    # Arrange: version 1 is ingested, then the bucket lists version 2 as well.
     serve_synthetic(recorded, version=1, xml=synthetic_jats(["Synthetic version one."]))
     ingest(SYNTHETIC_PMCID, bucket)
     serve_synthetic(
@@ -419,6 +434,7 @@ def test_new_version_becomes_current(bucket: PmcBucket, recorded: RecordedBucket
     )
     report = ingest(SYNTHETIC_PMCID, bucket)
 
+    # Version 2 is now the only current version, and only its text is served.
     assert report.version_id == f"{SYNTHETIC_PMCID}.2"
     v1, v2 = PaperVersion.objects.order_by("version_number")
     assert (v1.is_current, v2.is_current) == (False, True)
@@ -432,6 +448,7 @@ def test_changed_xml_reparses_and_keeps_surviving_paragraphs(
     bucket: PmcBucket, recorded: RecordedBucket
 ) -> None:
     """An updated XML keeps paragraph rows (and annotations) whose stable IDs survive."""
+    # Arrange: a synthetic article with two paragraphs and an annotation on the first.
     serve_synthetic(
         recorded, version=1, xml=synthetic_jats(["Synthetic alpha text.", "Synthetic beta."])
     )
@@ -451,8 +468,11 @@ def test_changed_xml_reparses_and_keeps_surviving_paragraphs(
         provenance=Provenance.HUMAN,
     )
 
+    # Act: the same version's XML changes; the second paragraph disappears.
     serve_synthetic(recorded, version=1, xml=synthetic_jats(["Synthetic alpha text, edited."]))
     report = ingest(SYNTHETIC_PMCID, bucket, now=NOW + timedelta(days=1))
+
+    # The surviving paragraph keeps its row, so the annotation stays attached.
     assert report.content_parsed
     assert list(Paragraph.objects.values_list("pk", "text")) == [
         (first.pk, "Synthetic alpha text, edited.")

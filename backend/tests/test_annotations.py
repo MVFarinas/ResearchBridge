@@ -174,6 +174,7 @@ def test_annotation_records_anchor_and_first_revision(paragraph: Paragraph) -> N
 
 def test_edit_appends_revision_and_verification_does_not(paragraph: Paragraph) -> None:
     """Content edits are versioned; verification alone is not a content change."""
+    # Act: one content edit, then a verification-only save.
     user = get_user_model().objects.create_user("synthetic-editor")
     annotation = make(paragraph)
     annotation.body = {**BODY, "value": "Synthetic corrected explanation."}
@@ -183,6 +184,7 @@ def test_edit_appends_revision_and_verification_does_not(paragraph: Paragraph) -
     annotation.verified_by = user
     annotation.save()
 
+    # Only the content edit produced a revision; the original is kept as revision 1.
     revisions = list(AnnotationRevision.objects.filter(annotation=annotation))
     assert [(r.number, r.provenance) for r in revisions] == [
         (1, Provenance.LLM),
@@ -230,9 +232,13 @@ def test_votes_and_reports_have_their_rules(paragraph: Paragraph) -> None:
     """One vote per reader, only +1/-1; resolved reports need a time."""
     annotation = make(paragraph)
     user = get_user_model().objects.create_user("synthetic-reader")
+
+    # One vote per reader per annotation.
     Vote.objects.create(annotation=annotation, voter=user, value=1)
     with pytest.raises(IntegrityError), transaction.atomic():
         Vote.objects.create(annotation=annotation, voter=user, value=-1)
+
+    # Votes are only +1 or -1, and a resolved report needs a resolution time.
     other = get_user_model().objects.create_user("synthetic-reader-2")
     with pytest.raises(IntegrityError), transaction.atomic():
         Vote.objects.create(annotation=annotation, voter=other, value=5)

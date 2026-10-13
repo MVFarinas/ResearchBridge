@@ -60,6 +60,7 @@ def test_real_blocks_round_trip_exactly(path: Path) -> None:
 
 def test_synthetic_block_with_every_field_round_trips() -> None:
     """Dates, scopes, empty statements, prose and inner flags all survive."""
+    # A synthetic block that sets every field rbcore models, including edge cases.
     block = PermissionsBlock(
         copyright_statement="(c) Synthetic Holder",
         copyright_years=("2020",),
@@ -88,11 +89,14 @@ def test_synthetic_block_with_every_field_round_trips() -> None:
         context="graphic",
         inner=True,
     )
+
+    # Storing and rebuilding it loses nothing.
     assert round_trip(block) == block
 
 
 def test_records_keep_raw_value_field_and_normalisation() -> None:
     """Each record holds the raw value, its field, and rbcore's normalisation."""
+    # A synthetic block with a ported CC licence URI and some prose.
     block = PermissionsBlock(
         licences=(
             LicenceStatement(
@@ -103,6 +107,8 @@ def test_records_keep_raw_value_field_and_normalisation() -> None:
             ),
         )
     )
+
+    # Act: build the rows that would be stored for it.
     rows = rows_from_block(
         PaperVersion(source_version_id="PMC0.1"),
         block,
@@ -111,6 +117,8 @@ def test_records_keep_raw_value_field_and_normalisation() -> None:
         source_url="https://example.invalid/synthetic.xml",
         retrieved_at=NOW,
     )
+
+    # Each record keeps its source field and rbcore's normalisation of the raw value.
     ali, prose = rows.records
     assert (
         ali.field,
@@ -124,17 +132,22 @@ def test_records_keep_raw_value_field_and_normalisation() -> None:
         "igo",
     )
     assert (prose.field, prose.normalised_family) == (LicenceField.JATS_LICENSE_P.value, "unknown")
+
+    # Provenance: where and when the value was read.
     assert ali.source_url == "https://example.invalid/synthetic.xml"
     assert ali.retrieved_at == NOW == ali.last_confirmed_at
 
 
 def test_evidence_summary_is_json_ready() -> None:
     """The reviewer's snapshot lists context, holders and each value."""
+    # A synthetic figure block with only licence prose.
     block = PermissionsBlock(
         copyright_holders=("Synthetic Holder",),
         licences=(LicenceStatement(prose="Not covered by the CC BY licence (synthetic)."),),
         context="fig",
     )
+
+    # The summary names the context, holders and each value with its field.
     summary = evidence_summary(block)
     assert summary["context"] == "fig"
     assert summary["copyright_holders"] == ["Synthetic Holder"]

@@ -78,6 +78,7 @@ def test_version_page_is_view_only(staff: Client, review: LicenceReview) -> None
 
 def test_review_form_approves_with_a_licence(staff: Client, review: LicenceReview) -> None:
     """Approving through the admin records the decision and re-runs the gate."""
+    # Act: a staff user approves the review through the admin form.
     url = reverse("admin:corpus_licencereview_change", args=[review.pk])
     response = staff.post(
         url,
@@ -88,6 +89,8 @@ def test_review_form_approves_with_a_licence(staff: Client, review: LicenceRevie
         },
     )
     assert response.status_code == 302
+
+    # The decision, reviewer and note are recorded, and the gate has re-run.
     review.refresh_from_db()
     assert (review.status, review.resolved_family, review.reviewer_note) == (
         ReviewStatus.APPROVED,

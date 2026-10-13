@@ -74,6 +74,7 @@ def test_parse_refuses_errors_and_garbage(document: bytes) -> None:
 
 def test_search_pages_until_limit(tmp_path: Path) -> None:
     """Paging continues with retstart and stops at the limit (synthetic pages)."""
+    # Synthetic ESearch: six results in total, served three per page.
     seen: list[dict[str, list[str]]] = []
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -85,12 +86,15 @@ def test_search_pages_until_limit(tmp_path: Path) -> None:
         body = {"esearchresult": {"count": "6", "retstart": str(start), "idlist": ids}}
         return httpx.Response(200, json=body)
 
+    # Act: ask for five.
     with PoliteFetcher(
         cache_dir=tmp_path,
         transport=httpx.MockTransport(handler),
         rate_limiter=RateLimiter({}, default_interval=0.0),
     ) as fetcher:
         found = search_pmc(fetcher, "synthetic", limit=5)
+
+    # Two pages were requested, the second from retstart 3, and nothing was cached.
     assert found == ["PMC1000", "PMC1001", "PMC1002", "PMC1003", "PMC1004"]
     assert [p["retstart"] for p in seen] == [["0"], ["3"]]
     assert not list(tmp_path.rglob("*")), "search results are never cached"

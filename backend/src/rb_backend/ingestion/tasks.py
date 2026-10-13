@@ -109,6 +109,7 @@ def defer_many(pmcids: Iterable[str]) -> tuple[int, int]:
     Returns:
         ``(queued, already_queued)``.
     """
+    # The queueing lock rejects an article already waiting; count those separately.
     queued = skipped = 0
     for pmcid in pmcids:
         if defer_ingest(pmcid):
@@ -131,6 +132,7 @@ def stale_pmcids(*, max_age: timedelta, limit: int) -> list[str]:
     Returns:
         PMC IDs.
     """
+    # Only current versions are served, so only they need to stay current.
     cutoff = timezone.now() - max_age
     versions = (
         PaperVersion.objects.filter(source=Source.PMC, is_current=True)
@@ -150,6 +152,7 @@ def recheck_stale_pmc_task(timestamp: int) -> None:
     Args:
         timestamp: The scheduled time, supplied by Procrastinate.
     """
+    # Bounded batch per day, so a large corpus is re-checked politely over several days.
     pmcids = stale_pmcids(
         max_age=timedelta(days=settings.RB_RECHECK_MAX_AGE_DAYS),
         limit=settings.RB_RECHECK_BATCH_SIZE,

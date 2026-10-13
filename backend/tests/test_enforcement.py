@@ -111,6 +111,7 @@ def test_database_refuses_permissions_that_break_the_table(
     description: str, changes: dict[str, object], model: str
 ) -> None:
     """Writing contradictory permissions fails at the database, for every gated table."""
+    # Arrange: one row of each gated table, approved under CC BY.
     version = synthetic_version()
     section = Section.objects.create(version=version, stable_id="body", kind="body", position=0)
     rows: dict[str, Callable[[], GatedPermissions]] = {
@@ -131,6 +132,8 @@ def test_database_refuses_permissions_that_break_the_table(
     row = rows[model]()
     decide_row(row, GateStatus.APPROVED, LicenceFamily.CC_BY)
     row.save()
+
+    # Act: write a contradictory combination directly; the check constraints refuse it.
     for name, value in changes.items():
         setattr(row, name, value)
     with pytest.raises(IntegrityError), transaction.atomic():
@@ -218,6 +221,7 @@ def test_matrix_covers_both_outcomes(matrix: list[PaperVersion]) -> None:
 
 def test_versions_and_papers_match_the_rules_exactly(matrix: list[PaperVersion]) -> None:
     """displayable()/rewriteable() return exactly the versions and papers that pass."""
+    # Versions: the querysets return exactly the ones the reference rules accept.
     by_pk = {v.pk: v for v in matrix}
     assert set(PaperVersion.objects.displayable().values_list("pk", flat=True)) == {
         pk for pk, v in by_pk.items() if version_display_ok(v)
@@ -225,6 +229,8 @@ def test_versions_and_papers_match_the_rules_exactly(matrix: list[PaperVersion])
     assert set(PaperVersion.objects.rewriteable().values_list("pk", flat=True)) == {
         pk for pk, v in by_pk.items() if version_rewrite_ok(v)
     }
+
+    # Papers: exactly those whose current version passes.
     assert set(Paper.objects.displayable().values_list("pk", flat=True)) == {
         v.paper_id for v in matrix if version_display_ok(v)
     }
@@ -239,6 +245,7 @@ def test_parts_match_the_rules_exactly(
     matrix: list[PaperVersion], model: type[Figure] | type[Paragraph]
 ) -> None:
     """Figures, tables and paragraphs pass only if they and their version pass."""
+    # Expected results from the reference rules: the part and its version must both pass.
     versions = {v.pk: v for v in matrix}
     rows: list[Figure | Paragraph] = list(model.objects.all())
     expected_display = {
@@ -252,6 +259,8 @@ def test_parts_match_the_rules_exactly(
         if own_rewrite_ok(r.gate_status, r.licence_family)
         and version_rewrite_ok(versions[r.version_id])
     }
+
+    # The querysets agree exactly, and the matrix is not trivially empty.
     assert set(model.objects.displayable().values_list("pk", flat=True)) == expected_display
     assert set(model.objects.rewriteable().values_list("pk", flat=True)) == expected_rewrite
     assert expected_display, "some parts must pass for the comparison to mean anything"
@@ -273,6 +282,7 @@ def test_no_returned_figure_fails_its_own_override(matrix: list[PaperVersion]) -
 
 def test_access_layer_applies_the_gate_per_version(matrix: list[PaperVersion]) -> None:
     """Access helpers return nothing for a failing version, and only passing parts otherwise."""
+    # Every version in the matrix: failing ones expose nothing at all.
     for version in matrix:
         paragraphs = list(access.displayable_paragraphs(version))
         figures = list(access.displayable_figures(version))
@@ -281,6 +291,8 @@ def test_access_layer_applies_the_gate_per_version(matrix: list[PaperVersion]) -
             assert (paragraphs, figures, sections) == ([], [], [])
             assert access.displayable_version(version.paper) is None
             continue
+
+        # Passing ones expose only parts whose own decision passes, in document order.
         assert access.displayable_version(version.paper) == version
         assert all(own_ok(p.gate_status, p.licence_family) for p in paragraphs)
         assert all(own_ok(f.gate_status, f.licence_family) for f in figures)

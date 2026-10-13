@@ -14,13 +14,13 @@ shared core library (`libs/rbcore`) that Phase 1, Phase 2 and Track R build on i
 | Database | `docker-compose.yml`: `pgvector/pgvector:0.8.7-pg16`, host port `${RB_DB_PORT:-5433}` bound to 127.0.0.1, named volume, `pg_isready` healthcheck. Smoke-tested as project `rb-phase0` on port 5439 (healthy; `CREATE EXTENSION vector` gave 0.8.7 on PostgreSQL 16.15; a vector distance query worked), then brought down with its volume removed. | `docker-compose.yml` |
 | CI | GitHub Actions: Python job (`make setup/packages/lint/typecheck/test`), web job gated on `web/package.json` via a detect job (job-level `if` cannot use `hashFiles`). Actions pinned to commit SHAs. | `.github/workflows/ci.yml` |
 | Docs | `docs/conventions.md` (coding, docstrings, comments, tests, commits without trailers, data safety, licence and reuse rules); `docs/licence-inventory.md` (seeded from the report's tiers, every dependency added, two pending reviews with evidence); `CLAUDE.md`; root `README.md`. | `docs/`, root |
-| `rbcore.jats` | Safe JATS parser (PMC, Europe PMC, PLOS, eLife) → frozen dataclasses: identifiers, title, authors, journal, dates, article type, all abstracts (incl. digests), nested sections and paragraph blocks with stable positional IDs and flattened text (plus each block's source XML), figures and tables with their own `<permissions>`, raw licence fields kept per field, COI statements and funding as raw text. | `libs/rbcore/src/rbcore/jats/` |
-| `rbcore.licences` | Normaliser for CC URLs (all versions, ports, `legalcode`/`deed` suffixes, `licences` spelling), CC0, public domain, arXiv URIs (non-exclusive and "assumed"), PMC/Europe PMC/bioRxiv/SPDX codes. `derive_permissions` (the §1.1 table + addendum), `decide` (evidence → decision, fail closed), `decide_figure` (figure-level override). `LicenceField` is the shared provenance vocabulary for every source. | `libs/rbcore/src/rbcore/licences/` |
+| `rbcore.jats` | Safe JATS parser (PMC, Europe PMC, PLOS, eLife) → frozen dataclasses: identifiers, title, authors, journal, dates, article type, all abstracts (incl. digests), nested sections and paragraph blocks with stable positional IDs and flattened text (plus each block's source XML), figures and tables (body, back and `floats-group`), every `<permissions>` block attached to the part it covers (article, figure/table, paragraph) or reported as unattached, raw licence fields kept per field with ALI dates and `@specific-use`, COI statements and funding as raw text. Entity references that cannot be resolved fail loudly. | `libs/rbcore/src/rbcore/jats/` |
+| `rbcore.licences` | Normaliser for CC URLs (all versions, ports, `legalcode`/`deed` suffixes, `licences` spelling), CC0, public domain, arXiv URIs (non-exclusive and "assumed"), PMC/Europe PMC/bioRxiv/SPDX codes. `derive_permissions` (the §1.1 table + addendum), `decide` (evidence → decision, fail closed, honours ALI `start_date`/`end_date`), `decide_part` (figure-, table- and paragraph-level override; several blocks fail closed). `LicenceField` is the shared provenance vocabulary for every source. | `libs/rbcore/src/rbcore/licences/` |
 | `rbcore.config` | `Settings.from_env()`: keys and model IDs from the environment only; secrets hidden from `repr`; judge must differ from generator (§1.4). | `libs/rbcore/src/rbcore/config.py` |
 | `rbcore.llm` | `LLMClient` protocol, `FakeLLMClient` (deterministic, output labelled `[SYNTHETIC FAKE LLM OUTPUT …]`, `synthetic=True`), `AnthropicClient` (official SDK, key from `ANTHROPIC_API_KEY`, model from config; **never called** in this run). | `libs/rbcore/src/rbcore/llm/` |
-| `rbcore.http` | `PoliteFetcher`: per-host intervals (arXiv 3 s, E-utilities 0.34 s, default 1 s), neutral User-Agent, atomic on-disk cache (resumable), retries honouring `Retry-After`, size limit, http(s) only. | `libs/rbcore/src/rbcore/http.py` |
-| Tests | 198 rbcore tests + 11 tools tests. Every §1.1 row (including CC BY-NC-ND and share-alike output licence), fail-closed cases, per-source codes, figure overrides; real fixtures; synthetic snippets (named as such) for structure edge cases; XXE, entity-bomb, DTD and size-limit security tests; config, fake/real LLM client (stubbed SDK), HTTP via `httpx.MockTransport`. | `libs/rbcore/tests/`, `tools/tests/` |
-| Fixtures | Five verbatim CC BY 4.0 JATS files with attribution README and SHA-256 manifest (checked by a test): eLife 93719 from PMC **and** from Europe PMC (the latter has prose-only licence), eLife 65180 (Figure 1 has its own CC BY-NC licence), eLife 61907 (Figure 1 has a prose-only "not covered by CC-BY" block), PLOS Medicine 1004542 (publisher JATS, `license/@xlink:href`). | `libs/rbcore/tests/fixtures/jats/` |
+| `rbcore.http` | `PoliteFetcher`: per-host intervals (arXiv 3 s, E-utilities 0.34 s, default 1 s), neutral User-Agent, atomic on-disk cache through unique temporary files (resumable, safe across processes), redirects followed by hand with each hop rate-limited, retries honouring `Retry-After`, size and `Content-Length` checks, http(s) only. | `libs/rbcore/src/rbcore/http.py` |
+| Tests | 242 rbcore tests + 11 tools tests. Every §1.1 row (including CC BY-NC-ND and share-alike output licence), fail-closed cases, per-source codes, figure overrides; real fixtures; synthetic snippets (named as such) for structure edge cases; XXE, entity-bomb, DTD and size-limit security tests; config, fake/real LLM client (stubbed SDK), HTTP via `httpx.MockTransport`. | `libs/rbcore/tests/`, `tools/tests/` |
+| Fixtures | Five verbatim CC BY 4.0 JATS files with attribution README and SHA-256 manifest (checked by a test): eLife 93719 from PMC **and** from Europe PMC (the latter has prose-only licence), eLife 65180 (Figure 1 has three panel-level blocks: one CC BY-NC, two copyright-only), eLife 61907 (Figure 1 has a prose-only "not covered by CC-BY" block), PLOS Medicine 1004542 (publisher JATS, `license/@xlink:href`). | `libs/rbcore/tests/fixtures/jats/` |
 
 ## How to run
 
@@ -43,12 +43,16 @@ Using the shared library:
 
 ```python
 from rbcore.jats import parse_jats_file
-from rbcore.licences import decide, decide_figure
+from rbcore.licences import LicenceEvidence, LicenceField, decide, decide_part
 
 article = parse_jats_file(path)
-decision = decide(article.permissions.evidence() if article.permissions else [])
-decision.permissions.can_display, decision.permissions.can_rewrite, decision.source_field
-[decide_figure(decision, f.permissions) for f in article.figures]
+evidence = [*(article.permissions.evidence() if article.permissions else ())]
+evidence.append(LicenceEvidence(LicenceField.PMC_LICENSE_CODE, pmc_json["license_code"]))
+decision = decide(evidence)  # one source's evidence, judged today (UTC)
+decision.permissions.can_display, decision.permissions.can_rewrite, decision.needs_review
+article.unattached_permissions  # non-empty: send the article to licence review
+[decide_part(decision, f.permissions) for f in article.figures]
+[decide_part(decision, p.permissions) for p in article.iter_paragraphs()]
 ```
 
 ## Deviations and decisions made, with reasons
@@ -89,7 +93,8 @@ decision.permissions.can_display, decision.permissions.can_rewrite, decision.sou
 8. **A figure/table with its own `<permissions>` block but no machine-readable licence fails
    closed** (no display, needs review), even when the copyright holder is the article's authors:
    the block exists because the object is licensed differently, and its prose cannot be trusted
-   automatically. Seen in real data (eLife 61907 Figure 1).
+   automatically. Seen in real data (eLife 61907 Figure 1). The same applies to paragraphs
+   (`decide_part`, which replaced `decide_figure` in fix round 1).
 9. **Definite refusals are not review cases.** `TDM`, arXiv non-exclusive and bioRxiv `cc_no`
    decide "no" with `needs_review=False`; review is for evidence a human could resolve.
 10. **Strict XML parsing (no `recover`)**: malformed files raise `JatsParseError`. Recovery can
@@ -102,7 +107,47 @@ decision.permissions.can_display, decision.permissions.can_rewrite, decision.sou
 13. **Compose binds Postgres to 127.0.0.1** rather than all interfaces: the dev credentials are
     public in `.env.example`.
 
+### Added in fix round 1 (after independent review)
+
+14. **Every `<permissions>` block is accounted for.** JATS allows `<permissions>` on `graphic`,
+    `media`, `fig-group`, `table-wrap-group`, `disp-quote`, `boxed-text`, `statement`,
+    `supplementary-material` and `sec-meta`, not only on `fig`/`table-wrap`. The parser now gives
+    each figure, table and paragraph the tuple of every block that applies to it (enclosing ones
+    and ones inside it, except inside a nested float), records where each block was attached
+    (`PermissionsBlock.context`), and reports any block it cannot attach in
+    `Article.unattached_permissions`. `permissions` is never flattened into paragraph text.
+    `Figure.permissions` changed from `PermissionsBlock | None` to a tuple (empty = inherits).
+15. **Several blocks on one part fail closed.** `decide_part` never chooses between blocks: a
+    figure with an open block and a closed block on its graphic gets no display and review. This
+    also fixed a real case: eLife 65180 Figure 1 has three panel-level blocks (CC BY-NC, and two
+    "not covered by CC-BY" copyright blocks); the original parser read only the first and
+    displayed the figure as CC BY-NC.
+16. **NISO ALI dates are honoured** (`decide(..., today=...)`, default today in UTC). A licence
+    with a future `start_date` (delayed open access), a past `end_date`, or an unparsable date is
+    not in force: no display, review. Among dated references in force the latest `start_date`
+    supersedes earlier ones (the ALI embargo-transition pattern); undated values always count.
+    A future `end_date` grants but sets review. `ali:free_to_read` dates are recorded for
+    reviewers only. Re-run `decide` when an embargo date passes; nothing schedules that yet.
+17. **`@specific-use` and `@license-type` raise review, never permissions.** If every
+    machine-readable value in force is scoped by a `@specific-use` other than `vor` (for example
+    `textmining`) and nothing unscoped agrees, the licence still stands but `needs_review=True`.
+    An `@license-type` that normalises to a different recognised family also sets review.
+    License-p prose is still never consulted, not even to clear a flag (§1.1 addendum).
+18. **Unresolvable entity references fail the parse** (`JatsParseError`) instead of silently
+    dropping their text. Entities are never expanded, so `&nbsp;`-style references (internal
+    DTD subset, or left for an external DTD) cannot be read safely. None of 60 real PMC, Europe
+    PMC and PLOS files tried uses one; all parse.
+19. **Objects in `<floats-group>`** are parsed after body and back (stable numbering continues)
+    and get the section of the first `xref` that cites them (`section_id=None` if uncited).
+
 ## Findings later phases should know
+
+- **Every PMC Cloud Service copy we have seen carries only `ali:license_ref
+  specific-use="textmining"`** (60 real files from eLife, Springer Nature, OUP, BMJ, Cureus, Wiley,
+  Frontiers and Elsevier journals: no `license/@xlink:href`). `decide` on the JATS alone therefore
+  grants but sets `needs_review`. Pass the PMC JSON `license_code` (the §1.1 addendum's first
+  precedence, fetched from the same bucket) in the same `decide` call: when it agrees, no review
+  is needed; when it disagrees, the paper fails closed.
 
 - **Prefer the PMC Cloud Service copy of an article over Europe PMC's `fullTextXML`.** For the
   same eLife article, PMC's XML has `ali:license_ref`, while Europe PMC's has only `license-p`
@@ -149,7 +194,14 @@ decision.permissions.can_display, decision.permissions.can_rewrite, decision.sou
 
 - Not parsed: `sub-article` (eLife peer-review material; skipped on purpose), supplementary
   material, `trans-abstract`, table cell text (tables keep caption, footnotes and source XML only),
-  references (`ref-list`).
+  references (`ref-list`), and text blocks (for example `boxed-text`) placed in `floats-group`;
+  any `<permissions>` on those is reported in `unattached_permissions`.
+- Part-level permissions attach to paragraphs, figures and tables; a section `title` or a figure
+  caption has no separate decision (it follows its section's paragraphs or its figure).
+- No real CC BY article using `<floats-group>` was found: 8 probed PMC copies (Data in Brief,
+  Scientific Reports, NAR, BMJ Open, Cureus, Ecology and Evolution, Frontiers in Immunology,
+  Heliyon) place floats in the body. The `floats-group` handling is tested on a synthetic snippet
+  only.
 - MathML without TeX or `@alttext` flattens to its raw token text (for example "x2" for x²).
 - Paragraph `text` is plain text; there is no offset map to rendered HTML yet, which W3C
   `TextPositionSelector`s will need (Phase 4).
@@ -158,7 +210,9 @@ decision.permissions.can_display, decision.permissions.can_rewrite, decision.sou
 - The fixture set is five articles from two publishers' pipelines (eLife via PMC/Europe PMC,
   PLOS). Other publishers' JATS variants (BMC, Frontiers, MDPI) are untested.
 - `PoliteFetcher` is synchronous and per-process: rate limits are not shared between concurrent
-  processes, and it does not read robots.txt (it is meant for APIs and the PMC bucket).
+  processes (cache writes are safe across processes), and it does not read robots.txt (it is
+  meant for APIs and the PMC bucket). `Content-Length` is checked only for responses without a
+  `Content-Encoding`.
 - The Docker image is pinned by tag, not digest. The lock was compiled on macOS; all pins are
   platform-independent versions, but CI on Linux has not run yet.
 - Distribution names `researchbridge-rbcore` and `researchbridge-devtools` are unregistered on

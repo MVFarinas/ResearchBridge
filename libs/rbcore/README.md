@@ -5,25 +5,31 @@ Phase 1 (benchmark), Phase 2 (backend) and Track R (scores), which are built in 
 
 | Module | What it does |
 |---|---|
-| `rbcore.jats` | Safe JATS XML parsing (PMC, Europe PMC, PLOS, eLife) into immutable dataclasses: identifiers, metadata, abstracts, nested sections and paragraphs with **stable positional IDs**, figures and tables with their own `<permissions>`, raw licence fields, COI statements and funding. |
-| `rbcore.licences` | Normalises licence URIs and codes (CC in every version and port, CC0, PMC `license_code`, Europe PMC, bioRxiv, arXiv, SPDX) and applies the decisions.md §1.1 gate: `can_display`, `can_rewrite`, `output_licence`, `non_commercial`. Fails closed. Figure-level overrides. |
+| `rbcore.jats` | Safe JATS XML parsing (PMC, Europe PMC, PLOS, eLife) into immutable dataclasses: identifiers, metadata, abstracts, nested sections and paragraphs with **stable positional IDs**, figures, tables and paragraphs with every `<permissions>` block that applies to them (plus any block that fits nowhere, reported as unattached), raw licence fields with ALI dates and `@specific-use`, COI statements and funding. |
+| `rbcore.licences` | Normalises licence URIs and codes (CC in every version and port, CC0, PMC `license_code`, Europe PMC, bioRxiv, arXiv, SPDX) and applies the decisions.md §1.1 gate: `can_display`, `can_rewrite`, `output_licence`, `non_commercial`. Fails closed, including on ALI embargo dates. Figure-, table- and paragraph-level overrides. |
 | `rbcore.config` | `Settings.from_env()`: model IDs and optional keys from the environment. |
 | `rbcore.llm` | `LLMClient` protocol, deterministic `FakeLLMClient`, and `AnthropicClient` (official SDK, never called without a key). |
-| `rbcore.http` | `PoliteFetcher`: per-host rate limits, neutral User-Agent, atomic on-disk cache, retries, size limits. |
+| `rbcore.http` | `PoliteFetcher`: per-host rate limits, neutral User-Agent, atomic on-disk cache, per-hop rate-limited redirects, retries, size and length checks. |
 
 ## Quick use
 
 ```python
 from rbcore.jats import parse_jats_file
-from rbcore.licences import decide, decide_figure
+from rbcore.licences import LicenceEvidence, LicenceField, decide, decide_part
 
 article = parse_jats_file("PMC10718527.1.xml")
-decision = decide(article.permissions.evidence() if article.permissions else [])
-if decision.permissions.can_rewrite:
-    for paragraph in article.iter_paragraphs():
+evidence = list(article.permissions.evidence()) if article.permissions else []
+# PMC copies carry only text-mining-scoped ali:license_refs; pass the PMC JSON
+# license_code in the same call so an unscoped value can confirm them.
+evidence.append(LicenceEvidence(LicenceField.PMC_LICENSE_CODE, "CC BY"))
+decision = decide(evidence)
+if article.unattached_permissions:
+    ...  # part of the article is licensed differently: send to licence review
+for paragraph in article.iter_paragraphs():
+    if decide_part(decision, paragraph.permissions).permissions.can_rewrite:
         print(paragraph.id, paragraph.text)  # e.g. "sec2.1-p3", "..."
 for figure in article.figures:
-    print(figure.id, decide_figure(decision, figure.permissions).permissions)
+    print(figure.id, decide_part(decision, figure.permissions).permissions)
 ```
 
 ## Paragraph ID scheme
@@ -39,7 +45,11 @@ A new article *version* may renumber; store IDs per version.
 per-source codes), never `license-p` prose or `@license-type`, and never aggregator fields
 (Crossref, OpenAlex). Missing, prose-only, conflicting or unrecognised evidence gives
 `can_display=False, can_rewrite=False`, with `needs_review=True` where a human could resolve it.
-Precedence *across* sources (PMC JSON vs Europe PMC vs JATS vs arXiv vs bioRxiv) is Phase 2's job.
+NISO ALI dates are honoured: a licence whose `start_date` is in the future (an embargo) or whose
+`end_date` has passed is not in force. A decision can grant permissions and still set
+`needs_review` (use-scoped `@specific-use` evidence with nothing unscoped agreeing, a
+contradicting `@license-type`, a future `end_date`). A part (figure, table, paragraph) with
+several permissions blocks fails closed. Precedence *across* sources (PMC JSON vs Europe PMC vs JATS vs arXiv vs bioRxiv) is Phase 2's job.
 
 Tests: `make test` (or `cd libs/rbcore && ../../.venv/bin/pytest`). Fixture attribution:
 [tests/fixtures/jats/README.md](tests/fixtures/jats/README.md).

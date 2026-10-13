@@ -54,7 +54,8 @@ Docker works with Docker Desktop or OrbStack through the normal `docker compose`
   **no print-debugging** (ruff `T20`). Command-line tools write to `sys.stdout`/`sys.stderr`.
 - Lint and format with ruff (config in [ruff.toml](../ruff.toml)): line length 100, rules
   `E W F I N D UP B A C4 SIM PT RET PTH ANN S T20 ERA RUF`, pydocstyle `google` convention.
-  Ruff also formats Python code blocks inside Markdown.
+  Ruff also formats Python code blocks inside Markdown files (`make lint` checks them) and code
+  examples inside docstrings (`docstring-code-format`).
 - Prefer immutable dataclasses (`frozen=True, slots=True`) for data passed between phases.
 
 ## TypeScript (web, from Phase 4)
@@ -82,8 +83,9 @@ Docker works with Docker Desktop or OrbStack through the normal `docker compose`
 - **No fabricated content, ever.** No invented annotations, rewrites, summaries, ratings or
   metrics may be presented as real. Placeholder or demo data must be labelled as such and never
   seeded into a database as if real.
-- **Licence gate first** (decisions.md §1.1). Nothing displays or rewrites a paper, figure or table
-  that has not passed `rbcore.licences.decide` / `decide_figure`. The gate fails closed.
+- **Licence gate first** (decisions.md §1.1). Nothing displays or rewrites a paper, figure, table
+  or paragraph that has not passed `rbcore.licences.decide` / `decide_part`. The gate fails
+  closed, and an article whose `unattached_permissions` is non-empty goes to licence review.
 - **LLM calls go through `rbcore.llm.LLMClient`.** Model IDs come from configuration
   (`RB_LLM_GENERATION_MODEL`, `RB_LLM_JUDGE_MODEL`), never from code. The key comes only from
   `ANTHROPIC_API_KEY`. Tests and dry runs use the fake client.

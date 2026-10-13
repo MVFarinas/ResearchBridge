@@ -1,0 +1,228 @@
+# ResearchBridge faithfulness rubric, version 1.
+#
+# STATUS: DRAFT, for the owner's review. Not yet used with raters or the judge
+# on real rewrites. Human-readable version: rubric_v1.md. Rater guide with
+# illustrative worked examples: rater_guide_v1.md.
+#
+# Every code is separate and judged on its own (decisions.md §1.4: narrow
+# yes/no checks agree far better than one holistic rating). Codes never
+# depend on each other: a claim can be "supported" and still carry a lost
+# hedge, and a claim can be "unsupported" because it is marked, factual added
+# context.
+#
+# Machine-readable: loaded by rbbench.rubric. Changing anything here means a
+# new file (rubric_v2.yaml); runs record this file's SHA-256.
+
+id: rubric_v1
+status: DRAFT
+status_note: >-
+  Draft for owner review (2026-10-13). Definitions follow decisions.md §1.4 and
+  the coding schemes cited per code. Not yet piloted; expect wording changes
+  after a calibration round with the first two raters.
+
+units:
+  claim: >-
+    One atomic claim taken from a rewritten paragraph. Judge it against the
+    aligned source paragraph; the rest of the source passage is shown for
+    context and may also support it.
+  paragraph: >-
+    One rewritten paragraph as a whole, judged against its aligned source
+    paragraph.
+
+codes:
+  - id: support
+    unit: claim
+    kind: nominal
+    question: Does the source passage support this claim?
+    values:
+      - id: supported
+        label: Supported
+        definition: >-
+          The source states the claim or directly entails it. Simplified
+          wording counts as supported if a domain expert would accept it as
+          saying the same thing.
+      - id: unsupported
+        label: Unsupported
+        definition: >-
+          The source neither states nor entails the claim, and does not
+          contradict it. Added background (marked or not) is usually here.
+      - id: contradicted
+        label: Contradicted
+        definition: >-
+          The source says something incompatible with the claim (a different
+          direction of effect, number, population, conclusion or certainty
+          that cannot both be true).
+    references:
+      - "decisions.md §1.4"
+      - "FactPICO (Joseph et al., ACL 2024): contradictions annotated separately"
+
+  - id: overgen_generic
+    unit: claim
+    kind: binary
+    group: overgeneralisation
+    question: >-
+      Does the claim turn a quantified or qualified statement about the studied
+      sample into a generic statement?
+    yes_when: >-
+      The source limits a finding to a proportion, subgroup, sample, species,
+      setting or condition ("in 62% of the mice tested", "in this cohort of
+      older adults") and the claim drops that limit ("mice", "older adults",
+      "people").
+    no_when: >-
+      The claim keeps the quantifier or qualifier, or the source itself makes
+      the generic statement.
+    references:
+      - "Peters & Chin-Yee 2025, R Soc Open Sci, doi:10.1098/rsos.241776 (shift 1: quantified to generic)"
+
+  - id: overgen_present_tense
+    unit: claim
+    kind: binary
+    group: overgeneralisation
+    question: >-
+      Does the claim turn a past-tense report of what was found into a
+      present-tense general truth?
+    yes_when: >-
+      The source reports a result in the past tense ("treatment reduced
+      symptoms") and the claim states it as a timeless fact ("treatment
+      reduces symptoms").
+    no_when: >-
+      The tense change is only about the paper itself ("the authors show"),
+      or the source already states the finding in the generic present.
+    references:
+      - "Peters & Chin-Yee 2025 (shift 2: past to present tense)"
+
+  - id: overgen_action_guiding
+    unit: claim
+    kind: binary
+    group: overgeneralisation
+    question: >-
+      Does the claim turn a description of a finding into a recommendation or
+      a statement about what people should do?
+    yes_when: >-
+      The source describes what was observed and the claim tells readers,
+      clinicians or policymakers what to do or what is safe or effective for
+      them ("so you should...", "doctors should prescribe...", "it is safe
+      to...").
+    no_when: >-
+      The source itself makes the recommendation, or the claim only describes.
+    references:
+      - "Peters & Chin-Yee 2025 (shift 3: descriptive to action-guiding)"
+
+  - id: lost_hedge
+    unit: claim
+    kind: binary
+    question: Is the claim more certain than the source?
+    yes_when: >-
+      The source hedges ("may", "suggests", "is associated with", "in
+      preliminary work", "we speculate") or expresses uncertainty (wide or
+      uncertain estimates, "not statistically significant", "could not
+      determine") and the claim drops the hedge or states the point with more
+      certainty.
+    no_when: >-
+      The claim keeps an equivalent hedge, or the source is itself certain.
+    references:
+      - "Pei & Jurgens, EMNLP 2021 (scientific certainty)"
+      - "Plan.md Phase 1 rubric item: lost hedge or certainty"
+
+  - id: correlation_to_causation
+    unit: claim
+    kind: binary
+    question: Does the claim present an association from the source as cause and effect?
+    yes_when: >-
+      The source reports a correlation or association (observational data,
+      "linked to", "associated with", "correlated with") and the claim uses
+      causal language ("causes", "leads to", "makes", "prevents", "because of").
+    no_when: >-
+      The claim keeps correlational language, or the source itself supports a
+      causal statement (for example a randomised comparison or a direct
+      experimental manipulation reported as causal by the authors).
+    references:
+      - "Yu, Li & Wang, EMNLP-IJCNLP 2019: detecting causal language use in science findings"
+      - "Yu, Wang & Li, COLING 2020: correlation-to-causation exaggeration in press releases"
+
+  - id: spin
+    unit: claim
+    kind: binary
+    question: >-
+      Does the claim make the finding look more favourable, important or
+      conclusive than the source reports?
+    yes_when: >-
+      The claim adds favourable framing that the source does not give:
+      presents a non-significant or secondary result as a success, stresses a
+      benefit while leaving out the reported harm or null primary outcome,
+      calls the result a "breakthrough", "proof" or "cure", or overstates its
+      importance.
+    no_when: >-
+      The framing matches the source's. Spin already present in the source
+      and carried over faithfully is not coded here (note it in the comment).
+    references:
+      - "Boutron & Ravaud 2018, PNAS: spin in biomedical research reports"
+
+  - id: substituted_detail
+    unit: claim
+    kind: binary
+    question: >-
+      Does the claim change a number, unit, population, intervention,
+      comparator or outcome from the source?
+    yes_when: >-
+      Any reported quantity differs (including rounding that changes meaning,
+      relative stated as absolute risk, or a wrong unit), or the claim names a
+      different population, species, intervention, comparator or outcome.
+    no_when: >-
+      Numbers and PICO elements match, or are rounded without changing the
+      meaning.
+    references:
+      - "Devaraj et al., ACL 2022: substitution errors"
+      - "FactPICO: Population, Intervention, Comparator, Outcome"
+
+  - id: added_information
+    unit: claim
+    kind: nominal
+    question: >-
+      Does the claim add information that is not in the source passage, and if
+      so, is that information correct?
+    values:
+      - id: "no"
+        label: Not added
+        definition: The claim's content comes from the source passage.
+      - id: factual
+        label: Added, factual
+        definition: >-
+          The claim adds information beyond the source (background,
+          definition, context) that is correct as general knowledge and does
+          not change what the paper found.
+      - id: non_factual
+        label: Added, non-factual
+        definition: >-
+          The claim adds information beyond the source that is wrong,
+          unverifiable, or presented as if the paper found it.
+    references:
+      - "FactPICO: added information labelled factual or non-factual"
+      - "Plan.md Phase 1: marked additions are classified, not forbidden"
+
+  - id: dropped_limitation
+    unit: paragraph
+    kind: binary
+    question: >-
+      Does the rewritten paragraph leave out a limitation, caveat or
+      uncertainty that its source paragraph states?
+    yes_when: >-
+      The source paragraph states a limitation of the study or finding
+      (sample size, design, generalisability, confounding, preliminary
+      nature, an unexplained or contrary result) and the rewritten paragraph
+      does not convey it.
+    no_when: >-
+      The source paragraph states no limitation, or the rewrite conveys every
+      limitation it states.
+    references:
+      - "Peters et al., OSF q936d: limitations in LLM summaries"
+      - "Plan.md Phase 1 rubric item: dropped limitation"
+
+derived:
+  - id: overgeneralisation
+    unit: claim
+    rule: any_yes
+    of: [overgen_generic, overgen_present_tense, overgen_action_guiding]
+    description: >-
+      Yes if any of the three Peters & Chin-Yee shifts is coded yes. Computed,
+      never rated directly.

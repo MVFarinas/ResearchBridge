@@ -240,16 +240,17 @@ class LicenceReviewAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
         "__str__",
         "version",
         "scope",
-        "part",
+        "part_stable_id",
         "status",
         "proposed_family",
         "created_at",
     )
     list_filter = ("status", "scope", "proposed_family")
-    search_fields = ("version__source_version_id", "version__title")
+    search_fields = ("version__source_version_id", "version__title", "part_stable_id")
     readonly_fields = (
         "version",
         "scope",
+        "part_stable_id",
         "figure",
         "paragraph",
         "status",
@@ -266,19 +267,6 @@ class LicenceReviewAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
         "created_at",
     )
 
-    @admin.display(description="part")
-    def part(self, review: LicenceReview) -> str:
-        """The figure or paragraph under review.
-
-        Args:
-            review: The review.
-
-        Returns:
-            The part's stable ID, or "".
-        """
-        part = review.figure or review.paragraph
-        return part.stable_id if part is not None else ""
-
     def get_queryset(self, request: HttpRequest) -> QuerySet[LicenceReview]:
         """Load related rows for the list.
 
@@ -288,7 +276,7 @@ class LicenceReviewAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
         Returns:
             The queryset.
         """
-        return super().get_queryset(request).select_related("version", "figure", "paragraph")
+        return super().get_queryset(request).select_related("version")
 
     def has_add_permission(self, request: HttpRequest) -> bool:
         """Reviews are opened by the gate, never by hand.

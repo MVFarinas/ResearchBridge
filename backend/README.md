@@ -9,7 +9,7 @@ decisions and results: [docs/phase-notes/phase-2.md](../docs/phase-notes/phase-2
 |---|---|
 | `rb_backend.corpus` | `Paper`, `PaperVersion`, `Section`, `Paragraph`, `Figure`; licence provenance (`LicenceRecord`, `PermissionsBlockRecord`); the `LicenceReview` queue; the gate (`gate.evaluate_version`, `precedence.resolve_licence`); the **gated read API** (`access`, and the `displayable()` / `rewriteable()` querysets); the static bypass check (`accesscheck`). |
 | `rb_backend.annotations` | W3C Web Annotation-shaped `Annotation` with provenance, plus `AnnotationRevision`, `Vote`, `Report`. |
-| `rb_backend.ingestion` | PMC Cloud Service client (`pmc`), ESearch discovery (`eutils`), the pipeline, worker tasks, and the `ingest_pmc` / `recheck_licences` commands. |
+| `rb_backend.ingestion` | PMC Cloud Service client (`pmc`), ESearch discovery (`eutils`), the pipeline, worker tasks, the review-resolution receivers (`receivers`), and the `ingest_pmc` / `recheck_licences` commands. |
 | `rb_backend.metadata` | Cached clients for OpenAlex, NIH iCite, Crossref and the PMC ID converter (`CachedResponse`, "as of" dates, stale fallback), and the paper-level credibility signals. |
 | `rb_backend.discovery` | Corpus full-text search (`SearchDocument`, built by the gate), OpenAlex search with availability tags, and the lookup flow (`LookupRequest`, daily budget, worker job status). |
 | `rb_backend.api` | Django REST framework endpoints under `/api/v1/`: `papers/<key>/`, `papers/<key>/credibility/`, `search/`, `lookup/`, `lookup/requests/<id>/`. |
@@ -17,6 +17,8 @@ decisions and results: [docs/phase-notes/phase-2.md](../docs/phase-notes/phase-2
 **The one rule for later phases:** read papers, versions, sections, paragraphs, figures and
 annotations only through `rb_backend.corpus.access` or the `displayable()` / `rewriteable()`
 queryset methods. The test suite fails if a module outside the corpus internals does otherwise.
+Retracted papers are displayable but never rewriteable: wherever a paper is shown, show
+`access.retraction_notice(paper)` prominently when it returns one.
 
 ## Run it locally
 

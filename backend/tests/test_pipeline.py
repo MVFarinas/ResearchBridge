@@ -30,7 +30,7 @@ from rb_backend.ingestion.pipeline import (
     ingest_pmc_article,
 )
 from rb_backend.ingestion.pmc import PmcBucket
-from rbcore.http import FetchError
+from rbcore.http import FetchError, PoliteFetcher
 from rbcore.jats import parse_jats
 
 pytestmark = pytest.mark.django_db
@@ -280,7 +280,7 @@ def test_article_removed_from_bucket_is_held_for_review_until_relisted(
 
 
 def test_jats_rejection_removes_text_and_does_not_refetch_it(
-    bucket: PmcBucket, recorded: RecordedBucket
+    bucket: PmcBucket, recorded: RecordedBucket, fetcher: PoliteFetcher
 ) -> None:
     """No code plus an all-rights-reserved JATS licence: rejected, and no text is kept."""
     # A synthetic article without a PMC code whose JATS licence reserves all rights.
@@ -300,6 +300,11 @@ def test_jats_rejection_removes_text_and_does_not_refetch_it(
     assert not Paragraph.objects.exists()
     assert PermissionsBlockRecord.objects.active().filter(scope="article").count() == 1
 
+    # Neither the database nor the download cache keeps the rejected XML.
+    cached = fetcher.cache_path(version.content_url)
+    assert cached is not None
+    assert not cached.exists()
+
     # A re-check with the same XML keeps the rejection without parsing the text again.
     report = ingest(SYNTHETIC_PMCID, bucket, now=NOW + timedelta(days=8))
     assert (report.outcome, report.gate_status, report.content_parsed) == (
@@ -310,10 +315,13 @@ def test_jats_rejection_removes_text_and_does_not_refetch_it(
     assert not Paragraph.objects.exists()
 
 
-def test_reviewer_rejection_removes_text_and_approval_brings_it_back(
+def test_reviewer_rejection_removes_text_and_new_evidence_brings_it_back(
     bucket: PmcBucket, recorded: RecordedBucket
 ) -> None:
-    """Text removed after a review rejection is fetched again once a reviewer approves."""
+    """Text removed after a review rejection is fetched again once new evidence approves it.
+
+    A reviewer approving a removed version instead is covered in test_receivers.py.
+    """
     # The code and the JATS disagree (synthetic CC BY-ND code), so the version is reviewed.
     recorded.add_metadata({**recorded_metadata("PMC10718527.1"), "license_code": "CC BY-ND"})
     ingest("PMC10718527", bucket)
@@ -385,11 +393,17 @@ def test_retraction_is_recorded_blocks_rewriting_and_can_be_withdrawn(
     assert not Paper.objects.rewriteable().exists()
     assert not Paragraph.objects.rewriteable().exists()
 
-    # PMC clears the flag: so do we, because PMC set it.
+    # The read API hands every reader path the notice it must show.
+    assert access.retraction_notice(paper) == access.RetractionNotice(
+        source="pmc:is_retracted", retraction_date=None, recorded_at=NOW
+    )
+
+    # PMC clears the flag: so do we, because PMC set it, and the notice goes.
     recorded.add_metadata(metadata)
     ingest("PMC10718527", bucket)
     paper.refresh_from_db()
     assert not paper.is_retracted
+    assert access.retraction_notice(paper) is None
     assert Paper.objects.rewriteable().filter(pk=paper.pk).exists()
 
 

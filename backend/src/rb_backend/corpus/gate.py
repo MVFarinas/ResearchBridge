@@ -42,7 +42,7 @@ from dataclasses import dataclass
 from datetime import UTC, date, datetime
 
 from django.db import transaction
-from django.db.models import Q, QuerySet
+from django.db.models import QuerySet
 from django.utils import timezone
 
 from rb_backend.corpus.blocks import block_from_rows, evidence_dict, evidence_summary
@@ -497,6 +497,7 @@ def _settle(
             scope=scope,
             figure=part if isinstance(part, Figure) else None,
             paragraph=part if isinstance(part, Paragraph) else None,
+            part_stable_id=part.stable_id if part is not None else "",
             reasons=reasons,
             evidence=list(snapshot),
             evidence_fingerprint=fingerprint,
@@ -556,6 +557,11 @@ def _reviews_for(
 ) -> QuerySet[LicenceReview]:
     """Reviews of one version scope (and part).
 
+    Part reviews are matched by the part's stable ID, not its row, so a
+    review resolved before the part's row was deleted (text removed after a
+    rejection, then fetched again) still applies while its evidence
+    fingerprint matches.
+
     Args:
         version: The version.
         scope: Review scope.
@@ -564,12 +570,9 @@ def _reviews_for(
     Returns:
         A queryset of the matching reviews.
     """
-    condition = Q(version=version, scope=scope)
-    if isinstance(part, Figure):
-        condition &= Q(figure=part)
-    elif isinstance(part, Paragraph):
-        condition &= Q(paragraph=part)
-    return LicenceReview.objects.filter(condition)
+    return LicenceReview.objects.filter(
+        version=version, scope=scope, part_stable_id=part.stable_id if part is not None else ""
+    )
 
 
 def _fingerprint(

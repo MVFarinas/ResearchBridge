@@ -20,6 +20,7 @@ from pathlib import Path
 from typing import Any
 
 import httpx
+from procrastinate.testing import InMemoryConnector
 
 from rb_backend.corpus.blocks import evidence_row, rows_from_block
 from rb_backend.corpus.models import (
@@ -339,3 +340,15 @@ def synthetic_content(version: PaperVersion, *, paragraphs: int = 2, figures: in
             label=f"Synthetic figure {i + 1}",
             position=i,
         )
+
+
+def jobs(connector: InMemoryConnector) -> list[dict[str, Any]]:
+    """The jobs an in-memory Procrastinate connector holds.
+
+    Args:
+        connector: The connector (see the ``queue`` fixture).
+
+    Returns:
+        The queued jobs as dictionaries.
+    """
+    return [dict(job) for job in connector.jobs.values()]

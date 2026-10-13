@@ -3,7 +3,8 @@
 A reviewer approves a review with a licence (a URI or code, normalised by
 rbcore and required to be recognised) or rejects it, always with a written
 justification. The version is then re-evaluated, which applies the
-resolution for as long as the evidence it was given for stays the same.
+resolution for as long as the evidence it was given for stays the same, and
+:data:`rb_backend.corpus.signals.review_resolved` is sent.
 """
 
 from __future__ import annotations
@@ -16,6 +17,7 @@ from django.utils import timezone
 
 from rb_backend.corpus.gate import evaluate_version
 from rb_backend.corpus.models import GateStatus, LicenceReview, ReviewStatus
+from rb_backend.corpus.signals import review_resolved
 from rbcore.licences import LicenceFamily, normalise_licence
 
 
@@ -73,4 +75,11 @@ def resolve_review(
             review.status = ReviewStatus.REJECTED
         review.save()
         # Re-run the gate so the resolution takes effect everywhere.
-        return evaluate_version(review.version, now=review.resolved_at)
+        status = evaluate_version(review.version, now=review.resolved_at)
+
+        # Let the content side react (fetch removed text again, or drop a
+        # rejected version's cached copy) without the gate depending on it.
+        review_resolved.send(
+            sender=LicenceReview, review=review, version=review.version, status=status
+        )
+        return status

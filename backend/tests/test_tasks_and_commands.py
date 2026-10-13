@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-from collections.abc import Iterator
 from datetime import timedelta
 from io import StringIO
 from typing import Any
@@ -14,7 +13,7 @@ from django.utils import timezone
 from procrastinate import App
 from procrastinate.contrib.django import app as procrastinate_app
 from procrastinate.testing import InMemoryConnector
-from support import synthetic_code, synthetic_content, synthetic_version
+from support import jobs, synthetic_code, synthetic_content, synthetic_version
 
 from rb_backend.corpus.gate import evaluate_version
 from rb_backend.corpus.models import GateStatus, Paper, PaperVersion
@@ -24,24 +23,11 @@ from rb_backend.ingestion.pmc import PmcBucket
 
 
 @pytest.fixture
-def queue() -> Iterator[tuple[App, InMemoryConnector]]:
-    """The Procrastinate app with an in-memory connector instead of Postgres."""
-    connector = InMemoryConnector()
-    with procrastinate_app.replace_connector(connector) as app:
-        yield app, connector
-
-
-@pytest.fixture
 def use_bucket(bucket: PmcBucket, monkeypatch: pytest.MonkeyPatch) -> PmcBucket:
     """Make tasks and commands use the recorded bucket instead of the real one."""
     for module in (tasks, ingest_pmc, recheck_licences):
         monkeypatch.setattr(module, "get_bucket", lambda: bucket)
     return bucket
-
-
-def jobs(connector: InMemoryConnector) -> list[dict[str, Any]]:
-    """The queued jobs as dictionaries."""
-    return [dict(job) for job in connector.jobs.values()]
 
 
 def run(command: str, *args: str) -> str:

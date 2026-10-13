@@ -63,7 +63,9 @@ CC-BY-3.0 list, both dev-only data used unmodified).
 Transitive dependencies under weak, file-level copyleft (MPL-2.0, e.g. certifi 2026.7.22 via
 httpx and pathspec 1.1.1 via mypy) are acceptable when installed and used unmodified; never copy
 or modify their source. The permissive-only rule above still applies to every direct dependency
-and to all copied code.
+and to all copied code, with one recorded exception awaiting the owner's confirmation: psycopg
+(LGPL-3.0, row above), the PostgreSQL driver Django and Procrastinate require, used unmodified as
+an imported library (docs/phase-notes/phase-2.md, deviation 2).
 
 ### Evaluated and not used
 

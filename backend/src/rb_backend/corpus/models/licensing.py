@@ -253,8 +253,11 @@ class LicenceReview(models.Model):
     Attributes:
         version: The paper version.
         scope: Version, figure or paragraph.
-        figure: The figure (figure scope).
-        paragraph: The paragraph (paragraph scope).
+        figure: The figure (figure scope); cleared if the figure row is
+            deleted, so a resolved review outlives the text it was about.
+        paragraph: The paragraph (paragraph scope); cleared likewise.
+        part_stable_id: The part's stable ID (part scopes), kept when the
+            part row goes; reviews are matched to parts by it.
         status: Open, approved, rejected or superseded.
         reasons: Why the gate could not decide automatically.
         evidence: Snapshot of the licence evidence the reviewer must judge.
@@ -279,15 +282,16 @@ class LicenceReview(models.Model):
     )
     scope = models.CharField(max_length=16, choices=ReviewScope.choices)
     figure = models.ForeignKey(
-        Figure, null=True, blank=True, on_delete=models.CASCADE, related_name="licence_reviews"
+        Figure, null=True, blank=True, on_delete=models.SET_NULL, related_name="licence_reviews"
     )
     paragraph = models.ForeignKey(
         Paragraph,
         null=True,
         blank=True,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         related_name="licence_reviews",
     )
+    part_stable_id = models.CharField(max_length=160, blank=True)
     status = models.CharField(
         max_length=16, choices=ReviewStatus.choices, default=ReviewStatus.OPEN, db_index=True
     )
@@ -314,15 +318,19 @@ class LicenceReview(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        """One open review per scope; scopes name their part; approvals name a licence."""
+        """One open review per scope; scopes name their part; approvals name a licence.
+
+        A part-scope review always keeps its part's stable ID. Only a closed
+        one may lose its part row (the text was removed or re-parsed without
+        it); an open review is superseded before its part is deleted.
+        """
 
         ordering = ["-created_at"]
         verbose_name = "licence review"
         constraints = [
             models.UniqueConstraint(
-                fields=["version", "scope", "figure", "paragraph"],
+                fields=["version", "scope", "part_stable_id"],
                 condition=Q(status=ReviewStatus.OPEN),
-                nulls_distinct=False,
                 name="licencereview_one_open_per_scope",
             ),
             models.CheckConstraint(
@@ -330,16 +338,19 @@ class LicenceReview(models.Model):
                     Q(scope=ReviewScope.VERSION)
                     & Q(figure__isnull=True)
                     & Q(paragraph__isnull=True)
+                    & Q(part_stable_id="")
                 )
                 | (
                     Q(scope=ReviewScope.FIGURE)
-                    & Q(figure__isnull=False)
                     & Q(paragraph__isnull=True)
+                    & ~Q(part_stable_id="")
+                    & (Q(figure__isnull=False) | ~Q(status=ReviewStatus.OPEN))
                 )
                 | (
                     Q(scope=ReviewScope.PARAGRAPH)
                     & Q(figure__isnull=True)
-                    & Q(paragraph__isnull=False)
+                    & ~Q(part_stable_id="")
+                    & (Q(paragraph__isnull=False) | ~Q(status=ReviewStatus.OPEN))
                 ),
                 name="licencereview_scope_matches_part",
             ),

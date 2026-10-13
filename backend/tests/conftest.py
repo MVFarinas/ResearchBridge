@@ -8,6 +8,9 @@ from pathlib import Path
 import httpx
 import pytest
 from metadata_support import RecordedMetadata, make_clients
+from procrastinate import App
+from procrastinate.contrib.django import app as procrastinate_app
+from procrastinate.testing import InMemoryConnector
 from rest_framework.test import APIClient
 from support import RecordedBucket
 
@@ -59,3 +62,11 @@ def api(monkeypatch: pytest.MonkeyPatch, clients: MetadataClients, bucket: PmcBu
     monkeypatch.setattr(views, "metadata_clients", lambda: clients)
     monkeypatch.setattr(views, "pmc_bucket", lambda: bucket)
     return APIClient()
+
+
+@pytest.fixture
+def queue() -> Iterator[tuple[App, InMemoryConnector]]:
+    """The Procrastinate app with an in-memory connector instead of Postgres."""
+    connector = InMemoryConnector()
+    with procrastinate_app.replace_connector(connector) as app:
+        yield app, connector

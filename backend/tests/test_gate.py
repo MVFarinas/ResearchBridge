@@ -452,3 +452,55 @@ def test_withdrawn_version_goes_to_review_until_listed_again() -> None:
     version.save()
     assert evaluate_version(version, today=TODAY) == GateStatus.APPROVED
     assert version.decision_source == LicenceField.PMC_LICENSE_CODE.value
+
+
+def test_part_reviews_survive_text_removal_and_apply_when_the_text_returns() -> None:
+    """Removing a rejected version's text keeps every part review as provenance."""
+    # Arrange: two figures, each with prose-only permissions and its own review.
+    version = synthetic_version()
+    synthetic_content(version, figures=2)
+    code = synthetic_code(version, "CC BY")
+    figure_prose = prose_block("Reproduced with permission (synthetic).", context="fig")
+    for figure in Figure.objects.filter(version=version):
+        synthetic_block(version, figure_prose, scope=BlockScope.FIGURE, figure=figure)
+    evaluate_version(version, today=TODAY)
+
+    # A reviewer resolves fig1; fig2's review stays open.
+    resolved = LicenceReview.objects.get(part_stable_id="fig1")
+    resolve_review(
+        resolved, approve=True, licence_value="CC BY-NC 4.0", note="Checked.", reviewer=None
+    )
+    still_open = LicenceReview.objects.get(part_stable_id="fig2")
+    assert still_open.status == ReviewStatus.OPEN
+
+    # Act: the code turns TDM, so the version is rejected and its text removed.
+    code.raw_value = "TDM"
+    code.save()
+    assert evaluate_version(version, today=TODAY) == GateStatus.REJECTED
+    assert not Figure.objects.filter(version=version).exists()
+
+    # The resolved review keeps the human decision; the open one is retired.
+    resolved.refresh_from_db()
+    assert (resolved.status, resolved.figure_id, resolved.part_stable_id) == (
+        ReviewStatus.APPROVED,
+        None,
+        "fig1",
+    )
+    assert resolved.reviewer_note == "Checked."
+    still_open.refresh_from_db()
+    assert (still_open.status, still_open.figure_id) == (ReviewStatus.SUPERSEDED, None)
+
+    # The code is CC BY again and the same text returns: the earlier answer applies.
+    code.raw_value = "CC BY"
+    code.save()
+    version.content_state = ContentState.PARSED
+    version.save()
+    synthetic_content(version, figures=2)
+    for figure in Figure.objects.filter(version=version):
+        synthetic_block(version, figure_prose, scope=BlockScope.FIGURE, figure=figure)
+    assert evaluate_version(version, today=TODAY) == GateStatus.APPROVED
+    fig1 = Figure.objects.get(version=version, stable_id="fig1")
+    assert (fig1.gate_status, fig1.non_commercial) == (GateStatus.APPROVED, True)
+    assert fig1.decision_source == f"licence-review:{resolved.pk}"
+    reopened = LicenceReview.objects.get(part_stable_id="fig2", status=ReviewStatus.OPEN)
+    assert reopened.figure == Figure.objects.get(version=version, stable_id="fig2")

@@ -62,11 +62,7 @@ def paper_detail(paper: Paper) -> dict[str, Any] | None:
         "published_date": version.published_date,
         "article_type": version.article_type,
         "citation": version.citation,
-        "retraction": {
-            "is_retracted": paper.is_retracted,
-            "source": paper.retraction_source or None,
-            "date": paper.retraction_date.isoformat() if paper.retraction_date else None,
-        },
+        "retraction": _retraction(paper),
         "licence": _licence(version),
         "permissions": {
             "can_display": True,
@@ -88,6 +84,28 @@ def paper_detail(paper: Paper) -> dict[str, Any] | None:
             "scholar": scholar_search_url(title=version.title, doi=paper.doi),
             "source": _source_url(paper, version),
         },
+    }
+
+
+def _retraction(paper: Paper) -> dict[str, Any]:
+    """The retraction block the paper page shows as a banner.
+
+    Built from :func:`rb_backend.corpus.access.retraction_notice`, the read
+    API's contract for retracted papers (shown with a notice, never rewritten).
+
+    Args:
+        paper: The paper.
+
+    Returns:
+        Whether the paper is retracted, and the notice's source and date.
+    """
+    notice = access.retraction_notice(paper)
+    if notice is None:
+        return {"is_retracted": False, "source": None, "date": None}
+    return {
+        "is_retracted": True,
+        "source": notice.source or None,
+        "date": notice.retraction_date.isoformat() if notice.retraction_date else None,
     }
 
 

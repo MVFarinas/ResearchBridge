@@ -25,7 +25,7 @@ from rb_backend.corpus.models import (
     PermissionsBlockRecord,
     Section,
 )
-from rb_backend.corpus.retention import supersede_blocks
+from rb_backend.corpus.retention import delete_parts, supersede_blocks
 from rbcore.jats import Article
 from rbcore.jats import Figure as JatsFigure
 from rbcore.jats import Section as JatsSection
@@ -125,9 +125,9 @@ def store_article(
         retrieved_at: When the XML was retrieved.
     """
     _apply_metadata(version, article)
-    sections = _upsert_sections(version, article)
-    paragraphs = _upsert_paragraphs(version, article, sections)
-    figures = _upsert_figures(version, article)
+    sections = _upsert_sections(version, article, retrieved_at)
+    paragraphs = _upsert_paragraphs(version, article, sections, retrieved_at)
+    figures = _upsert_figures(version, article, retrieved_at)
     _replace_blocks(
         version,
         article,
@@ -204,12 +204,13 @@ def _roots(article: Article) -> list[JatsSection]:
     return [*article.abstracts, article.body, article.back]
 
 
-def _upsert_sections(version: PaperVersion, article: Article) -> dict[str, Section]:
+def _upsert_sections(version: PaperVersion, article: Article, when: datetime) -> dict[str, Section]:
     """Create, update and delete sections to match the parsed article.
 
     Args:
         version: The version.
         article: The parsed article.
+        when: Time to record on reviews of deleted paragraphs.
 
     Returns:
         Section rows by stable ID.
@@ -241,7 +242,10 @@ def _upsert_sections(version: PaperVersion, article: Article) -> dict[str, Secti
     # Sections that no longer exist go last, after nothing points at them.
     stale = set(existing) - set(by_id)
     if stale:
-        Paragraph.objects.filter(version=version, section__stable_id__in=stale).delete()
+        delete_parts(
+            paragraphs=Paragraph.objects.filter(version=version, section__stable_id__in=stale),
+            when=when,
+        )
         Section.objects.filter(version=version, stable_id__in=stale).delete()
     return by_id
 
@@ -270,7 +274,7 @@ def _section_values(item: _FlatSection, position: int, by_id: dict[str, Section]
 
 
 def _upsert_paragraphs(
-    version: PaperVersion, article: Article, sections: dict[str, Section]
+    version: PaperVersion, article: Article, sections: dict[str, Section], when: datetime
 ) -> dict[str, Paragraph]:
     """Create, update and delete paragraphs to match the parsed article.
 
@@ -278,6 +282,7 @@ def _upsert_paragraphs(
         version: The version.
         article: The parsed article.
         sections: Section rows by stable ID.
+        when: Time to record on reviews of deleted paragraphs.
 
     Returns:
         Paragraph rows by stable ID.
@@ -312,16 +317,20 @@ def _upsert_paragraphs(
 
     Paragraph.objects.bulk_create(created, batch_size=500)
     Paragraph.objects.bulk_update(updated, list(_PARAGRAPH_FIELDS), batch_size=500)
-    Paragraph.objects.filter(version=version).exclude(stable_id__in=list(by_id)).delete()
+    delete_parts(
+        paragraphs=Paragraph.objects.filter(version=version).exclude(stable_id__in=list(by_id)),
+        when=when,
+    )
     return by_id
 
 
-def _upsert_figures(version: PaperVersion, article: Article) -> dict[str, Figure]:
+def _upsert_figures(version: PaperVersion, article: Article, when: datetime) -> dict[str, Figure]:
     """Create, update and delete figures and tables to match the parsed article.
 
     Args:
         version: The version.
         article: The parsed article.
+        when: Time to record on reviews of deleted figures.
 
     Returns:
         Figure rows by stable ID.
@@ -345,7 +354,10 @@ def _upsert_figures(version: PaperVersion, article: Article) -> dict[str, Figure
 
     Figure.objects.bulk_create(created)
     Figure.objects.bulk_update(updated, list(_FIGURE_FIELDS))
-    Figure.objects.filter(version=version).exclude(stable_id__in=list(by_id)).delete()
+    delete_parts(
+        figures=Figure.objects.filter(version=version).exclude(stable_id__in=list(by_id)),
+        when=when,
+    )
     return by_id
 
 

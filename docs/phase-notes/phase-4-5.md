@@ -206,3 +206,26 @@ Chromium screenshots were run earlier in the session against the same build, bef
 documentation commits and one layout change to the explanation cards (covered by the Vitest
 tests); the fresh install removed the downloaded browser. `docker compose -p rb-phase45 down` was
 run at the end; the named volume keeps the local sample corpus.
+
+## Merge of Phase 2 fix round 2
+
+`phase-2-corpus-licence-gate` gained fix-round-2 commits (review parts that survive text removal,
+rejected XML removed from the cache, review-resolution receivers, and the retraction policy) after
+this branch started; it was merged in with `git merge --no-ff`.
+
+- **Conflicts** in `backend/README.md` (package table: kept Phase 2's `receivers` mention and this
+  branch's `metadata`, `discovery` and `api` rows), `corpus/access.py` (imports: both sides' needs)
+  and `tests/conftest.py` (kept both the metadata/API fixtures and Phase 2's in-memory `queue`).
+- **Two `0004` corpus migrations** (`0004_review_part_survives_text_removal` and
+  `0004_search_document`). They touch different tables, so a no-op merge migration
+  `corpus/0005_merge_review_parts_and_search_document` joins them. Renaming this branch's
+  migration was tried and rejected: a database that had already applied `0004_search_document`
+  (such as the `rb-phase45` one) then fails with "relation corpus_searchdocument already exists".
+- **Retraction contract.** Phase 2 made `access.retraction_notice()` the read API's way to tell a
+  reader about a retraction. The paper detail's `retraction` block is now built from it
+  (`api/papers.py`); the JSON shape is unchanged, so the web app's banner needs no change.
+- After the merge, from a fresh `.venv` and `web/node_modules` with the `rb-phase45` database on
+  port 5434: `make check` exited 0 (ruff, docstring and lock checks, ESLint, mypy, `tsc`, pytest
+  with **417 backend**, 257 rbcore and 11 tools tests, Vitest with 85 web tests) and `npm run build`
+  succeeded. `makemigrations --check` reports no changes, and the existing `rb-phase45` database
+  migrated through the merge migration.

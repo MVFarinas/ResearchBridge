@@ -17,8 +17,10 @@ until the slot has its candidates. Screening, cheapest checks first:
 5. The §1.1 gate over the PMC ``license_code`` together with the JATS
    licence evidence passes with no review flag (:func:`benchmark_licence`).
 
-Every screened PMID is logged with its outcome, so the shortlist can be
-audited and reproduced. The licence evidence recorded for each candidate is
+Every screened PMID is logged with its outcome, and every slot's search with
+PubMed's total hit count and how many PMIDs were retrieved (esearch returns
+at most 500, in its default order), so the shortlist can be audited and
+reproduced. The licence evidence recorded for each candidate is
 the primary-source field, its raw value, the URL it came from, and the date
 it was retrieved.
 """
@@ -142,6 +144,29 @@ class ScreeningRecord:
 
 
 @dataclass(frozen=True, slots=True)
+class SlotPool:
+    """The PubMed search behind one slot: how large the pool was and what was used.
+
+    Attributes:
+        slot: Slot ID.
+        query: The esearch term.
+        pubmed_count: Total hits PubMed reported.
+        retrieved: PMIDs esearch returned (the first page, at most its retmax).
+        truncated: True when ``pubmed_count`` exceeds ``retrieved``, so the
+            seeded order permutes only PubMed's first page of hits.
+        screen_limit: PMIDs eligible for screening after the seeded order,
+            de-duplication across slots and the per-slot cap.
+    """
+
+    slot: str
+    query: str
+    pubmed_count: int
+    retrieved: int
+    truncated: bool
+    screen_limit: int
+
+
+@dataclass(frozen=True, slots=True)
 class Shortlist:
     """The result of a selection run.
 
@@ -149,11 +174,13 @@ class Shortlist:
         candidates: Accepted candidates, by slot then option.
         screening: Every screened PMID, in order.
         unfilled: Slot IDs that ended with fewer candidates than configured.
+        pools: Each slot's search: PubMed count and PMIDs retrieved.
     """
 
     candidates: list[Candidate]
     screening: list[ScreeningRecord]
     unfilled: list[str]
+    pools: list[SlotPool]
 
 
 class _RejectedError(Exception):
@@ -198,16 +225,23 @@ def build_shortlist(
     candidates: list[Candidate] = []
     screening: list[ScreeningRecord] = []
     unfilled: list[str] = []
+    pools: list[SlotPool] = []
     used: set[str] = set()
 
     for slot in config.slots:
+        # Search, put the hits in the seeded order, drop PMIDs already used, cap.
         query = config.query_for(slot)
-        order = [p for p in screening_order(eutils.esearch(query), config.seed) if p not in used]
+        search = eutils.esearch(query)
+        order = [p for p in screening_order(search.pmids, config.seed) if p not in used]
         order = order[: config.max_screen_per_slot]
+        pools.append(
+            SlotPool(slot.id, query, search.count, len(search.pmids), search.truncated, len(order))
+        )
         summaries = eutils.esummary(order)
         accepted: list[Candidate] = []
-        report(f"{slot.id}: {len(order)} PMIDs to screen")
+        report(f"{slot.id}: {len(order)} PMIDs to screen (PubMed count {search.count})")
 
+        # Screen in order until the slot has its candidates; log every outcome.
         for rank, pmid in enumerate(order, start=1):
             summary = summaries.get(pmid)
             try:
@@ -220,6 +254,7 @@ def build_shortlist(
                     ScreeningRecord(slot.id, rank, pmid, pmcid, "rejected", str(rejected))
                 )
                 continue
+            # Accepted: the option letter follows screening order.
             option = chr(ord("A") + len(accepted))
             accepted.append(_with_option(candidate, option))
             used.add(pmid)
@@ -229,11 +264,12 @@ def build_shortlist(
             if len(accepted) == config.candidates_per_slot:
                 break
 
+        # A slot that ran out of PMIDs is reported, never padded.
         if len(accepted) < config.candidates_per_slot:
             unfilled.append(slot.id)
         report(f"{slot.id}: {len(accepted)} candidate(s)")
         candidates.extend(accepted)
-    return Shortlist(candidates, screening, unfilled)
+    return Shortlist(candidates, screening, unfilled, pools)
 
 
 def _with_option(candidate: Candidate, option: str) -> Candidate:
@@ -379,6 +415,7 @@ def _screen(
 
 CANDIDATE_COLUMNS = tuple(Candidate.__dataclass_fields__)
 SCREENING_COLUMNS = tuple(ScreeningRecord.__dataclass_fields__)
+POOL_COLUMNS = tuple(SlotPool.__dataclass_fields__)
 
 
 def write_candidates(path: Path, candidates: list[Candidate]) -> None:
@@ -453,3 +490,21 @@ def write_screening_log(path: Path, records: list[ScreeningRecord]) -> None:
         writer.writeheader()
         for record in records:
             writer.writerow(asdict(record))
+
+
+def write_pool_log(path: Path, pools: list[SlotPool]) -> None:
+    """Write the per-slot search log CSV (booleans as true/false).
+
+    Args:
+        path: Destination.
+        pools: One entry per slot.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=POOL_COLUMNS, lineterminator="\n")
+        writer.writeheader()
+        for pool in pools:
+            row = asdict(pool)
+            writer.writerow(
+                {k: str(v).lower() if isinstance(v, bool) else v for k, v in row.items()}
+            )

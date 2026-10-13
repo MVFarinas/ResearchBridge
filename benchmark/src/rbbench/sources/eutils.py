@@ -55,6 +55,25 @@ class PubmedSummary:
         return int(head) if head.isdigit() else None
 
 
+@dataclass(frozen=True, slots=True)
+class SearchResult:
+    """What one esearch call returned.
+
+    Attributes:
+        pmids: PMIDs in the order esearch returned them (its default sort).
+        count: Total hits PubMed reports for the query; when it exceeds
+            ``len(pmids)`` the PMIDs are only the first page.
+    """
+
+    pmids: list[str]
+    count: int
+
+    @property
+    def truncated(self) -> bool:
+        """Whether PubMed has more hits than were returned."""
+        return self.count > len(self.pmids)
+
+
 class EutilsClient:
     """A small esearch/esummary client over a polite fetcher."""
 
@@ -68,15 +87,19 @@ class EutilsClient:
         self._fetcher = fetcher
         self._api_key = api_key
 
-    def esearch(self, term: str, *, retmax: int = 500) -> list[str]:
+    def esearch(self, term: str, *, retmax: int = 500) -> SearchResult:
         """Search PubMed.
+
+        No ``sort`` is sent, so when a query has more than ``retmax`` hits the
+        PMIDs are the first ``retmax`` in E-utilities' default order; the
+        result's ``count`` records how many there were in total.
 
         Args:
             term: A PubMed query.
             retmax: Maximum PMIDs to return.
 
         Returns:
-            PMIDs in the order PubMed returns them.
+            The PMIDs in the order PubMed returns them, and the total count.
 
         Raises:
             EutilsError: On an error response or unexpected JSON.
@@ -87,7 +110,12 @@ class EutilsClient:
             raise EutilsError(f"unexpected esearch response for {term!r}")
         if result.get("errorlist"):
             raise EutilsError(f"esearch reported errors for {term!r}: {result['errorlist']}")
-        return [str(pmid) for pmid in result["idlist"]]
+        pmids = [str(pmid) for pmid in result["idlist"]]
+        try:
+            count = int(result.get("count", len(pmids)))
+        except (TypeError, ValueError):
+            raise EutilsError(f"esearch returned a non-numeric count for {term!r}") from None
+        return SearchResult(pmids, count)
 
     def esummary(self, pmids: Sequence[str]) -> dict[str, PubmedSummary]:
         """Fetch summaries in batches.
@@ -123,7 +151,8 @@ class EutilsClient:
             The decoded JSON object.
 
         Raises:
-            EutilsError: On a fetch failure (key redacted) or non-object JSON.
+            EutilsError: On a fetch failure (key redacted), a body that is not
+                JSON, or non-object JSON.
         """
         query = {**params, "retmode": "json", "tool": TOOL}
         if self._api_key:
@@ -135,7 +164,11 @@ class EutilsClient:
             # The fetcher's message contains the URL; never let the key reach a log.
             message = str(exc).replace(self._api_key, "***") if self._api_key else str(exc)
             raise EutilsError(message) from None
-        decoded: Any = json.loads(body)
+        # An error page or truncated body is an E-utilities failure, not a crash.
+        try:
+            decoded: Any = json.loads(body)
+        except ValueError as exc:
+            raise EutilsError(f"{endpoint} returned invalid JSON: {exc}") from None
         if not isinstance(decoded, dict):
             raise EutilsError(f"{endpoint} returned non-object JSON")
         return decoded

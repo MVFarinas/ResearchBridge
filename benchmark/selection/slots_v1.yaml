@@ -5,11 +5,15 @@
 # slot (12 papers). Nothing here is final until the owner says so.
 #
 # Reproducibility: PubMed queries are bounded by publication date, candidates
-# are screened in an order fixed by `seed` (SHA-256 of seed and PMID, so the
-# order does not depend on PubMed's relevance ranking), and every response is
-# cached under data/benchmark/cache. Re-running against the cache reproduces
-# candidates.csv exactly; re-running against a fresh cache reproduces it unless
-# PubMed or PMC changed the underlying records (new versions, retractions).
+# are screened in an order fixed by `seed` (SHA-256 of seed and PMID), and
+# every response is cached under data/benchmark/cache. The pool is what one
+# esearch call returns: at most 500 PMIDs in E-utilities' default order. For a
+# slot with more hits (pool_log.csv: S07, S08, S09, S11, S12) the seeded order
+# permutes only that first page, so it is independent of PubMed's ordering
+# within the page but not of which 500 PubMed returned. Re-running against the
+# cache reproduces candidates.csv exactly; re-running against a fresh cache
+# reproduces it unless PubMed or PMC changed the underlying records (new
+# versions, retractions, re-indexing, a different default order).
 
 version: slots_v1
 status: PROPOSED

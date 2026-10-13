@@ -20,10 +20,12 @@ from rbbench.selection.classify import StudyType, classify, design_evidence
 from rbbench.selection.config import SelectionConfig, SelectionConfigError, load_selection_config
 from rbbench.selection.shortlist import (
     CANDIDATE_COLUMNS,
+    POOL_COLUMNS,
     build_shortlist,
     read_candidates,
     screening_order,
     write_candidates,
+    write_pool_log,
     write_screening_log,
 )
 from rbbench.sources.eutils import EutilsClient, EutilsError
@@ -197,8 +199,10 @@ class SyntheticServer:
         self.requests.append(url)
         parts = urlsplit(url)
         query = parse_qs(parts.query)
+        # No personal identifier may ever reach NCBI.
         assert "mailto" not in url
         assert "email" not in query
+        # E-utilities endpoints.
         if parts.path.endswith("esearch.fcgi"):
             body = {"esearchresult": {"idlist": list(self.summaries), "count": "5"}}
             return httpx.Response(200, json=body)
@@ -206,6 +210,7 @@ class SyntheticServer:
             ids = query["id"][0].split(",")
             result = {"uids": ids, **{i: self.summaries[i] for i in ids}}
             return httpx.Response(200, json={"result": result})
+        # PMC Cloud Service: bucket listing, then per-version metadata and JATS.
         if parts.path == "/" and "list-type" in query:
             pmcid = query["prefix"][0].rstrip(".")
             listing = (
@@ -304,6 +309,16 @@ def test_shortlist_screens_in_order_and_records_licence_evidence(
     write_screening_log(tmp_path / "screening.csv", shortlist.screening)
     assert len((tmp_path / "screening.csv").read_text().splitlines()) == 6
 
+    # The slot's search is logged with PubMed's count; five of five hits is not truncated.
+    (pool,) = shortlist.pools
+    assert (pool.slot, pool.pubmed_count, pool.retrieved, pool.truncated) == ("S01", 5, 5, False)
+    assert pool.screen_limit == 5
+    write_pool_log(tmp_path / "pools.csv", shortlist.pools)
+    lines = (tmp_path / "pools.csv").read_text(encoding="utf-8").splitlines()
+    assert lines[0] == ",".join(POOL_COLUMNS)
+    assert lines[1].startswith("S01,")
+    assert lines[1].endswith(",5,5,false,5")
+
 
 def test_rerun_is_served_from_the_cache(
     synthetic_config: SelectionConfig, fetcher_for: Callable[[SyntheticServer], PoliteFetcher]
@@ -340,3 +355,29 @@ def test_eutils_api_key_is_sent_but_never_leaks_into_errors(tmp_path: Path) -> N
     assert "api_key=secret-key" in seen[0]
     assert "tool=ResearchBridge-dev" in seen[0]
     assert json.dumps(seen).count("@") == 0
+
+
+def _eutils_answering(body: bytes, tmp_path: Path) -> EutilsClient:
+    """An E-utilities client whose every request gets the same SYNTHETIC body."""
+    fetcher = PoliteFetcher(
+        cache_dir=None,
+        transport=httpx.MockTransport(lambda _request: httpx.Response(200, content=body)),
+        rate_limiter=RateLimiter(sleep=lambda _s: None),
+    )
+    return EutilsClient(fetcher)
+
+
+def test_esearch_reports_the_total_count_and_truncation(tmp_path: Path) -> None:
+    """A query with more hits than retrieved is marked truncated, with PubMed's count."""
+    body = json.dumps({"esearchresult": {"idlist": ["3", "1"], "count": "1234"}}).encode()
+    result = _eutils_answering(body, tmp_path).esearch("synthetic")
+    assert result.pmids == ["3", "1"]
+    assert result.count == 1234
+    assert result.truncated
+
+
+@pytest.mark.parametrize("body", [b"<html>Service unavailable</html>", b'{"esearchresult": '])
+def test_non_json_eutils_response_is_an_eutils_error(tmp_path: Path, body: bytes) -> None:
+    """An HTML error page or truncated JSON raises EutilsError, not JSONDecodeError."""
+    with pytest.raises(EutilsError, match=r"esearch\.fcgi returned invalid JSON"):
+        _eutils_answering(body, tmp_path).esearch("synthetic")

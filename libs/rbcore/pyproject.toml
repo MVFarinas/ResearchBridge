@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "researchbridge-rbcore"
+version = "0.1.0"
+description = "ResearchBridge shared core: safe JATS parsing, licence normalisation and permission derivation, config, LLM client interface and polite HTTP."
+readme = "README.md"
+requires-python = ">=3.12"
+# Private package: the classifier makes PyPI refuse an accidental upload.
+classifiers = ["Private :: Do Not Upload", "Programming Language :: Python :: 3.12"]
+dependencies = [
+  "lxml>=6.0",
+  "httpx>=0.28",
+]
+
+[project.optional-dependencies]
+# The real Claude client. Installed in the dev lock so it type-checks; never needed for tests.
+anthropic = ["anthropic>=1.13"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+rbcore = ["py.typed"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = ["-ra", "--strict-markers", "--strict-config", "--import-mode=importlib"]
+filterwarnings = ["error"]
+markers = [
+  "network: test needs network access (never run by default)",
+]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+files = ["src", "tests"]
+warn_unreachable = true

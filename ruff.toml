@@ -1,0 +1,45 @@
+# Shared ruff configuration for every Python package in the monorepo.
+# See docs/conventions.md for the rules behind these settings.
+target-version = "py312"
+line-length = 100
+extend-exclude = ["third_party", "data"]
+# Source roots for first-party import detection (isort); globs pick up later packages.
+src = ["libs/*/src", "*/src", "*"]
+
+[lint]
+select = [
+  "E", "W",  # pycodestyle
+  "F",       # pyflakes
+  "I",       # isort
+  "N",       # pep8-naming
+  "D",       # pydocstyle (google convention, below)
+  "UP",      # pyupgrade
+  "B",       # flake8-bugbear
+  "A",       # flake8-builtins
+  "C4",      # flake8-comprehensions
+  "SIM",     # flake8-simplify
+  "PT",      # flake8-pytest-style
+  "RET",     # flake8-return
+  "PTH",     # flake8-use-pathlib
+  "ANN",     # flake8-annotations: type hints throughout
+  "S",       # flake8-bandit: security smells (unsafe XML, eval, subprocess)
+  "T20",     # flake8-print: no print-debugging
+  "ERA",     # eradicate: no commented-out code
+  "RUF",     # ruff-specific
+]
+ignore = [
+  "ANN401",  # Any is occasionally the honest type at untyped boundaries
+]
+
+[lint.pydocstyle]
+convention = "google"
+
+[lint.per-file-ignores]
+# Tests use bare asserts by design.
+"**/tests/**/*.py" = ["S101"]
+# Django migrations are generated code.
+"**/migrations/*.py" = ["D", "E501", "ANN", "RUF012"]
+
+[format]
+quote-style = "double"
+docstring-code-format = true

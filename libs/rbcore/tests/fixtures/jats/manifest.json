@@ -1,0 +1,51 @@
+{
+  "_comment": "Verbatim real-world JATS fixtures. See README.md for attribution. Checked by tests/test_jats_fixtures.py (test_fixtures_match_manifest_checksums).",
+  "retrieved": "2026-10-13",
+  "fixtures": [
+    {
+      "file": "elife-93719-pmc-s3.xml",
+      "source_url": "https://pmc-oa-opendata.s3.amazonaws.com/PMC10718527.1/PMC10718527.1.xml",
+      "doi": "10.7554/eLife.93719",
+      "pmcid": "PMC10718527",
+      "licence": "CC BY 4.0",
+      "pmc_license_code": "CC BY",
+      "sha256": "f038957eac8917f15ce2329bff21549e74470f37ed0427b889b9a21ec018b2c2"
+    },
+    {
+      "file": "elife-93719-europepmc.xml",
+      "source_url": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC10718527/fullTextXML",
+      "doi": "10.7554/eLife.93719",
+      "pmcid": "PMC10718527",
+      "licence": "CC BY 4.0",
+      "pmc_license_code": "CC BY",
+      "sha256": "d9bfa2364bdb66a4e058207fd3cb8e095c1aa46c9d16f528ee6c573d0e4efe8a"
+    },
+    {
+      "file": "elife-65180-pmc-s3.xml",
+      "source_url": "https://pmc-oa-opendata.s3.amazonaws.com/PMC7853715.1/PMC7853715.1.xml",
+      "doi": "10.7554/eLife.65180",
+      "pmcid": "PMC7853715",
+      "licence": "CC BY 4.0",
+      "pmc_license_code": "CC BY",
+      "sha256": "e06bb24e0b7efed423f159ec5532225a9000f6c78998c7047be15b8247ef6656"
+    },
+    {
+      "file": "elife-61907-pmc-s3.xml",
+      "source_url": "https://pmc-oa-opendata.s3.amazonaws.com/PMC7781593.1/PMC7781593.1.xml",
+      "doi": "10.7554/eLife.61907",
+      "pmcid": "PMC7781593",
+      "licence": "CC BY 4.0",
+      "pmc_license_code": "CC BY",
+      "sha256": "7ef31566d2c17c9882dd7fb8ce56054bbe93b21c28d500609e1b894829530227"
+    },
+    {
+      "file": "plos-pmed-1004542.xml",
+      "source_url": "https://journals.plos.org/plosmedicine/article/file?id=10.1371/journal.pmed.1004542&type=manuscript",
+      "doi": "10.1371/journal.pmed.1004542",
+      "pmcid": "PMC11964404",
+      "licence": "CC BY 4.0",
+      "pmc_license_code": "CC BY",
+      "sha256": "2a118ec7e89e926f0e65494980f0f40955b0ef96e25d801c530763a06181a1b4"
+    }
+  ]
+}

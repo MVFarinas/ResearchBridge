@@ -1,0 +1,28 @@
+# Local development database: Postgres 16 with pgvector (decisions.md §1.6).
+# Works with Docker Desktop or OrbStack (`docker compose up -d --wait db`, or `make db-up`).
+# Credentials are for local development only; production uses the managed platform's database.
+name: researchbridge
+
+services:
+  db:
+    image: pgvector/pgvector:0.8.7-pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${RB_DB_NAME:-researchbridge}
+      POSTGRES_USER: ${RB_DB_USER:-researchbridge}
+      POSTGRES_PASSWORD: ${RB_DB_PASSWORD:-researchbridge-dev-only}
+    ports:
+      # Bound to localhost only; the host port comes from RB_DB_PORT (default 5433,
+      # so it does not collide with a Postgres already running on 5432).
+      - "127.0.0.1:${RB_DB_PORT:-5433}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+volumes:
+  pgdata:

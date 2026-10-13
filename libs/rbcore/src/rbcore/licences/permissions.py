@@ -164,12 +164,16 @@ def decide(evidence: Sequence[LicenceEvidence], *, today: date | None = None) ->
        never aggregator fields (:attr:`LicenceField.is_secondary`).
     2. No machine-readable evidence: ``UNKNOWN``, sent to review if any prose
        or licence type exists.
-    3. NISO ALI dates: a ``start_date`` in the future (an embargo), an
-       ``end_date`` in the past, or a date that cannot be parsed means the
-       licence is not in force today: ``UNKNOWN`` and review. When several
-       dated references are in force, the one with the latest ``start_date``
-       supersedes the earlier ones (the ALI pattern for delayed open
-       access); undated values always count.
+    3. NISO ALI dates: an ``end_date`` in the past or a date that cannot
+       be parsed means ``UNKNOWN`` and review. A reference whose
+       ``start_date`` is in the future (an embargo) is not in force: it is
+       set aside with a note when at least one *dated* reference is in force
+       today (the licence before the transition applies until then), and
+       otherwise the decision is ``UNKNOWN`` and review (an undated value
+       next to a future-dated one may be meant to start on that date too).
+       When several dated references are in force, the one with the latest
+       ``start_date`` supersedes the earlier ones (the ALI pattern for
+       delayed open access); undated values always count.
     4. Machine-readable values that normalise to different licence families
        conflict: ``UNKNOWN`` and review. Versions may differ (by/3.0 and by/4.0
        agree), since versions do not change the gate.
@@ -255,10 +259,12 @@ def _check_dates(usable: Sequence[LicenceEvidence], today: date) -> _DateCheck:
         The evidence in force today, or a failure reason.
     """
     starts: dict[LicenceEvidence, date] = {}
+    pending: list[LicenceEvidence] = []
     review: list[str] = []
     for item in usable:
         described = f"{item.field.value}={item.value!r}"
-        # Any unreadable, future-start or past-end date makes the evidence unusable.
+        # An unreadable or past end date makes the evidence unusable; a future
+        # start date is held back until we know whether anything else is in force.
         for label, raw in (("start_date", item.start_date), ("end_date", item.end_date)):
             if raw is None:
                 continue
@@ -266,26 +272,41 @@ def _check_dates(usable: Sequence[LicenceEvidence], today: date) -> _DateCheck:
             if parsed is None:
                 return _DateCheck((), failure=f"unparsable {label} {raw!r} on {described}")
             if label == "start_date" and parsed > today:
-                return _DateCheck(
-                    (), failure=f"{described} applies only from {raw} (start_date in the future)"
-                )
-            if label == "end_date" and parsed < today:
+                pending.append(item)
+            elif label == "end_date" and parsed < today:
                 return _DateCheck((), failure=f"{described} ended on {raw} (end_date has passed)")
-            if label == "end_date":
-                review.append(f"{described} ends on {raw}")
+            elif label == "end_date":
+                # A set-aside future reference's end date is irrelevant today.
+                if item not in pending:
+                    review.append(f"{described} ends on {raw}")
             else:
                 starts[item] = parsed
+
+    # A future-dated reference can be set aside only when a dated one is in
+    # force today; an undated value beside it might be meant to start then too.
+    if pending and not starts:
+        first = pending[0]
+        return _DateCheck(
+            (),
+            failure=f"{first.field.value}={first.value!r} applies only from {first.start_date} "
+            "(start_date in the future)",
+        )
+    notes = [
+        f"{item.field.value}={item.value!r} applies only from {item.start_date} (start_date in "
+        "the future); set aside while an earlier dated licence is in force, re-check then"
+        for item in pending
+    ]
 
     # The latest start date in force supersedes earlier dated references.
     latest = max(starts.values(), default=None)
     superseded = [item for item, start in starts.items() if start != latest]
-    notes = tuple(
+    notes.extend(
         f"{item.field.value}={item.value!r} (start_date {item.start_date}) superseded by a "
         "later start_date"
         for item in superseded
     )
-    in_force = tuple(item for item in usable if item not in superseded)
-    return _DateCheck(in_force, notes=notes, review=tuple(review))
+    in_force = tuple(item for item in usable if item not in superseded and item not in pending)
+    return _DateCheck(in_force, notes=tuple(notes), review=tuple(review))
 
 
 def _parse_date(raw: str) -> date | None:

@@ -493,6 +493,40 @@ def test_part_block_with_embargoed_licence_is_reported_as_a_date_problem() -> No
     assert "start_date in the future" in decision.reasons[0]
 
 
+def test_future_reference_is_set_aside_while_an_earlier_dated_one_is_in_force() -> None:
+    """Before an embargo transition the earlier dated licence applies (review probe P8)."""
+    evidence = [
+        LicenceEvidence(
+            ALI, "https://creativecommons.org/licenses/by-nc-nd/4.0/", start_date="2024-01-01"
+        ),
+        LicenceEvidence(ALI, CC_BY_URI, start_date="2027-01-01"),
+    ]
+    before = decide(evidence, today=TODAY)
+    assert before.licence == Licence(F.CC_BY_NC_ND, "4.0")
+    assert before.permissions.can_display
+    assert not before.permissions.can_rewrite
+    assert not before.needs_review
+    assert any("applies only from 2027-01-01" in reason for reason in before.reasons)
+
+    after = decide(evidence, today=date(2027, 1, 1))
+    assert after.licence == Licence(F.CC_BY, "4.0")
+    assert after.permissions.can_rewrite
+
+
+def test_future_reference_beside_only_undated_values_still_fails_closed() -> None:
+    """An undated href beside a future-dated ref may mean the same embargo: never open early."""
+    decision = decide(
+        [
+            LicenceEvidence(ALI, CC_BY_URI, start_date="2099-01-01"),
+            LicenceEvidence(HREF, CC_BY_URI),
+        ],
+        today=TODAY,
+    )
+    assert decision.permissions == NO_PERMISSIONS
+    assert decision.needs_review
+    assert "start_date in the future" in decision.reasons[0]
+
+
 # ----- decide_part(): blocks on objects nested inside a part ------------------
 
 ND_URI = "https://creativecommons.org/licenses/by-nd/4.0/"

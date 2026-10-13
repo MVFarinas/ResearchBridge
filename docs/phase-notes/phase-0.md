@@ -123,9 +123,11 @@ article.unattached_permissions  # non-empty: send the article to licence review
     "not covered by CC-BY" copyright blocks); the original parser read only the first and
     displayed the figure as CC BY-NC.
 16. **NISO ALI dates are honoured** (`decide(..., today=...)`, default today in UTC). A licence
-    with a future `start_date` (delayed open access), a past `end_date`, or an unparsable date is
-    not in force: no display, review. Among dated references in force the latest `start_date`
-    supersedes earlier ones (the ALI embargo-transition pattern); undated values always count.
+    with a past `end_date` or an unparsable date fails closed with review. A reference with a
+    future `start_date` (delayed open access) is not in force: if no other dated reference is in
+    force today the paper gets no display and review; otherwise it is set aside with a note (see
+    19). Among dated references in force the latest `start_date` supersedes earlier ones (the
+    ALI embargo-transition pattern); undated values always count.
     A future `end_date` grants but sets review. `ali:free_to_read` dates are recorded for
     reviewers only. Re-run `decide` when an embargo date passes; nothing schedules that yet.
 17. **`@specific-use` and `@license-type` raise review, never permissions.** If every
@@ -147,6 +149,14 @@ article.unattached_permissions  # non-empty: send the article to licence review
     allows at least as much (display, rewrite, and no added non-commercial, attribution, or
     different share-alike condition); otherwise the part fails closed with review, because one
     decision cannot express the mix. An inner block therefore never widens a part.
+19. **Both halves of an embargo transition are covered.** Fix round 1 refused a paper as soon as
+    any reference had a future `start_date`, even when an earlier dated licence was in force
+    (for example CC BY-NC-ND from 2024 and CC BY from 2027, judged in 2026). Now a future-dated
+    reference is set aside, with a "re-check then" note, whenever at least one dated reference
+    is in force today, so the current licence applies until the transition. When the only
+    other values are undated (for example an undated `xlink:href` beside a future-dated
+    `ali:license_ref`), the paper is still refused until that date, because the undated value
+    may be meant to start on the same date.
 18. **Unresolvable entity references fail the parse** (`JatsParseError`) instead of silently
     dropping their text. Entities are never expanded, so `&nbsp;`-style references (internal
     DTD subset, or left for an external DTD) cannot be read safely. None of 60 real PMC, Europe

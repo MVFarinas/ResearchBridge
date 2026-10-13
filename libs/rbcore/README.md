@@ -46,7 +46,8 @@ per-source codes), never `license-p` prose or `@license-type`, and never aggrega
 (Crossref, OpenAlex). Missing, prose-only, conflicting or unrecognised evidence gives
 `can_display=False, can_rewrite=False`, with `needs_review=True` where a human could resolve it.
 NISO ALI dates are honoured: a licence whose `start_date` is in the future (an embargo) or whose
-`end_date` has passed is not in force. A decision can grant permissions and still set
+`end_date` has passed is not in force; before an embargo transition, an earlier dated licence
+that is in force today still applies. A decision can grant permissions and still set
 `needs_review` (use-scoped `@specific-use` evidence with nothing unscoped agreeing, a
 contradicting `@license-type`, a future `end_date`). A part (figure, table, paragraph) with
 several covering permissions blocks fails closed; a block on an object nested inside it (an

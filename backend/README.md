@@ -1,12 +1,57 @@
 # backend/ — Django backend (Phase 2)
 
-**Owner: Phase 2.** Placeholder created in Phase 0; the Django project does not exist yet.
+Corpus storage, the licence gate (decisions.md §1.1) and PMC ingestion, with a Procrastinate
+worker on the same codebase. Details, decisions and results: [docs/phase-notes/phase-2.md](../docs/phase-notes/phase-2.md).
 
-Purpose: Django + Postgres/pgvector backend with a background worker: the paper and annotation
-schema, ingestion (PMC Cloud Service, PLOS), licence storage per version and per figure, precedence
-across licence sources, the manual review queue and enforcement of the licence gate. See
-[Plan.md](../Plan.md) "Phase 2".
+| Package | What |
+|---|---|
+| `rb_backend.corpus` | `Paper`, `PaperVersion`, `Section`, `Paragraph`, `Figure`; licence provenance (`LicenceRecord`, `PermissionsBlockRecord`); the `LicenceReview` queue; the gate (`gate.evaluate_version`, `precedence.resolve_licence`); the **gated read API** (`access`, and the `displayable()` / `rewriteable()` querysets); the static bypass check (`accesscheck`). |
+| `rb_backend.annotations` | W3C Web Annotation-shaped `Annotation` with provenance, plus `AnnotationRevision`, `Vote`, `Report`. |
+| `rb_backend.ingestion` | PMC Cloud Service client (`pmc`), ESearch discovery (`eutils`), the pipeline, worker tasks, and the `ingest_pmc` / `recheck_licences` commands. |
 
-JATS parsing and licence-permission derivation live in `libs/rbcore` (Phase 0 deviation, see
-[docs/phase-notes/phase-0.md](../docs/phase-notes/phase-0.md)); this package stores and enforces
-their results. Local database: `make db-up` (port from `RB_DB_PORT`, default 5433).
+**The one rule for later phases:** read papers, versions, sections, paragraphs, figures and
+annotations only through `rb_backend.corpus.access` or the `displayable()` / `rewriteable()`
+queryset methods. The test suite fails if a module outside the corpus internals does otherwise.
+
+## Run it locally
+
+```sh
+make setup                                   # .venv with the locked environment
+RB_DB_PORT=5433 make db-up                   # Postgres 16 + pgvector (docker compose)
+cd backend
+export DJANGO_DEBUG=true                     # or set DJANGO_SECRET_KEY
+../.venv/bin/python manage.py migrate
+../.venv/bin/python manage.py createsuperuser   # for the admin (licence review queue)
+
+# Discover and queue articles, then let the worker ingest them
+../.venv/bin/python manage.py ingest_pmc --limit 50 --query "asthma AND 2024[pdat]"
+../.venv/bin/python manage.py procrastinate worker --queues ingestion --one-shot
+
+../.venv/bin/python manage.py corpus_stats              # counts by licence and gate status
+../.venv/bin/python manage.py recheck_licences --offline  # recompute decisions, no network
+../.venv/bin/python manage.py runserver                 # admin at http://127.0.0.1:8000/admin/
+```
+
+`ingest_pmc --sync` ingests inline without the worker. Without `--one-shot` the worker keeps
+running and also schedules the daily re-check of stale articles.
+
+## Tests
+
+The backend tests need the local Postgres (`make db-up` first); pytest-django creates and drops a
+separate test database. Ingestion tests use recorded responses in `tests/fixtures/pmc` and never
+the network. `make check` from the repository root runs lint, mypy and every package's tests.
+
+## Docker image
+
+```sh
+docker build -f backend/Dockerfile -t researchbridge-backend .    # from the repository root
+docker run --rm -e DATABASE_URL=postgres://... -e DJANGO_SECRET_KEY=... researchbridge-backend django-admin migrate
+docker run --rm -p 8000:8000 -e DATABASE_URL=... -e DJANGO_SECRET_KEY=... -e DJANGO_ALLOWED_HOSTS=localhost researchbridge-backend
+docker run --rm -e DATABASE_URL=... -e DJANGO_SECRET_KEY=... researchbridge-backend django-admin procrastinate worker
+```
+
+## Data acknowledgement
+
+Full text and metadata come from the NIH National Library of Medicine (NLM) PubMed Central Article
+Datasets on AWS (<https://registry.opendata.aws/ncbi-pmc/>). Their use does not imply NLM
+endorsement.

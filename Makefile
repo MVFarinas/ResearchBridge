@@ -60,14 +60,16 @@ format: ## Apply ruff formatting and safe autofixes.
 	$(BIN)/ruff format .
 	$(BIN)/ruff check --fix .
 
+# The loops end with `|| exit 1` because macOS ships GNU Make 3.81, which ignores
+# .SHELLFLAGS: without it a failing package other than the last would not fail the target.
 typecheck: ## mypy for every package with a [tool.mypy] section (and web tsc).
-	@for p in $(MYPY_PACKAGES); do echo "mypy: $$p"; (cd $$p && $(BIN)/mypy); done
+	@for p in $(MYPY_PACKAGES); do echo "mypy: $$p"; (cd $$p && $(BIN)/mypy) || exit 1; done
 ifneq ($(WEB),)
 	npm --prefix web run typecheck
 endif
 
 test: ## pytest in every Python package (and web tests).
-	@for p in $(PY_PACKAGES); do echo "pytest: $$p"; (cd $$p && $(BIN)/pytest -q); done
+	@for p in $(PY_PACKAGES); do echo "pytest: $$p"; (cd $$p && $(BIN)/pytest -q) || exit 1; done
 ifneq ($(WEB),)
 	npm --prefix web test
 endif

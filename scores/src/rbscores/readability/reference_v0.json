@@ -1,0 +1,27 @@
+{
+  "version": "reference-v0-2026-10-13-provisional",
+  "description": "PROVISIONAL. Means and sample SDs of the five readability features over 772 windows of research-article body text: the opening ~150 words (whole sentences) of up to 4 body sections per article, from the first 100 training-split articles of each of BioLaySumm/BioLaySumm2025-eLife, BioLaySumm/BioLaySumm2025-PLOS (PLOS and eLife articles, CC BY 4.0). spaCy en_core_web_sm-3.8.0, wordfreq 3.1.1.",
+  "units": 772,
+  "features": {
+    "mean_sentence_length": {
+      "mean": 25.310668505357622,
+      "sd": 7.257136018413081
+    },
+    "mean_parse_depth": {
+      "mean": 7.515263331228357,
+      "sd": 1.4250670928935694
+    },
+    "nominalisation_rate": {
+      "mean": 4.82590155916228,
+      "sd": 2.6917759048350165
+    },
+    "passive_rate": {
+      "mean": 0.41838138832957483,
+      "sd": 0.2751093286331105
+    },
+    "jargon_density": {
+      "mean": 0.17628606789719434,
+      "sd": 0.062791235102038
+    }
+  }
+}

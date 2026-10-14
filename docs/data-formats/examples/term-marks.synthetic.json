@@ -1,0 +1,36 @@
+{
+  "schema": "researchbridge.term-marks",
+  "version": 1,
+  "study_id": "synthetic-example-marks",
+  "synthetic": true,
+  "description": "SYNTHETIC example for the format documentation and tests. Not real data: the passages were written for this file and the marks are invented.",
+  "passages": [
+    {
+      "passage_id": "m1",
+      "text": "Each kidney holds about a million nephrons, which filter the blood.",
+      "source": {"licence": "CC0-1.0"}
+    },
+    {
+      "passage_id": "m2",
+      "text": "Apoptosis, or programmed cell death, removed damaged hepatocytes.",
+      "source": {"licence": "CC0-1.0"}
+    }
+  ],
+  "raters": [
+    {"rater_id": "r01", "background": "secondary_or_less"},
+    {"rater_id": "r02", "background": "university_other_field"}
+  ],
+  "responses": [
+    {"rater_id": "r01", "passage_id": "m1", "marks": [{"start": 34, "end": 42, "text": "nephrons"}]},
+    {"rater_id": "r02", "passage_id": "m1", "marks": []},
+    {
+      "rater_id": "r01",
+      "passage_id": "m2",
+      "marks": [
+        {"start": 0, "end": 9, "text": "Apoptosis"},
+        {"start": 53, "end": 64, "text": "hepatocytes"}
+      ]
+    },
+    {"rater_id": "r02", "passage_id": "m2", "marks": [{"start": 53, "end": 64, "text": "hepatocytes"}]}
+  ]
+}

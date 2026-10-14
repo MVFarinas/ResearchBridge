@@ -6,5 +6,7 @@ file naming the upstream URL, commit, licence and "modified by ResearchBridge" i
 entry also has a row in [docs/licence-inventory.md](../docs/licence-inventory.md) marked
 `vendored` or `adapted`. Rules: [docs/conventions.md](../docs/conventions.md#reusing-other-peoples-code).
 
-Nothing has been vendored or adapted yet (Phase 0). Published packages installed through the lock
+Nothing has been vendored or adapted yet (Phase 0; Track R's first half reused code only as
+published packages, and reimplemented the Schwartz-Hearst algorithm and the De-Jargonizer method
+from their papers). Published packages installed through the lock
 files are recorded in the inventory but need no entry here.

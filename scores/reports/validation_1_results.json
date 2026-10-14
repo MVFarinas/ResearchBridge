@@ -1,0 +1,1456 @@
+{
+  "provisional": true,
+  "notice": "PROVISIONAL: these readability and prior-knowledge burden scores are draft definitions (decisions.md §2.4). They have not been validated against lay readers' judgements and must not be shown to readers as a measure of difficulty.",
+  "method_version": "rbscores-0.1-provisional",
+  "reference_version": "reference-v0-2026-10-13-provisional",
+  "spacy_model": "en_core_web_sm-3.8.0",
+  "wordfreq_version": "3.1.1",
+  "dataset": {
+    "elife": {
+      "dataset": "BioLaySumm/BioLaySumm2025-eLife",
+      "revision": "144e9c785e3a309da804eb6786feb38e6596f390",
+      "pairs_split": "validation",
+      "pairs": 241,
+      "skipped_rows": [],
+      "calibration_split": "train",
+      "calibration_articles": 100,
+      "calibration_windows": 385
+    },
+    "plos": {
+      "dataset": "BioLaySumm/BioLaySumm2025-PLOS",
+      "revision": "b3fd4cbdf3f1defac6b0d5f5557652ce2d65ad16",
+      "pairs_split": "validation",
+      "pairs": 1376,
+      "skipped_rows": [],
+      "calibration_split": "train",
+      "calibration_articles": 100,
+      "calibration_windows": 387
+    }
+  },
+  "skipped_pairs": {
+    "elife": [],
+    "plos": []
+  },
+  "limit_per_source": null,
+  "pairs": {
+    "elife": 241,
+    "plos": 1376,
+    "all": 1617
+  },
+  "comparisons": {
+    "full": {
+      "elife": {
+        "mean_sentence_length": {
+          "n": 241,
+          "lay_easier": 130,
+          "ties": 0,
+          "share_correct": 0.5394190871369294,
+          "ci95_low": 0.4763634725452432,
+          "ci95_high": 0.601237764155092,
+          "sign_test_p": 0.2462042946879871,
+          "median_lay": 22.38888888888889,
+          "median_technical": 22.142857142857142,
+          "median_difference": -0.32456140350877405
+        },
+        "mean_parse_depth": {
+          "n": 241,
+          "lay_easier": 114,
+          "ties": 2,
+          "share_correct": 0.4730290456431535,
+          "ci95_low": 0.4109129399661968,
+          "ci95_high": 0.535991477028311,
+          "sign_test_p": 0.5178172686986395,
+          "median_lay": 7.555555555555555,
+          "median_technical": 7.4,
+          "median_difference": 0.05263157894736814
+        },
+        "nominalisation_rate": {
+          "n": 241,
+          "lay_easier": 221,
+          "ties": 0,
+          "share_correct": 0.91701244813278,
+          "ci95_low": 0.8753016167364577,
+          "ci95_high": 0.9456377820407703,
+          "sign_test_p": 4.963338291141735e-44,
+          "median_lay": 3.125,
+          "median_technical": 6.763285024154589,
+          "median_difference": -3.437580770224864
+        },
+        "passive_rate": {
+          "n": 241,
+          "lay_easier": 80,
+          "ties": 5,
+          "share_correct": 0.33195020746887965,
+          "ci95_low": 0.27554227111974183,
+          "ci95_high": 0.39363140399988283,
+          "sign_test_p": 8.52431286351073e-07,
+          "median_lay": 0.3181818181818182,
+          "median_technical": 0.2222222222222222,
+          "median_difference": 0.07936507936507936
+        },
+        "jargon_density": {
+          "n": 241,
+          "lay_easier": 240,
+          "ties": 0,
+          "share_correct": 0.995850622406639,
+          "ci95_low": 0.9768747151162902,
+          "ci95_high": 0.9992671570616076,
+          "sign_test_p": 1.3696714606725402e-70,
+          "median_lay": 0.09595959595959595,
+          "median_technical": 0.19798657718120805,
+          "median_difference": -0.09799426040301952
+        },
+        "composite": {
+          "n": 241,
+          "lay_easier": 214,
+          "ties": 0,
+          "share_correct": 0.8879668049792531,
+          "ci95_low": 0.8419062956347629,
+          "ci95_high": 0.9218532445211653,
+          "sign_test_p": 2.698510767166949e-37,
+          "median_lay": -0.5137300947608169,
+          "median_technical": 0.002387074431191716,
+          "median_difference": -0.5679723360406164
+        },
+        "burden": {
+          "n": 241,
+          "lay_easier": 240,
+          "ties": 0,
+          "share_correct": 0.995850622406639,
+          "ci95_low": 0.9768747151162902,
+          "ci95_high": 0.9992671570616076,
+          "sign_test_p": 1.3696714606725402e-70,
+          "median_lay": 11.841059602649008,
+          "median_technical": 62.30985915492958,
+          "median_difference": -48.123699078203984
+        },
+        "burden_no_definitions": {
+          "n": 241,
+          "lay_easier": 241,
+          "ties": 0,
+          "share_correct": 1.0,
+          "ci95_low": 0.9843104234095119,
+          "ci95_high": 1.0,
+          "sign_test_p": 5.659799424266695e-73,
+          "median_lay": 16.975124378109452,
+          "median_technical": 68.41025641025642,
+          "median_difference": -49.89159031116756
+        },
+        "flesch_kincaid_grade": {
+          "n": 241,
+          "lay_easier": 229,
+          "ties": 0,
+          "share_correct": 0.950207468879668,
+          "ci95_low": 0.9149975267846534,
+          "ci95_high": 0.9712902818454879,
+          "sign_test_p": 3.622035296240701e-53,
+          "median_lay": 13.149879951980793,
+          "median_technical": 16.944360902255635,
+          "median_difference": -3.7856132491186862
+        }
+      },
+      "plos": {
+        "mean_sentence_length": {
+          "n": 1376,
+          "lay_easier": 784,
+          "ties": 2,
+          "share_correct": 0.5697674418604651,
+          "ci95_low": 0.5434488328075536,
+          "ci95_high": 0.595697587799417,
+          "sign_test_p": 1.8379623280888765e-07,
+          "median_lay": 23.881944444444443,
+          "median_technical": 24.746031746031747,
+          "median_difference": -0.6950757575757578
+        },
+        "mean_parse_depth": {
+          "n": 1376,
+          "lay_easier": 688,
+          "ties": 19,
+          "share_correct": 0.5,
+          "ci95_low": 0.4736182560752463,
+          "ci95_high": 0.5263817439247537,
+          "sign_test_p": 0.6251179125873529,
+          "median_lay": 7.894444444444445,
+          "median_technical": 7.888888888888889,
+          "median_difference": -0.004761904761904745
+        },
+        "nominalisation_rate": {
+          "n": 1376,
+          "lay_easier": 786,
+          "ties": 0,
+          "share_correct": 0.5712209302325582,
+          "ci95_low": 0.5449091656368568,
+          "ci95_high": 0.597136138732759,
+          "sign_test_p": 1.398925871211806e-07,
+          "median_lay": 6.185567010309279,
+          "median_technical": 6.6984120001759555,
+          "median_difference": -0.38015618425293374
+        },
+        "passive_rate": {
+          "n": 1376,
+          "lay_easier": 668,
+          "ties": 65,
+          "share_correct": 0.48546511627906974,
+          "ci95_low": 0.45913495553640726,
+          "ci95_high": 0.5118762068371405,
+          "sign_test_p": 0.5074470320947972,
+          "median_lay": 0.2857142857142857,
+          "median_technical": 0.2857142857142857,
+          "median_difference": 0.0
+        },
+        "jargon_density": {
+          "n": 1376,
+          "lay_easier": 1093,
+          "ties": 0,
+          "share_correct": 0.7943313953488372,
+          "ci95_low": 0.7721698050171942,
+          "ci95_high": 0.8148541569184623,
+          "sign_test_p": 2.0415813808023384e-112,
+          "median_lay": 0.14443057345360824,
+          "median_technical": 0.17373338124326265,
+          "median_difference": -0.026198142746940475
+        },
+        "composite": {
+          "n": 1376,
+          "lay_easier": 920,
+          "ties": 0,
+          "share_correct": 0.6686046511627907,
+          "ci95_low": 0.643294265678393,
+          "ci95_high": 0.6929762507884522,
+          "sign_test_p": 2.014479018927228e-36,
+          "median_lay": -0.038772835012074944,
+          "median_technical": 0.10562793038907925,
+          "median_difference": -0.15009338890215157
+        },
+        "burden": {
+          "n": 1376,
+          "lay_easier": 976,
+          "ties": 0,
+          "share_correct": 0.7093023255813954,
+          "ci95_low": 0.6847534756939998,
+          "ci95_high": 0.7326857861269117,
+          "sign_test_p": 7.90782825370651e-56,
+          "median_lay": 41.673562173221185,
+          "median_technical": 51.48626865671642,
+          "median_difference": -8.827882747376734
+        },
+        "burden_no_definitions": {
+          "n": 1376,
+          "lay_easier": 985,
+          "ties": 0,
+          "share_correct": 0.715843023255814,
+          "ci95_low": 0.6914375696439232,
+          "ci95_high": 0.7390466691088915,
+          "sign_test_p": 2.202565686093179e-59,
+          "median_lay": 45.123711779235165,
+          "median_technical": 55.800929101452894,
+          "median_difference": -8.946210204701103
+        },
+        "flesch_kincaid_grade": {
+          "n": 1376,
+          "lay_easier": 812,
+          "ties": 0,
+          "share_correct": 0.5901162790697675,
+          "ci95_low": 0.5639144667236038,
+          "ci95_high": 0.6158163265603998,
+          "sign_test_p": 2.4495527254075827e-11,
+          "median_lay": 16.73412879659457,
+          "median_technical": 17.110713561286587,
+          "median_difference": -0.4888486738773494
+        }
+      },
+      "all": {
+        "mean_sentence_length": {
+          "n": 1617,
+          "lay_easier": 914,
+          "ties": 2,
+          "share_correct": 0.5652442795299938,
+          "ci95_low": 0.5409557497187166,
+          "ci95_high": 0.589223546258523,
+          "sign_test_p": 1.2730873732619492e-07,
+          "median_lay": 23.642857142857142,
+          "median_technical": 24.428571428571427,
+          "median_difference": -0.6274509803921546
+        },
+        "mean_parse_depth": {
+          "n": 1617,
+          "lay_easier": 802,
+          "ties": 21,
+          "share_correct": 0.49598021026592454,
+          "ci95_low": 0.471648994687489,
+          "ci95_high": 0.5203304799679417,
+          "sign_test_p": 0.8609144032193212,
+          "median_lay": 7.857142857142857,
+          "median_technical": 7.833333333333333,
+          "median_difference": 0.0
+        },
+        "nominalisation_rate": {
+          "n": 1617,
+          "lay_easier": 1007,
+          "ties": 0,
+          "share_correct": 0.6227581941867656,
+          "ci95_low": 0.598868966120762,
+          "ci95_high": 0.6460655386326224,
+          "sign_test_p": 4.26313401778326e-23,
+          "median_lay": 5.769230769230769,
+          "median_technical": 6.70391061452514,
+          "median_difference": -0.7326007326007318
+        },
+        "passive_rate": {
+          "n": 1617,
+          "lay_easier": 748,
+          "ties": 70,
+          "share_correct": 0.46258503401360546,
+          "ci95_low": 0.43840026564645995,
+          "ci95_high": 0.48694715230024155,
+          "sign_test_p": 0.2036311043861104,
+          "median_lay": 0.2857142857142857,
+          "median_technical": 0.2857142857142857,
+          "median_difference": 0.0
+        },
+        "jargon_density": {
+          "n": 1617,
+          "lay_easier": 1333,
+          "ties": 0,
+          "share_correct": 0.8243661100803958,
+          "ci95_low": 0.80505709421395,
+          "ci95_high": 0.8421376047439856,
+          "sign_test_p": 2.5033495493975514e-162,
+          "median_lay": 0.13636363636363635,
+          "median_technical": 0.17625899280575538,
+          "median_difference": -0.03205426356589147
+        },
+        "composite": {
+          "n": 1617,
+          "lay_easier": 1134,
+          "ties": 0,
+          "share_correct": 0.7012987012987013,
+          "ci95_low": 0.6785348302811596,
+          "ci95_high": 0.7231084004353476,
+          "sign_test_p": 2.0792842454420536e-60,
+          "median_lay": -0.09624182590514985,
+          "median_technical": 0.09677571839730408,
+          "median_difference": -0.19863897649280884
+        },
+        "burden": {
+          "n": 1617,
+          "lay_easier": 1216,
+          "ties": 0,
+          "share_correct": 0.7520098948670377,
+          "ci95_low": 0.7303805538451361,
+          "ci95_high": 0.7724446889105526,
+          "sign_test_p": 2.593535418037723e-95,
+          "median_lay": 36.95652173913044,
+          "median_technical": 52.60431654676258,
+          "median_difference": -11.859025032938078
+        },
+        "burden_no_definitions": {
+          "n": 1617,
+          "lay_easier": 1226,
+          "ties": 0,
+          "share_correct": 0.7581941867656153,
+          "ci95_low": 0.7367282993784509,
+          "ci95_high": 0.7784362131381136,
+          "sign_test_p": 3.3139988272614513e-100,
+          "median_lay": 40.59911894273127,
+          "median_technical": 57.130434782608695,
+          "median_difference": -12.3463601532567
+        },
+        "flesch_kincaid_grade": {
+          "n": 1617,
+          "lay_easier": 1041,
+          "ties": 0,
+          "share_correct": 0.6437847866419295,
+          "ci95_low": 0.6201281852481235,
+          "ci95_high": 0.6667598366922387,
+          "sign_test_p": 3.2662595307523157e-31,
+          "median_lay": 16.23242424242424,
+          "median_technical": 17.093287671232876,
+          "median_difference": -0.8548110797010935
+        }
+      }
+    },
+    "length_matched": {
+      "elife": {
+        "mean_sentence_length": {
+          "n": 241,
+          "lay_easier": 144,
+          "ties": 3,
+          "share_correct": 0.5975103734439834,
+          "ci95_low": 0.5345349404820446,
+          "ci95_high": 0.6574260134608895,
+          "sign_test_p": 0.001440246915136851,
+          "median_lay": 21.428571428571427,
+          "median_technical": 22.142857142857142,
+          "median_difference": -1.0
+        },
+        "mean_parse_depth": {
+          "n": 241,
+          "lay_easier": 128,
+          "ties": 7,
+          "share_correct": 0.5311203319502075,
+          "ci95_low": 0.46812256714833145,
+          "ci95_high": 0.5931415670887753,
+          "sign_test_p": 0.16967644986005434,
+          "median_lay": 7.333333333333333,
+          "median_technical": 7.4,
+          "median_difference": -0.16071428571428648
+        },
+        "nominalisation_rate": {
+          "n": 241,
+          "lay_easier": 221,
+          "ties": 0,
+          "share_correct": 0.91701244813278,
+          "ci95_low": 0.8753016167364577,
+          "ci95_high": 0.9456377820407703,
+          "sign_test_p": 4.963338291141735e-44,
+          "median_lay": 2.6490066225165565,
+          "median_technical": 6.763285024154589,
+          "median_difference": -3.9258565031760897
+        },
+        "passive_rate": {
+          "n": 241,
+          "lay_easier": 80,
+          "ties": 21,
+          "share_correct": 0.33195020746887965,
+          "ci95_low": 0.27554227111974183,
+          "ci95_high": 0.39363140399988283,
+          "sign_test_p": 6.315149791585084e-05,
+          "median_lay": 0.3,
+          "median_technical": 0.2222222222222222,
+          "median_difference": 0.07142857142857145
+        },
+        "jargon_density": {
+          "n": 241,
+          "lay_easier": 240,
+          "ties": 0,
+          "share_correct": 0.995850622406639,
+          "ci95_low": 0.9768747151162902,
+          "ci95_high": 0.9992671570616076,
+          "sign_test_p": 1.3696714606725402e-70,
+          "median_lay": 0.08959537572254335,
+          "median_technical": 0.19798657718120805,
+          "median_difference": -0.10017039922103213
+        },
+        "composite": {
+          "n": 241,
+          "lay_easier": 218,
+          "ties": 0,
+          "share_correct": 0.9045643153526971,
+          "ci95_low": 0.8608707171488285,
+          "ci95_high": 0.9355630279335571,
+          "sign_test_p": 5.055865615933152e-41,
+          "median_lay": -0.6288714929335208,
+          "median_technical": 0.002387074431191716,
+          "median_difference": -0.6706724176188954
+        },
+        "burden": {
+          "n": 241,
+          "lay_easier": 236,
+          "ties": 0,
+          "share_correct": 0.979253112033195,
+          "ci95_low": 0.952361272660145,
+          "ci95_high": 0.991106394591296,
+          "sign_test_p": 3.7565657279072503e-63,
+          "median_lay": 13.379310344827585,
+          "median_technical": 62.30985915492958,
+          "median_difference": -45.30712858094603
+        },
+        "burden_no_definitions": {
+          "n": 241,
+          "lay_easier": 236,
+          "ties": 0,
+          "share_correct": 0.979253112033195,
+          "ci95_low": 0.952361272660145,
+          "ci95_high": 0.991106394591296,
+          "sign_test_p": 3.7565657279072503e-63,
+          "median_lay": 20.738853503184718,
+          "median_technical": 68.41025641025642,
+          "median_difference": -44.014877982400435
+        },
+        "flesch_kincaid_grade": {
+          "n": 241,
+          "lay_easier": 233,
+          "ties": 0,
+          "share_correct": 0.966804979253112,
+          "ci95_low": 0.9358766025011641,
+          "ci95_high": 0.9830854110554345,
+          "sign_test_p": 1.47050251502926e-58,
+          "median_lay": 12.565000000000001,
+          "median_technical": 16.944360902255635,
+          "median_difference": -4.332473828383453
+        }
+      },
+      "plos": {
+        "mean_sentence_length": {
+          "n": 1376,
+          "lay_easier": 741,
+          "ties": 16,
+          "share_correct": 0.5385174418604651,
+          "ci95_low": 0.5121066433919235,
+          "ci95_high": 0.5647137763181749,
+          "sign_test_p": 0.0010269334330912415,
+          "median_lay": 23.875,
+          "median_technical": 24.375,
+          "median_difference": -0.5555555555555571
+        },
+        "mean_parse_depth": {
+          "n": 1376,
+          "lay_easier": 630,
+          "ties": 41,
+          "share_correct": 0.4578488372093023,
+          "ci95_low": 0.43167809272508795,
+          "ci95_high": 0.48425427815820066,
+          "sign_test_p": 0.04279548168582813,
+          "median_lay": 7.888888888888889,
+          "median_technical": 7.75,
+          "median_difference": 0.058080808080807955
+        },
+        "nominalisation_rate": {
+          "n": 1376,
+          "lay_easier": 732,
+          "ties": 6,
+          "share_correct": 0.5319767441860465,
+          "ci95_low": 0.5055598335443635,
+          "ci95_high": 0.5582156092338312,
+          "sign_test_p": 0.011957051710157107,
+          "median_lay": 6.182671145604077,
+          "median_technical": 6.442180720618751,
+          "median_difference": -0.24163569458782508
+        },
+        "passive_rate": {
+          "n": 1376,
+          "lay_easier": 663,
+          "ties": 136,
+          "share_correct": 0.48183139534883723,
+          "ci95_low": 0.4555176069229307,
+          "ci95_high": 0.5082463460440041,
+          "sign_test_p": 0.01575154693147312,
+          "median_lay": 0.2857142857142857,
+          "median_technical": 0.2857142857142857,
+          "median_difference": 0.0
+        },
+        "jargon_density": {
+          "n": 1376,
+          "lay_easier": 1112,
+          "ties": 3,
+          "share_correct": 0.8081395348837209,
+          "ci95_low": 0.7864876179740274,
+          "ci95_high": 0.8280757397067586,
+          "sign_test_p": 3.555407810384041e-125,
+          "median_lay": 0.14414928292046936,
+          "median_technical": 0.17714926160337552,
+          "median_difference": -0.02954883540605585
+        },
+        "composite": {
+          "n": 1376,
+          "lay_easier": 897,
+          "ties": 0,
+          "share_correct": 0.6518895348837209,
+          "ci95_low": 0.6263281111392746,
+          "ci95_high": 0.6766052420571508,
+          "sign_test_p": 9.333343581783579e-30,
+          "median_lay": -0.038772835012074944,
+          "median_technical": 0.1019898721336769,
+          "median_difference": -0.13668108224227213
+        },
+        "burden": {
+          "n": 1376,
+          "lay_easier": 1099,
+          "ties": 0,
+          "share_correct": 0.7986918604651163,
+          "ci95_low": 0.776686985502506,
+          "ci95_high": 0.8190336277210863,
+          "sign_test_p": 5.668603426233537e-116,
+          "median_lay": 41.75378871074017,
+          "median_technical": 56.408508158508155,
+          "median_difference": -14.00608134372185
+        },
+        "burden_no_definitions": {
+          "n": 1376,
+          "lay_easier": 1139,
+          "ties": 0,
+          "share_correct": 0.8277616279069767,
+          "ci95_low": 0.8069054257721245,
+          "ci95_high": 0.846792862704372,
+          "sign_test_p": 1.5217093775812845e-141,
+          "median_lay": 45.49480844969567,
+          "median_technical": 62.44717958034335,
+          "median_difference": -15.227318697464963
+        },
+        "flesch_kincaid_grade": {
+          "n": 1376,
+          "lay_easier": 788,
+          "ties": 2,
+          "share_correct": 0.5726744186046512,
+          "ci95_low": 0.5463697277074319,
+          "ci95_high": 0.598574460424829,
+          "sign_test_p": 5.5740453742430066e-08,
+          "median_lay": 16.70433760683761,
+          "median_technical": 17.091936597207827,
+          "median_difference": -0.4227801151606396
+        }
+      },
+      "all": {
+        "mean_sentence_length": {
+          "n": 1617,
+          "lay_easier": 885,
+          "ties": 19,
+          "share_correct": 0.5473098330241187,
+          "ci95_low": 0.5229651283652009,
+          "ci95_high": 0.571430285305499,
+          "sign_test_p": 1.8559660810501414e-05,
+          "median_lay": 23.428571428571427,
+          "median_technical": 24.0,
+          "median_difference": -0.6111111111111107
+        },
+        "mean_parse_depth": {
+          "n": 1617,
+          "lay_easier": 758,
+          "ties": 48,
+          "share_correct": 0.46876932591218307,
+          "ci95_low": 0.444549233317637,
+          "ci95_high": 0.4931374543899402,
+          "sign_test_p": 0.18924018369216877,
+          "median_lay": 7.8,
+          "median_technical": 7.714285714285714,
+          "median_difference": 0.013888888888889284
+        },
+        "nominalisation_rate": {
+          "n": 1617,
+          "lay_easier": 953,
+          "ties": 6,
+          "share_correct": 0.5893630179344465,
+          "ci95_low": 0.5652006859951322,
+          "ci95_high": 0.6131017620495229,
+          "sign_test_p": 2.0567019397016846e-13,
+          "median_lay": 5.7591623036649215,
+          "median_technical": 6.486486486486487,
+          "median_difference": -0.6410256410256414
+        },
+        "passive_rate": {
+          "n": 1617,
+          "lay_easier": 743,
+          "ties": 157,
+          "share_correct": 0.45949288806431665,
+          "ci95_low": 0.435327186075631,
+          "ci95_high": 0.48385059699063254,
+          "sign_test_p": 0.5129452728737001,
+          "median_lay": 0.2857142857142857,
+          "median_technical": 0.2857142857142857,
+          "median_difference": 0.0
+        },
+        "jargon_density": {
+          "n": 1617,
+          "lay_easier": 1352,
+          "ties": 3,
+          "share_correct": 0.8361162646876933,
+          "ci95_low": 0.8172810492605718,
+          "ci95_high": 0.8533582622430278,
+          "sign_test_p": 6.9651328833752734e-177,
+          "median_lay": 0.1358974358974359,
+          "median_technical": 0.18037974683544303,
+          "median_difference": -0.037037037037037035
+        },
+        "composite": {
+          "n": 1617,
+          "lay_easier": 1115,
+          "ties": 0,
+          "share_correct": 0.6895485466914039,
+          "ci95_low": 0.6665702292686255,
+          "ci95_high": 0.7116283889022177,
+          "sign_test_p": 1.3955546505247132e-53,
+          "median_lay": -0.09862712655780195,
+          "median_technical": 0.0895491308210434,
+          "median_difference": -0.1805715496418263
+        },
+        "burden": {
+          "n": 1617,
+          "lay_easier": 1335,
+          "ties": 0,
+          "share_correct": 0.8256029684601113,
+          "ci95_low": 0.8063423538454089,
+          "ci95_high": 0.8433201990647017,
+          "sign_test_p": 1.1271732038272242e-163,
+          "median_lay": 37.692307692307686,
+          "median_technical": 57.313131313131315,
+          "median_difference": -17.570621468926554
+        },
+        "burden_no_definitions": {
+          "n": 1617,
+          "lay_easier": 1375,
+          "ties": 0,
+          "share_correct": 0.8503401360544217,
+          "ci95_low": 0.8321228973087685,
+          "ci95_high": 0.8668967346448452,
+          "sign_test_p": 3.1482037440398748e-192,
+          "median_lay": 41.44329896907216,
+          "median_technical": 63.333333333333336,
+          "median_difference": -18.4301474673397
+        },
+        "flesch_kincaid_grade": {
+          "n": 1617,
+          "lay_easier": 1021,
+          "ties": 2,
+          "share_correct": 0.6314162028447743,
+          "ci95_low": 0.6076169601054373,
+          "ci95_high": 0.6545925223131734,
+          "sign_test_p": 1.5175194764911204e-26,
+          "median_lay": 16.186666666666667,
+          "median_technical": 17.074154995331465,
+          "median_difference": -0.845281638069963
+        }
+      }
+    }
+  },
+  "paired": {
+    "full": {
+      "elife": [
+        {
+          "first": "composite",
+          "second": "flesch_kincaid_grade",
+          "both": 208,
+          "only_first": 6,
+          "only_second": 21,
+          "neither": 6,
+          "mcnemar_exact_p": 0.005924612283706665
+        },
+        {
+          "first": "composite",
+          "second": "jargon_density",
+          "both": 214,
+          "only_first": 0,
+          "only_second": 26,
+          "neither": 1,
+          "mcnemar_exact_p": 2.9802322387695312e-08
+        },
+        {
+          "first": "burden",
+          "second": "burden_no_definitions",
+          "both": 240,
+          "only_first": 0,
+          "only_second": 1,
+          "neither": 0,
+          "mcnemar_exact_p": 1.0
+        }
+      ],
+      "plos": [
+        {
+          "first": "composite",
+          "second": "flesch_kincaid_grade",
+          "both": 705,
+          "only_first": 215,
+          "only_second": 107,
+          "neither": 349,
+          "mcnemar_exact_p": 1.7608763939779096e-09
+        },
+        {
+          "first": "composite",
+          "second": "jargon_density",
+          "both": 770,
+          "only_first": 150,
+          "only_second": 323,
+          "neither": 133,
+          "mcnemar_exact_p": 1.2573320785743139e-15
+        },
+        {
+          "first": "burden",
+          "second": "burden_no_definitions",
+          "both": 929,
+          "only_first": 47,
+          "only_second": 56,
+          "neither": 344,
+          "mcnemar_exact_p": 0.43068906630813125
+        }
+      ],
+      "all": [
+        {
+          "first": "composite",
+          "second": "flesch_kincaid_grade",
+          "both": 913,
+          "only_first": 221,
+          "only_second": 128,
+          "neither": 355,
+          "mcnemar_exact_p": 7.31904239325779e-07
+        },
+        {
+          "first": "composite",
+          "second": "jargon_density",
+          "both": 984,
+          "only_first": 150,
+          "only_second": 349,
+          "neither": 134,
+          "mcnemar_exact_p": 2.5732920658889473e-19
+        },
+        {
+          "first": "burden",
+          "second": "burden_no_definitions",
+          "both": 1169,
+          "only_first": 47,
+          "only_second": 57,
+          "neither": 344,
+          "mcnemar_exact_p": 0.37758392329809853
+        }
+      ]
+    },
+    "length_matched": {
+      "elife": [
+        {
+          "first": "composite",
+          "second": "flesch_kincaid_grade",
+          "both": 213,
+          "only_first": 5,
+          "only_second": 20,
+          "neither": 3,
+          "mcnemar_exact_p": 0.004077315330505371
+        },
+        {
+          "first": "composite",
+          "second": "jargon_density",
+          "both": 218,
+          "only_first": 0,
+          "only_second": 22,
+          "neither": 1,
+          "mcnemar_exact_p": 4.76837158203125e-07
+        },
+        {
+          "first": "burden",
+          "second": "burden_no_definitions",
+          "both": 235,
+          "only_first": 1,
+          "only_second": 1,
+          "neither": 4,
+          "mcnemar_exact_p": 1.0
+        }
+      ],
+      "plos": [
+        {
+          "first": "composite",
+          "second": "flesch_kincaid_grade",
+          "both": 668,
+          "only_first": 229,
+          "only_second": 120,
+          "neither": 359,
+          "mcnemar_exact_p": 5.62675424646826e-09
+        },
+        {
+          "first": "composite",
+          "second": "jargon_density",
+          "both": 755,
+          "only_first": 142,
+          "only_second": 357,
+          "neither": 122,
+          "mcnemar_exact_p": 2.121146489603823e-22
+        },
+        {
+          "first": "burden",
+          "second": "burden_no_definitions",
+          "both": 1082,
+          "only_first": 17,
+          "only_second": 57,
+          "neither": 220,
+          "mcnemar_exact_p": 3.3971668169915196e-06
+        }
+      ],
+      "all": [
+        {
+          "first": "composite",
+          "second": "flesch_kincaid_grade",
+          "both": 881,
+          "only_first": 234,
+          "only_second": 140,
+          "neither": 362,
+          "mcnemar_exact_p": 1.3437582074804664e-06
+        },
+        {
+          "first": "composite",
+          "second": "jargon_density",
+          "both": 973,
+          "only_first": 142,
+          "only_second": 379,
+          "neither": 123,
+          "mcnemar_exact_p": 6.35306208122948e-26
+        },
+        {
+          "first": "burden",
+          "second": "burden_no_definitions",
+          "both": 1317,
+          "only_first": 18,
+          "only_second": 58,
+          "neither": 224,
+          "mcnemar_exact_p": 4.713242239575156e-06
+        }
+      ]
+    }
+  },
+  "words": {
+    "elife": {
+      "lay_median": 355.0,
+      "technical_median": 153.0,
+      "matched_lay_median": 153.0,
+      "matched_technical_median": 153.0
+    },
+    "plos": {
+      "lay_median": 186.0,
+      "technical_median": 251.0,
+      "matched_lay_median": 181.0,
+      "matched_technical_median": 181.0
+    },
+    "all": {
+      "lay_median": 193.0,
+      "technical_median": 235.0,
+      "matched_lay_median": 174.0,
+      "matched_technical_median": 173.0
+    }
+  },
+  "terms": {
+    "elife": {
+      "lay_undefined": 13.0,
+      "technical_undefined": 20.0,
+      "lay_defined": 3.0,
+      "technical_defined": 1.0
+    },
+    "plos": {
+      "lay_undefined": 17.0,
+      "technical_undefined": 25.0,
+      "lay_defined": 1.0,
+      "technical_defined": 2.0
+    },
+    "all": {
+      "lay_undefined": 16.0,
+      "technical_undefined": 24.0,
+      "lay_defined": 1.0,
+      "technical_defined": 2.0
+    }
+  },
+  "failure_analysis": {
+    "elife": {
+      "composite_failures": 27,
+      "of_pairs": 241,
+      "median_feature_z_difference_in_failures": {
+        "mean_sentence_length": 0.6213320099899292,
+        "mean_parse_depth": 0.9330580548109221,
+        "nominalisation_rate": -0.48090867428890427,
+        "passive_rate": 0.9996025993242262,
+        "jargon_density": -0.9299920685834107
+      },
+      "failures_also_failing_burden": 0,
+      "failures_with_longer_lay_text": 27,
+      "spearman_length_ratio_vs_composite_gap": 0.01114718245909257,
+      "worst_examples": [
+        {
+          "id": "elife-validation-59",
+          "title": "Impact of nucleic acid and methylated H3K9 binding activities of Suv39h1 on its heterochromatin assembly",
+          "year": "2017",
+          "lay_words": 367,
+          "technical_words": 158,
+          "lay_composite": 0.03968994614275605,
+          "technical_composite": -0.46287160068661387,
+          "z_difference": {
+            "mean_sentence_length": 0.8907488708884999,
+            "mean_parse_depth": 1.2530738339402885,
+            "nominalisation_rate": -0.32994775412584376,
+            "passive_rate": 1.8823685311949716,
+            "jargon_density": -1.1834357477510666
+          }
+        },
+        {
+          "id": "elife-validation-13",
+          "title": "An effector of the Irish potato famine pathogen antagonizes a host autophagy cargo receptor",
+          "year": "2016",
+          "lay_words": 343,
+          "technical_words": 82,
+          "lay_composite": -0.19048901211262873,
+          "technical_composite": -0.6582579093137729,
+          "z_difference": {
+            "mean_sentence_length": 1.1161427840746507,
+            "mean_parse_depth": 1.3332705593124667,
+            "nominalisation_rate": 0.6300449071096529,
+            "passive_rate": 0.7789111163565398,
+            "jargon_density": -1.519524880847589
+          }
+        },
+        {
+          "id": "elife-validation-123",
+          "title": "Sodium taurocholate cotransporting polypeptide is a functional receptor for human hepatitis B and D virus",
+          "year": "2012",
+          "lay_words": 458,
+          "technical_words": 160,
+          "lay_composite": 0.06053811931126875,
+          "technical_composite": -0.3642779479374036,
+          "z_difference": {
+            "mean_sentence_length": 1.4946973840231514,
+            "mean_parse_depth": 1.7884148218847777,
+            "nominalisation_rate": -1.024063783834771,
+            "passive_rate": 1.6407618423251187,
+            "jargon_density": -1.7757299281549153
+          }
+        },
+        {
+          "id": "elife-validation-49",
+          "title": "Coordination of robust single cell rhythms in the Arabidopsis circadian clock via spatial waves of gene expression",
+          "year": "2018",
+          "lay_words": 359,
+          "technical_words": 156,
+          "lay_composite": -0.5080336070562892,
+          "technical_composite": -0.9311526217537682,
+          "z_difference": {
+            "mean_sentence_length": 0.4047740034838625,
+            "mean_parse_depth": 1.7981609517043136,
+            "nominalisation_rate": -0.7668313963765699,
+            "passive_rate": 0.9087296357492964,
+            "jargon_density": -0.2292381210735075
+          }
+        },
+        {
+          "id": "elife-validation-192",
+          "title": "Identification of human glucocorticoid response markers using integrated multi-omic analysis from a randomized crossover trial",
+          "year": "2021",
+          "lay_words": 406,
+          "technical_words": 267,
+          "lay_composite": 0.057529440716855326,
+          "technical_composite": -0.3293113082836191,
+          "z_difference": {
+            "mean_sentence_length": 0.3849920115663402,
+            "mean_parse_depth": 1.462982687092468,
+            "nominalisation_rate": 1.4051013806401458,
+            "passive_rate": 0.04405961870299627,
+            "jargon_density": -1.3629319529995785
+          }
+        },
+        {
+          "id": "elife-validation-229",
+          "title": "Muscle niche-driven Insulin-Notch-Myc cascade reactivates dormant Adult Muscle Precursors in Drosophila",
+          "year": "2015",
+          "lay_words": 343,
+          "technical_words": 153,
+          "lay_composite": -0.13638771175245845,
+          "technical_composite": -0.4523574034146577,
+          "z_difference": {
+            "mean_sentence_length": 0.36417357152347496,
+            "mean_parse_depth": 0.3508606735032801,
+            "nominalisation_rate": -0.022652989630941422,
+            "passive_rate": 1.8174592714985933,
+            "jargon_density": -0.9299920685834107
+          }
+        },
+        {
+          "id": "elife-validation-25",
+          "title": "Population structuring of multi-copy, antigen-encoding genes in Plasmodium falciparum",
+          "year": "2012",
+          "lay_words": 502,
+          "technical_words": 140,
+          "lay_composite": 0.828885308875044,
+          "technical_composite": 0.5836574535346449,
+          "z_difference": {
+            "mean_sentence_length": 1.462751226992419,
+            "mean_parse_depth": 1.727314084939228,
+            "nominalisation_rate": -2.0689508192605714,
+            "passive_rate": 0.671061884861019,
+            "jargon_density": -0.5660371008301
+          }
+        },
+        {
+          "id": "elife-validation-7",
+          "title": "CAMKII and Calcineurin regulate the lifespan of Caenorhabditis elegans through the FOXO transcription factor DAF-16",
+          "year": "2013",
+          "lay_words": 441,
+          "technical_words": 150,
+          "lay_composite": 0.16808345320010115,
+          "technical_composite": -0.07487330243422904,
+          "z_difference": {
+            "mean_sentence_length": 1.4675210679500033,
+            "mean_parse_depth": 1.4619194729303366,
+            "nominalisation_rate": -0.8019724654094007,
+            "passive_rate": 1.0601845750408458,
+            "jargon_density": -1.972868872340134
+          }
+        },
+        {
+          "id": "elife-validation-184",
+          "title": "A microbial clock provides an accurate estimate of the postmortem interval in a mouse model system",
+          "year": "2013",
+          "lay_words": 318,
+          "technical_words": 122,
+          "lay_composite": -0.11877253688895181,
+          "technical_composite": -0.3358996220241807,
+          "z_difference": {
+            "mean_sentence_length": 0.6213320099899292,
+            "mean_parse_depth": 0.6762042071154132,
+            "nominalisation_rate": 0.5592255369592127,
+            "passive_rate": -0.19826828416348297,
+            "jargon_density": -0.5728580442249275
+          }
+        },
+        {
+          "id": "elife-validation-35",
+          "title": "Thalamus and claustrum control parallel layer 1 circuits in retrosplenial cortex",
+          "year": "2021",
+          "lay_words": 321,
+          "technical_words": 154,
+          "lay_composite": 0.019453711430162546,
+          "technical_composite": -0.18705590816929102,
+          "z_difference": {
+            "mean_sentence_length": 0.6545281758462456,
+            "mean_parse_depth": 1.39508886845352,
+            "nominalisation_rate": 0.03757555031842244,
+            "passive_rate": 1.2981851939275664,
+            "jargon_density": -2.3528296905484867
+          }
+        }
+      ]
+    },
+    "plos": {
+      "composite_failures": 456,
+      "of_pairs": 1376,
+      "median_feature_z_difference_in_failures": {
+        "mean_sentence_length": 0.36307995719457586,
+        "mean_parse_depth": 0.6140061786307413,
+        "nominalisation_rate": 0.2617018027726703,
+        "passive_rate": 0.3495113983651139,
+        "jargon_density": -0.29721195907146714
+      },
+      "failures_also_failing_burden": 163,
+      "failures_with_longer_lay_text": 72,
+      "spearman_length_ratio_vs_composite_gap": 0.018142670092694015,
+      "worst_examples": [
+        {
+          "id": "plos-validation-1137",
+          "title": "Pneumococcal Competence Coordination Relies on a Cell-Contact Sensing Mechanism",
+          "year": "2016",
+          "lay_words": 122,
+          "technical_words": 225,
+          "lay_composite": 1.6639002853609668,
+          "technical_composite": 0.005507301869259998,
+          "z_difference": {
+            "mean_sentence_length": 2.785137437253243,
+            "mean_parse_depth": 3.7212495674590373,
+            "nominalisation_rate": 0.6306736215442292,
+            "passive_rate": 1.4319376078473762,
+            "jargon_density": -0.277033316645351
+          }
+        },
+        {
+          "id": "plos-validation-256",
+          "title": "Exploring the parasite load and molecular diversity of Trypanosoma cruzi in patients with chronic Chagas disease from different regions of Brazil",
+          "year": "2018",
+          "lay_words": 151,
+          "technical_words": 401,
+          "lay_composite": 0.4952428607820444,
+          "technical_composite": -0.7973148426988865,
+          "z_difference": {
+            "mean_sentence_length": 1.758988305981306,
+            "mean_parse_depth": 2.6238276453288814,
+            "nominalisation_rate": 1.1025235020826352,
+            "passive_rate": 0.8218076705906683,
+            "jargon_density": 0.15564139342116345
+          }
+        },
+        {
+          "id": "plos-validation-1223",
+          "title": "State–Space Forecasting of Schistosoma haematobium Time-Series in Niono, Mali",
+          "year": "2008",
+          "lay_words": 182,
+          "technical_words": 267,
+          "lay_composite": 1.1058969852728953,
+          "technical_composite": 0.06973672504269648,
+          "z_difference": {
+            "mean_sentence_length": 2.5905536222967194,
+            "mean_parse_depth": 0.6666352796562334,
+            "nominalisation_rate": 1.10470494100798,
+            "passive_rate": 0.7269837085994372,
+            "jargon_density": 0.09192374959062431
+          }
+        },
+        {
+          "id": "plos-validation-1287",
+          "title": "Viral MicroRNA Effects on Pathogenesis of Polyomavirus SV40 Infections in Syrian Golden Hamsters",
+          "year": "2014",
+          "lay_words": 144,
+          "technical_words": 308,
+          "lay_composite": 0.6927278601174656,
+          "technical_composite": -0.3387877447166732,
+          "z_difference": {
+            "mean_sentence_length": 1.4719791545966343,
+            "mean_parse_depth": 1.9648197716183722,
+            "nominalisation_rate": 1.939931724064351,
+            "passive_rate": -0.042763747564672626,
+            "jargon_density": -0.17638887854399132
+          }
+        },
+        {
+          "id": "plos-validation-87",
+          "title": "High Seroprevalence for Spotted Fever Group Rickettsiae, Is Associated with Higher Temperatures and Rural Environment in Mbeya Region, Southwestern Tanzania",
+          "year": "2015",
+          "lay_words": 112,
+          "technical_words": 230,
+          "lay_composite": 1.0435897280500823,
+          "technical_composite": 0.05579583844200294,
+          "z_difference": {
+            "mean_sentence_length": 1.217192748064948,
+            "mean_parse_depth": 2.2805943777713242,
+            "nominalisation_rate": -0.7297359749589214,
+            "passive_rate": 2.1203691500816917,
+            "jargon_density": 0.05054914708135466
+          }
+        },
+        {
+          "id": "plos-validation-897",
+          "title": "An Inducible and Reversible Mouse Genetic Rescue System",
+          "year": "2008",
+          "lay_words": 210,
+          "technical_words": 227,
+          "lay_composite": 0.9103407945239542,
+          "technical_composite": -0.05863244407661169,
+          "z_difference": {
+            "mean_sentence_length": 2.3119006912931717,
+            "mean_parse_depth": 2.1831330795759682,
+            "nominalisation_rate": 0.15898132574195167,
+            "passive_rate": 0.6462077409772776,
+            "jargon_density": -0.45535664458553965
+          }
+        },
+        {
+          "id": "plos-validation-824",
+          "title": "Transat—A Method for Detecting the Conserved Helices of Functional RNA Structures, Including Transient, Pseudo-Knotted and Alternative Structures",
+          "year": "2010",
+          "lay_words": 178,
+          "technical_words": 300,
+          "lay_composite": 0.5189443505068431,
+          "technical_composite": -0.4351213460777695,
+          "z_difference": {
+            "mean_sentence_length": 0.643045225392803,
+            "mean_parse_depth": 1.5788730307647625,
+            "nominalisation_rate": 0.10574587366105476,
+            "passive_rate": 2.4232790286647905,
+            "jargon_density": 0.01938532443965202
+          }
+        },
+        {
+          "id": "plos-validation-888",
+          "title": "A Feature-Based Approach to Modeling Protein–DNA Interactions",
+          "year": "2008",
+          "lay_words": 193,
+          "technical_words": 206,
+          "lay_composite": 0.34650053357444704,
+          "technical_composite": -0.5396596064892114,
+          "z_difference": {
+            "mean_sentence_length": 0.5894581232767354,
+            "mean_parse_depth": 1.1305510590661263,
+            "nominalisation_rate": 0.7718210459118546,
+            "passive_rate": 1.3126094738600949,
+            "jargon_density": 0.6263609982034808
+          }
+        },
+        {
+          "id": "plos-validation-859",
+          "title": "Genome-Wide Association Study Reveals Multiple Loci Associated with Primary Tooth Development during Infancy",
+          "year": "2010",
+          "lay_words": 191,
+          "technical_words": 153,
+          "lay_composite": 0.6477739835243106,
+          "technical_composite": -0.21193624453107224,
+          "z_difference": {
+            "mean_sentence_length": 1.3746732114264506,
+            "mean_parse_depth": 1.0859973227482496,
+            "nominalisation_rate": 0.6839409012690001,
+            "passive_rate": 1.904004951093764,
+            "jargon_density": -0.75006524626055
+          }
+        },
+        {
+          "id": "plos-validation-452",
+          "title": "Geostatistical mapping of the seasonal spread of under-reported dengue cases in Bangladesh",
+          "year": "2018",
+          "lay_words": 103,
+          "technical_words": 218,
+          "lay_composite": 0.7388269823383812,
+          "technical_composite": -0.11376002424096479,
+          "z_difference": {
+            "mean_sentence_length": 0.5442918514931936,
+            "mean_parse_depth": 2.8419714553765734,
+            "nominalisation_rate": 1.7719719845071658,
+            "passive_rate": -0.9087296357492964,
+            "jargon_density": 0.013429377269093656
+          }
+        }
+      ]
+    },
+    "all": {
+      "composite_failures": 483,
+      "of_pairs": 1617,
+      "median_feature_z_difference_in_failures": {
+        "mean_sentence_length": 0.3849920115663402,
+        "mean_parse_depth": 0.623752308450277,
+        "nominalisation_rate": 0.2089457044885772,
+        "passive_rate": 0.3728121582561216,
+        "jargon_density": -0.31374160126483985
+      },
+      "failures_also_failing_burden": 163,
+      "failures_with_longer_lay_text": 99,
+      "spearman_length_ratio_vs_composite_gap": -0.18665083474823058,
+      "worst_examples": [
+        {
+          "id": "plos-validation-1137",
+          "title": "Pneumococcal Competence Coordination Relies on a Cell-Contact Sensing Mechanism",
+          "year": "2016",
+          "lay_words": 122,
+          "technical_words": 225,
+          "lay_composite": 1.6639002853609668,
+          "technical_composite": 0.005507301869259998,
+          "z_difference": {
+            "mean_sentence_length": 2.785137437253243,
+            "mean_parse_depth": 3.7212495674590373,
+            "nominalisation_rate": 0.6306736215442292,
+            "passive_rate": 1.4319376078473762,
+            "jargon_density": -0.277033316645351
+          }
+        },
+        {
+          "id": "plos-validation-256",
+          "title": "Exploring the parasite load and molecular diversity of Trypanosoma cruzi in patients with chronic Chagas disease from different regions of Brazil",
+          "year": "2018",
+          "lay_words": 151,
+          "technical_words": 401,
+          "lay_composite": 0.4952428607820444,
+          "technical_composite": -0.7973148426988865,
+          "z_difference": {
+            "mean_sentence_length": 1.758988305981306,
+            "mean_parse_depth": 2.6238276453288814,
+            "nominalisation_rate": 1.1025235020826352,
+            "passive_rate": 0.8218076705906683,
+            "jargon_density": 0.15564139342116345
+          }
+        },
+        {
+          "id": "plos-validation-1223",
+          "title": "State–Space Forecasting of Schistosoma haematobium Time-Series in Niono, Mali",
+          "year": "2008",
+          "lay_words": 182,
+          "technical_words": 267,
+          "lay_composite": 1.1058969852728953,
+          "technical_composite": 0.06973672504269648,
+          "z_difference": {
+            "mean_sentence_length": 2.5905536222967194,
+            "mean_parse_depth": 0.6666352796562334,
+            "nominalisation_rate": 1.10470494100798,
+            "passive_rate": 0.7269837085994372,
+            "jargon_density": 0.09192374959062431
+          }
+        },
+        {
+          "id": "plos-validation-1287",
+          "title": "Viral MicroRNA Effects on Pathogenesis of Polyomavirus SV40 Infections in Syrian Golden Hamsters",
+          "year": "2014",
+          "lay_words": 144,
+          "technical_words": 308,
+          "lay_composite": 0.6927278601174656,
+          "technical_composite": -0.3387877447166732,
+          "z_difference": {
+            "mean_sentence_length": 1.4719791545966343,
+            "mean_parse_depth": 1.9648197716183722,
+            "nominalisation_rate": 1.939931724064351,
+            "passive_rate": -0.042763747564672626,
+            "jargon_density": -0.17638887854399132
+          }
+        },
+        {
+          "id": "plos-validation-87",
+          "title": "High Seroprevalence for Spotted Fever Group Rickettsiae, Is Associated with Higher Temperatures and Rural Environment in Mbeya Region, Southwestern Tanzania",
+          "year": "2015",
+          "lay_words": 112,
+          "technical_words": 230,
+          "lay_composite": 1.0435897280500823,
+          "technical_composite": 0.05579583844200294,
+          "z_difference": {
+            "mean_sentence_length": 1.217192748064948,
+            "mean_parse_depth": 2.2805943777713242,
+            "nominalisation_rate": -0.7297359749589214,
+            "passive_rate": 2.1203691500816917,
+            "jargon_density": 0.05054914708135466
+          }
+        },
+        {
+          "id": "plos-validation-897",
+          "title": "An Inducible and Reversible Mouse Genetic Rescue System",
+          "year": "2008",
+          "lay_words": 210,
+          "technical_words": 227,
+          "lay_composite": 0.9103407945239542,
+          "technical_composite": -0.05863244407661169,
+          "z_difference": {
+            "mean_sentence_length": 2.3119006912931717,
+            "mean_parse_depth": 2.1831330795759682,
+            "nominalisation_rate": 0.15898132574195167,
+            "passive_rate": 0.6462077409772776,
+            "jargon_density": -0.45535664458553965
+          }
+        },
+        {
+          "id": "plos-validation-824",
+          "title": "Transat—A Method for Detecting the Conserved Helices of Functional RNA Structures, Including Transient, Pseudo-Knotted and Alternative Structures",
+          "year": "2010",
+          "lay_words": 178,
+          "technical_words": 300,
+          "lay_composite": 0.5189443505068431,
+          "technical_composite": -0.4351213460777695,
+          "z_difference": {
+            "mean_sentence_length": 0.643045225392803,
+            "mean_parse_depth": 1.5788730307647625,
+            "nominalisation_rate": 0.10574587366105476,
+            "passive_rate": 2.4232790286647905,
+            "jargon_density": 0.01938532443965202
+          }
+        },
+        {
+          "id": "plos-validation-888",
+          "title": "A Feature-Based Approach to Modeling Protein–DNA Interactions",
+          "year": "2008",
+          "lay_words": 193,
+          "technical_words": 206,
+          "lay_composite": 0.34650053357444704,
+          "technical_composite": -0.5396596064892114,
+          "z_difference": {
+            "mean_sentence_length": 0.5894581232767354,
+            "mean_parse_depth": 1.1305510590661263,
+            "nominalisation_rate": 0.7718210459118546,
+            "passive_rate": 1.3126094738600949,
+            "jargon_density": 0.6263609982034808
+          }
+        },
+        {
+          "id": "plos-validation-859",
+          "title": "Genome-Wide Association Study Reveals Multiple Loci Associated with Primary Tooth Development during Infancy",
+          "year": "2010",
+          "lay_words": 191,
+          "technical_words": 153,
+          "lay_composite": 0.6477739835243106,
+          "technical_composite": -0.21193624453107224,
+          "z_difference": {
+            "mean_sentence_length": 1.3746732114264506,
+            "mean_parse_depth": 1.0859973227482496,
+            "nominalisation_rate": 0.6839409012690001,
+            "passive_rate": 1.904004951093764,
+            "jargon_density": -0.75006524626055
+          }
+        },
+        {
+          "id": "plos-validation-452",
+          "title": "Geostatistical mapping of the seasonal spread of under-reported dengue cases in Bangladesh",
+          "year": "2018",
+          "lay_words": 103,
+          "technical_words": 218,
+          "lay_composite": 0.7388269823383812,
+          "technical_composite": -0.11376002424096479,
+          "z_difference": {
+            "mean_sentence_length": 0.5442918514931936,
+            "mean_parse_depth": 2.8419714553765734,
+            "nominalisation_rate": 1.7719719845071658,
+            "passive_rate": -0.9087296357492964,
+            "jargon_density": 0.013429377269093656
+          }
+        }
+      ]
+    }
+  }
+}

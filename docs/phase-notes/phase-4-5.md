@@ -19,16 +19,16 @@ synthetic.
 |---|---|---|
 | Search index | `SearchDocument` (one per version): weighted `tsvector` (title A, abstract B, authors and journal C) with a GIN index, plus `published_year` for filters. **Rebuilt by the gate** at the end of every `evaluate_version`, so it follows ingestion, re-checks and review resolutions. Only abstract paragraphs whose own licence allows display are indexed. Read only through `displayable()` (the access check now covers `SearchDocument`). `manage.py rebuild_search_index` backfills. | `corpus/models/search.py`, `corpus/search_index.py`, `corpus/gate.py` |
 | Access layer additions | `displayable_search_documents`, `article_copyright` (copyright lines for the attribution block), `withheld_parts` (counts, never content, of parts held back by their own licence), `ingestion_state` (gate status only, for lookup). | `corpus/access.py` |
-| Metadata clients | OpenAlex (work by DOI or PMID; search with year, type and date-sort filters; optional `OPENALEX_API_KEY`, redacted from errors), NIH iCite (citations by year, RCR), Crossref (`updated-by` notices), PMC ID Converter (DOI/PMID → PMC ID). All over `rbcore.http.PoliteFetcher` with per-host intervals (OpenAlex 0.5 s, Crossref and iCite 1 s, NCBI 0.34 s), a 10 s timeout and one retry. 401/402/403/429 become `UpstreamRefusedError`, other failures `UpstreamError`, 404 is a cacheable "not found". Payloads are trimmed to the fields used. | `metadata/` |
+| Metadata clients | OpenAlex (work by DOI or PMID; search with year, type and date-sort filters; optional `OPENALEX_API_KEY`, redacted from errors), NIH iCite (citations by year, RCR), Crossref (`updated-by` notices), PMC ID Converter (DOI/PMID → PMC ID). All over `rbcore.http.PoliteFetcher` with per-host intervals (OpenAlex 0.5 s, Crossref and iCite 1 s, NCBI 0.34 s), a 5 s timeout and **no retries** (a retry would sleep for the server's `Retry-After`, up to a minute, inside the request; see fix round 1). 401/402/403/429 become `UpstreamRefusedError`, other failures `UpstreamError`, 404 is a cacheable "not found". Payloads are trimmed to the fields used. | `metadata/` |
 | Metadata cache | `CachedResponse` in Postgres: trimmed payload and `fetched_at` ("as of"). Fresh answers are served as is; after the TTL (`RB_METADATA_TTL_HOURS` 168, `RB_SEARCH_TTL_HOURS` 24) the service is asked again, and if it fails the old answer is served **marked stale with its original date**. | `metadata/cache.py`, `metadata/services.py` |
 | Credibility | Paper-level and neutral only: OpenAlex citation count, counts by year, FWCI and citation percentile where present, `is_retracted`; iCite citations by year and RCR (with the provisional flag); Crossref retraction, expression-of-concern and correction notices with links and Retraction Watch attribution. Each section has a status (`ok`, `not_found`, `not_applicable`, `unavailable`), source, licence and "as of" date. Nothing about journals or publishers. | `metadata/credibility.py` |
 | Crossref research | Checked against live records before coding: the **original article's** record lists notices in `updated-by` (`DOI`, Crossmark `type` such as `retraction`, `partial_retraction`, `withdrawal`, `removal`, `expression_of_concern`, `correction`; `label`; `source` = `retraction-watch` or `publisher`; `updated` date; `record-id` for Retraction Watch); the notice's record has the mirror `update-to`. One lookup per DOI is enough. Examples recorded as fixtures: the retracted Wakefield Lancet paper (correction 2004, retraction 2010) and a Karger paper (expression of concern 2021, retraction 2022). | `metadata/crossref.py` |
 | Corpus search | `websearch_to_tsquery` ranking with `ts_rank`; filters by year range and availability; sort by relevance, newest or oldest; snippets from `ts_headline` with private-use highlight markers (no HTML crosses the API). | `discovery/corpus_search.py` |
 | Search service | Corpus results plus OpenAlex results; every result has **exactly one** availability tag: `plain_english_available` (corpus, `can_rewrite`), `original_annotations_only` (corpus, display only), `may_be_available` (not in the corpus, OpenAlex reports a CC or public-domain licence and there is an identifier lookup can check; routes to lookup), `original_elsewhere`. An OpenAlex work already in the corpus takes the corpus tag and key. If OpenAlex refuses (e.g. keyless budget spent) or fails, the corpus results come back with a notice. | `discovery/search.py`, `discovery/availability.py`, `discovery/results.py` |
-| Lookup | Accepts DOI, PMC ID, PMID, arXiv ID (bare, prefixed or as URLs) or a title. Corpus hit → the paper. Otherwise the ID converter finds the PMC ID and the **primary source** decides: the latest version's `license_code` in the PMC bucket metadata, through the same precedence code as ingestion. Eligible → a `LookupRequest` and a worker job (`queue_ingest`), within `RB_LOOKUP_DAILY_INGEST_LIMIT` (100/day); the status endpoint reports `preparing`, `ready` (with the paper key), `held_for_review`, `not_available` or `failed`. A request is reused while its job waits. Not eligible / not in PMC → "not available here" with DOI, PubMed and Scholar links. Titles return candidates (no guessing). arXiv IDs get arXiv and DOI links (arXiv ingestion is after the MVP). Nothing about the reader is stored. | `discovery/lookup.py`, `identifiers.py`, `ingestion/tasks.py` |
+| Lookup | Accepts DOI, PMC ID, PMID, arXiv ID (bare, prefixed or as URLs) or a title. Corpus hit → the paper. Otherwise the ID converter finds the PMC ID and the **primary source** decides: the latest version's `license_code` in the PMC bucket metadata, through the same precedence code as ingestion. Eligible → a `LookupRequest` and a worker job (`queue_ingest`), within `RB_LOOKUP_DAILY_INGEST_LIMIT` (100/day), counted and spent in one transaction under a Postgres advisory lock so concurrent lookups cannot overrun it. The bucket check uses its own fetcher (5 s timeout, no retries). A stored version still `pending` (a bulk ingest has not decided it) is checked and queued like a new one; `review` is "held"; `rejected` is "not permitted". The status endpoint reports `preparing`, `ready` (with the paper key), `held_for_review`, `not_available` or `failed`; a request whose job vanished (pruned) or finished without a gate decision turns `failed` after an hour. A request is reused while its job waits. Not eligible / not in PMC → "not available here" with DOI, PubMed and Scholar links. Titles return candidates (no guessing). arXiv IDs get arXiv and DOI links (arXiv ingestion is after the MVP). Nothing about the reader is stored. | `discovery/lookup.py`, `identifiers.py`, `ingestion/tasks.py` |
 | Retractions from new sources | A Crossref retraction notice (or OpenAlex `is_retracted`) seen during a credibility lookup is recorded on the paper (`crossref:retraction-watch`, `crossref:publisher` or `openalex:is_retracted`, with the notice date), so the paper stops being rewriteable. Never cleared automatically. | `corpus/retractions.py` |
 | API | DRF, public and unauthenticated, JSON only, under `/api/v1/`: `papers/<key>/` (metadata, licence, permissions and output licence, attribution with copyright lines and the NLM acknowledgement, declarations, sections and paragraphs, figure captions, withheld counts, annotations in W3C shape with provenance and the disclaimer flag (annotations whose paragraph text changed are withheld), rewrite and summary status, DOI/Scholar/PMC links), `papers/<key>/credibility/`, `search/`, `lookup/` (202 when queued, 503 when a source is down), `lookup/requests/<id>/`. Keys are PMC IDs (`rb-<id>` otherwise); a gated or unknown paper is a 404 either way. | `api/` |
-| Rate limits | DRF scoped throttles per client address (`RB_API_RATE_*`: search 30/min, papers 120/min, credibility 60/min, lookup 10/min, lookup status 120/min) on a **database cache table** (`rb_cache`, created by a migration) so limits hold across processes. `RB_API_NUM_PROXIES` defaults to 0 (socket address): DRF's own default would trust any client's `X-Forwarded-For`. | `settings.py`, `api/migrations/0001_cache_table.py` |
+| Rate limits | DRF scoped throttles per client address (`RB_API_RATE_*`: search 30/min, papers 120/min, credibility 60/min, lookup 10/min, lookup status 120/min) on a **database cache table** (`rb_cache`, created by a migration) so limits hold across processes. The table is sized for it (`MAX_ENTRIES` 100,000, `CULL_FREQUENCY` 10): Django's default of 300 entries would cull a third of the throttle histories on every write once a few dozen readers were active. `RB_API_NUM_PROXIES` defaults to 0 (socket address): DRF's own default would trust any client's `X-Forwarded-For`. | `settings.py`, `api/migrations/0001_cache_table.py` |
 | rbcore | `FetchError.status` carries the HTTP status, so callers tell 404 from refusals and outages. | `libs/rbcore/src/rbcore/http.py` |
 
 ### Web (`web/`)
@@ -39,9 +39,9 @@ function, component, type and interface), Vitest 5 with Testing Library and jsdo
 
 | Route / part | What |
 |---|---|
-| `/` | Explanation, search box, legend of the four availability tags. |
+| `/` | What works today, with a note that plain-English versions and explanations are not published until the benchmark is done (linking the methodology); search box; legend of the four availability tags (`#what-the-labels-mean`, linked from every results page). |
 | `/search` | GET form (works without JavaScript; shareable URLs): query, year range, availability, work type, sort by relevance/newest/oldest. Two sections: "Readable on ResearchBridge" and "From the wider scholarly record" (with OpenAlex's "as of" date or its notice). Snippets are highlighted as text. Pagination. |
-| `/papers/<key>` | Server-rendered and indexable: `generateMetadata` gives title, description, canonical URL and Highwire `citation_*` tags. Retraction banner; title, byline, one-line licence statement; **Read original paper** (`https://doi.org/<doi>`) and **Find on Google Scholar** (a search URL, never fetched); view tabs as links (`?view=plain` / `?view=original`). Original view: sections at their heading levels, paragraphs carrying `data-paragraph-id`, figure and table captions, a note for withheld parts, and the annotation layer. Plain-English view: an empty state that says why (not generated yet, or the licence forbids it). Aside: summary panel (empty state plus the paper's own competing-interest and funding statements, quoted) and the credibility panel (streamed in with Suspense, so the text is never held up). The full licence and attribution block, with the NLM acknowledgement, is on every view. |
+| `/papers/<key>` | Server-rendered and indexable; the paper is fetched with `cache: "no-store"` (one fetch per request shared by `generateMetadata` and the page through React `cache()`), so a paper the gate stops displaying disappears on the next request: `generateMetadata` gives title, description, canonical URL and Highwire `citation_*` tags. Retraction banner; title, byline, one-line licence statement; **Read original paper** (`https://doi.org/<doi>`) and **Find on Google Scholar** (a search URL, never fetched); view tabs as links (`?view=plain` / `?view=original`). Original view: sections at their heading levels, paragraphs carrying `data-paragraph-id`, figure and table captions, a note for withheld parts, and the annotation layer. Plain-English view: an empty state that says why (not generated yet, or the licence forbids it). Aside: summary panel (empty state plus the paper's own competing-interest and funding statements, quoted) and the credibility panel (streamed in with Suspense, so the text is never held up). The full licence and attribution block, with the NLM acknowledgement, is on every view. |
 | Annotation layer | `@recogito/text-annotator` 4.3.7 (BSD-3-Clause), loaded in the browser only when annotations exist, read-only (`annotatingEnabled: false`). API selectors count Unicode code points per paragraph; they are converted to UTF-16 offsets relative to the paragraph element (`offsetReference`), with the quote (and prefix/suffix) as a fallback; an annotation that cannot be placed unambiguously is left out. Explanations are also listed below the text (keyboard and screen-reader reachable) with provenance and the disclaimer for unverified AI text. Superseded annotations are not shown. |
 | Side-by-side | `AlignedParagraphs` pairs plain-English paragraphs with originals by paragraph ID: two columns from 70rem, stacked below. Ready for Phase 3 output; used today only by the demo. |
 | `Disclaimer` | Ready for LLM output: annotations, rewrites, summaries. |
@@ -138,7 +138,9 @@ another origin, which stops hydration. `OPENALEX_API_KEY` is optional (see "Pend
 9. **Credibility is fetched at request time**, not by the worker: single-record lookups are fast
    and free, answers are cached with dates and served stale on failure, and the panel is streamed
    after the text. Metadata requests are serialised per process (a lock) so the per-host intervals
-   hold across request threads.
+   hold across request threads; with no retries the lock is held for at most one host interval
+   plus one 5 s timeout, and a credibility read (three sources) stays well inside gunicorn's 30 s
+   worker timeout.
 10. **Retractions from Crossref/OpenAlex are written to the paper during a credibility read** (a
     write in a GET path, idempotent). Failing towards "retracted" only withholds a rewrite; it never
     hides the original or the notice. Phase 2 planned these sources for Phase 5.
@@ -170,7 +172,9 @@ another origin, which stops hydration. `OPENALEX_API_KEY` is optional (see "Pend
   `RB_API_NUM_PROXIES` to the number of proxies in front of it **only if** it is reachable solely
   through them (otherwise leave 0). Keep the backend private if possible.
 - **Domain:** needed for `RB_SITE_URL`, HSTS (Phase 2 note) and a sitemap.
-- **Launch checklist (Plan.md Phase 5):** terms and privacy pages, a takedown/contact route, a
+- **Launch checklist (Plan.md Phase 5):** terms and privacy pages, a takedown/contact route (the
+  web app fetches paper pages uncached, so a takedown or gate change in the backend shows on the
+  next request; only the credibility panel may be reused for up to 60 s), a
   third-party notices page (the BSD-3 annotator packages are redistributed in browser JavaScript;
   texts are in `third_party/`), a licence audit of a random corpus sample, disclaimer copy review,
   and privacy-respecting analytics (none was added).
@@ -187,8 +191,18 @@ another origin, which stops hydration. `OPENALEX_API_KEY` is optional (see "Pend
   and lookup then says "not available here".
 - The metadata lock serialises outbound metadata requests per process; under heavy load,
   credibility panels for uncached papers queue behind each other (cached ones are unaffected).
+  A refusal or outage is reported at once (no retries), so the wait is bounded by one 5 s timeout
+  per queued call.
 - Lookup status depends on Procrastinate's job table; if jobs are pruned, a request with no stored
-  paper shows "preparing" until the article is ingested by a later run.
+  paper shows "preparing" for at most an hour after it was made, then "failed" (the reader can
+  look the paper up again).
+- Web caching windows: paper detail is never cached by Next.js; the credibility panel may be
+  reused for up to 60 s (each source also carries its own "as of" date from the backend cache);
+  search results are not cached by Next.js (the backend caches OpenAlex for 24 h, with a date).
+- `npm audit` reports 5 high-severity advisories, all in development-only lint tooling (`braces`
+  through `micromatch` and `fast-glob` under `eslint-config-next`); production dependencies have
+  none (`npm audit --omit=dev`: 0). The only offered fix downgrades `eslint-config-next` to 14.x,
+  so it waits for upstream.
 - Rewrite and summary payloads do not exist in the API yet; Phase 3 adds them and switches
   `generation_status` (one module) and the plain-English view (which already has the aligned layout).
 - Markdown annotation bodies are shown as plain text (no Markdown renderer; HTML is never rendered).
@@ -229,3 +243,44 @@ this branch started; it was merged in with `git merge --no-ff`.
   with **417 backend**, 257 rbcore and 11 tools tests, Vitest with 85 web tests) and `npm run build`
   succeeded. `makemigrations --check` reports no changes, and the existing `rb-phase45` database
   migrated through the merge migration.
+
+## Fix round 1
+
+Independent review findings, all fixed (tests added where testable):
+
+- **Metadata calls inside requests no longer wait out `Retry-After`** (major). The shared metadata
+  fetcher retried once, sleeping up to 60 s while holding the per-process lock, so a keyless
+  OpenAlex 429 stalled every search and credibility request and could outlast gunicorn's 30 s
+  worker timeout. It now never retries and times out after 5 s (`metadata/fetch.py`,
+  `build_metadata_fetcher`); a 429 or 503 with a one-hour `Retry-After` fails after one request
+  with no sleep (test). The lookup's PMC bucket check had the same shape (the ingestion fetcher:
+  30 s timeout, three retries) and now uses `ingestion.runtime.get_request_bucket()` (5 s, no
+  retries).
+- **Throttle cache sized** (`MAX_ENTRIES` 100,000, `CULL_FREQUENCY` 10), with a test that 400 live
+  throttle keys all survive (Django's default culls them).
+- **Lookup budget is atomic**: count and create in one transaction under a Postgres advisory lock
+  (`ingestion.tasks.lock_on_demand_budget`, in the ingestion app, which the gate-bypass check
+  trusts for raw SQL). A two-thread test with one slot left gets exactly one queued request.
+- **Lookup statuses**: `pending` versions are prepared, not "held for a person"; a request with no
+  live job and no decision turns `failed` after an hour.
+- **Crossref notice links** go through `doi_url` (percent-encoded).
+- **Web caching**: paper detail uncached (`no-store`, one fetch per request via React `cache()`);
+  credibility reuse cut from 600 s to 60 s. Recorded under "Known limitations" and the takedown
+  item of the launch checklist.
+- **Home page copy** no longer describes plain-English versions in the present tense; a note says
+  they are not published until the benchmark is done. The site description was reworded the same
+  way.
+- **Availability tags** carry their explanation as visually hidden text, and results pages link to
+  the legend (`/#what-the-labels-mean`).
+- **`docs/conventions.md`** now allows openly licensed metadata fixtures (facts only, terms stated)
+  and trimmed files marked in the manifest.
+- **`npm audit`**: recorded under "Known limitations" (dev-only; no production advisories).
+
+Verification, from a fresh environment (`rm -rf .venv web/node_modules web/.next` and every
+Python cache, then `make setup`), with the `rb-phase45` database on port 5434 and
+`NEXT_TELEMETRY_DISABLED=1`: `make check` exited 0 (ruff, docstring and lock checks, ESLint, mypy,
+`tsc`, pytest with **430 backend**, 257 rbcore and 11 tools tests, Vitest with **91 web tests** in
+16 files); `npm run build` succeeded; `makemigrations --check` reports no changes. A production
+`next start` against the local API served the home page (with the new note), a paper page and a
+results page linking the legend. The Playwright smoke test was not re-run (the fresh install
+removed the downloaded browser).

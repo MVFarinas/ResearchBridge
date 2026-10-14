@@ -5,6 +5,7 @@
  * shareable and work without JavaScript.
  */
 import type { Metadata } from "next";
+import Link from "next/link";
 
 import { Pagination } from "@/components/Pagination";
 import { ResultCard } from "@/components/ResultCard";
@@ -64,6 +65,9 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     <>
       <h1>Search results</h1>
       <SearchForm query={query} />
+      <p className="small">
+        <Link href="/#what-the-labels-mean">What the labels on results mean</Link>
+      </p>
       {failure ? (
         <div className="notice danger" role="alert">
           <p>{failure} Please try again in a moment.</p>

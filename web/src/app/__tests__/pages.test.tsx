@@ -27,6 +27,7 @@ vi.mock("@recogito/text-annotator/text-annotator.css", () => ({}));
 
 import AnnotationsDemoPage from "@/app/dev/annotations-demo/page";
 import RequestPage from "@/app/lookup/requests/[id]/page";
+import HomePage from "@/app/page";
 import MethodologyPage from "@/app/methodology/page";
 import PaperPage, { generateMetadata } from "@/app/papers/[key]/page";
 import SearchPage from "@/app/search/page";
@@ -133,6 +134,28 @@ describe("paper page", () => {
   });
 });
 
+describe("home page", () => {
+  it("says plain-English versions are not published yet, and links the methodology", () => {
+    render(<HomePage />);
+    // No present-tense promise of a feature that does not exist yet.
+    expect(document.body.textContent).not.toMatch(/puts openly licensed research papers beside/);
+    expect(screen.getByRole("note")).toHaveTextContent(
+      "Plain-English versions and explanations are not published yet.",
+    );
+    expect(screen.getByRole("link", { name: "methodology" })).toHaveAttribute("href", "/methodology");
+  });
+
+  it("has a legend the search results link to, without repeating each description", () => {
+    render(<HomePage />);
+    expect(screen.getByRole("heading", { name: "What the labels on results mean" })).toHaveAttribute(
+      "id",
+      "what-the-labels-mean",
+    );
+    // The legend shows each description once, beside its tag.
+    expect(screen.getAllByText(/Read it at the publisher\./)).toHaveLength(1);
+  });
+});
+
 describe("search page", () => {
   it("shows corpus and OpenAlex sections with the OpenAlex notice", async () => {
     apiGet.mockResolvedValue({
@@ -154,6 +177,11 @@ describe("search page", () => {
     expect(screen.getByRole("heading", { name: "Readable on ResearchBridge" })).toBeInTheDocument();
     expect(screen.getByText(/Showing papers from ResearchBridge only/)).toBeInTheDocument();
     expect(apiGet).toHaveBeenCalledWith("search/", expect.objectContaining({ q: "sleep" }));
+    // Keyboard and touch users reach the tag explanations through the legend.
+    expect(screen.getByRole("link", { name: "What the labels on results mean" })).toHaveAttribute(
+      "href",
+      "/#what-the-labels-mean",
+    );
   });
 
   it("shows only the form without a query, and an error when the API fails", async () => {

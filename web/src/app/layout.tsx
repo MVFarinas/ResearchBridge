@@ -11,7 +11,7 @@ import type { ReactNode } from "react";
 export const metadata: Metadata = {
   title: { default: "ResearchBridge", template: "%s · ResearchBridge" },
   description:
-    "Openly licensed research papers, made readable: the original beside a plain-English version, with explanations and the context to judge them.",
+    "Openly licensed research papers with their licence and citation context. Plain-English versions and explanations will follow once their faithfulness has been tested.",
   metadataBase: new URL(process.env.RB_SITE_URL || "http://localhost:3000"),
 };
 

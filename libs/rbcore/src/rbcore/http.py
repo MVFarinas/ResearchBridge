@@ -53,7 +53,23 @@ _MAX_RETRY_AFTER = 60.0
 
 
 class FetchError(RuntimeError):
-    """Raised when a URL cannot be fetched within the rules."""
+    """Raised when a URL cannot be fetched within the rules.
+
+    Attributes:
+        status: The HTTP status of the final response when the failure was a
+            non-success status (so callers can tell "not found" from "refused"
+            or "unavailable"); None for every other failure.
+    """
+
+    def __init__(self, message: str, *, status: int | None = None) -> None:
+        """Create the error.
+
+        Args:
+            message: What went wrong.
+            status: The HTTP status, when the failure was an HTTP status.
+        """
+        super().__init__(message)
+        self.status = status
 
 
 @dataclass(frozen=True, slots=True)
@@ -260,7 +276,9 @@ class PoliteFetcher:
             if response.status < 300:
                 return response.body
             if response.status not in _RETRY_STATUSES or attempt >= self._max_retries:
-                raise FetchError(f"GET {current} returned HTTP {response.status}")
+                raise FetchError(
+                    f"GET {current} returned HTTP {response.status}", status=response.status
+                )
             # Back off exponentially, but defer to the server's Retry-After.
             delay = response.retry_after if response.retry_after is not None else 2.0**attempt
             self._sleep(min(delay, _MAX_RETRY_AFTER))

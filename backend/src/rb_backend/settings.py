@@ -19,6 +19,16 @@ Every value that differs between machines comes from an environment variable
 * ``RB_DATA_DIR``: where downloads and the HTTP cache live (gitignored).
 * ``RB_RECHECK_MAX_AGE_DAYS`` and ``RB_RECHECK_BATCH_SIZE``: how often the
   worker's periodic task re-checks stored PMC articles, and how many per run.
+* ``RB_METADATA_TTL_HOURS`` (default 168) and ``RB_SEARCH_TTL_HOURS``
+  (default 24): how long cached OpenAlex, iCite, Crossref and ID-converter
+  answers stay fresh.
+* ``RB_LOOKUP_DAILY_INGEST_LIMIT`` (default 100): papers on-demand lookups
+  may queue per UTC day.
+* ``RB_API_RATE_SEARCH``, ``RB_API_RATE_PAPERS``, ``RB_API_RATE_CREDIBILITY``,
+  ``RB_API_RATE_LOOKUP`` and ``RB_API_RATE_LOOKUP_STATUS``: DRF rates such as
+  ``30/min``, per client address.
+* ``RB_API_NUM_PROXIES`` (default 0): proxies in front of the API whose
+  ``X-Forwarded-For`` entries are trusted for the client address.
 """
 
 from __future__ import annotations
@@ -62,9 +72,13 @@ INSTALLED_APPS = [
     "django.contrib.postgres",
     # Procrastinate must come before the apps whose tasks it discovers.
     "procrastinate.contrib.django",
+    "rest_framework",
     "rb_backend.corpus",
     "rb_backend.annotations",
     "rb_backend.ingestion",
+    "rb_backend.metadata",
+    "rb_backend.discovery",
+    "rb_backend.api",
 ]
 
 MIDDLEWARE = [
@@ -99,6 +113,24 @@ TEMPLATES = [
 # --- Database -----------------------------------------------------------------
 DATABASES = {"default": database_from_env(_ENV)}
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# --- Cache: a database table, so API rate limits hold across processes -------
+# The table is created by the api app's migrations. It holds the DRF throttle
+# histories: one row per client address per scope, each expiring after its
+# rate window (a minute). Django's default MAX_ENTRIES of 300 would make every
+# write cull a third of the rows once about 60 readers were active across five
+# scopes, resetting other clients' counters exactly under load. Expired rows are
+# deleted first when the table is over the limit, so with 100,000 entries live
+# histories are only culled (a tenth at a time) beyond 100,000 active
+# client-scope pairs per minute, far past any expected load.
+RB_CACHE_MAX_ENTRIES = 100_000
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.db.DatabaseCache",
+        "LOCATION": "rb_cache",
+        "OPTIONS": {"MAX_ENTRIES": RB_CACHE_MAX_ENTRIES, "CULL_FREQUENCY": 10},
+    }
+}
 
 # --- Internationalisation -----------------------------------------------------
 LANGUAGE_CODE = "en-gb"
@@ -146,3 +178,29 @@ RB_DATA_DIR = Path(get_str(_ENV, "RB_DATA_DIR", str(BASE_DIR.parent / "data")))
 # The worker's periodic re-check keeps PMC data current (a bucket term of use).
 RB_RECHECK_MAX_AGE_DAYS = get_int(_ENV, "RB_RECHECK_MAX_AGE_DAYS", default=7)
 RB_RECHECK_BATCH_SIZE = get_int(_ENV, "RB_RECHECK_BATCH_SIZE", default=500)
+
+# --- Reader API (Phases 4-5) ----------------------------------------------------
+# Cached metadata answers stay fresh this long (and are served stale on failure).
+RB_METADATA_TTL_HOURS = get_int(_ENV, "RB_METADATA_TTL_HOURS", default=168)
+RB_SEARCH_TTL_HOURS = get_int(_ENV, "RB_SEARCH_TTL_HOURS", default=24)
+# Papers that on-demand lookups may queue for ingestion per UTC day.
+RB_LOOKUP_DAILY_INGEST_LIMIT = get_int(_ENV, "RB_LOOKUP_DAILY_INGEST_LIMIT", default=100)
+
+REST_FRAMEWORK = {
+    # Public, read-mostly API without accounts (Plan.md M2): no sessions, no CSRF.
+    "DEFAULT_AUTHENTICATION_CLASSES": [],
+    "DEFAULT_PERMISSION_CLASSES": [],
+    "UNAUTHENTICATED_USER": None,
+    "DEFAULT_RENDERER_CLASSES": ["rest_framework.renderers.JSONRenderer"],
+    "DEFAULT_PARSER_CLASSES": ["rest_framework.parsers.JSONParser"],
+    "DEFAULT_THROTTLE_RATES": {
+        "search": get_str(_ENV, "RB_API_RATE_SEARCH", "30/min"),
+        "papers": get_str(_ENV, "RB_API_RATE_PAPERS", "120/min"),
+        "credibility": get_str(_ENV, "RB_API_RATE_CREDIBILITY", "60/min"),
+        "lookup": get_str(_ENV, "RB_API_RATE_LOOKUP", "10/min"),
+        "lookup_status": get_str(_ENV, "RB_API_RATE_LOOKUP_STATUS", "120/min"),
+    },
+    # Trusted proxies in front of the API. 0 means "use the socket address";
+    # DRF's own default (None) would trust any client-supplied X-Forwarded-For.
+    "NUM_PROXIES": get_int(_ENV, "RB_API_NUM_PROXIES", default=0),
+}

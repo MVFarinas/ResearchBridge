@@ -14,3 +14,5 @@ anthropic>=1.13
 pytest-django>=4.14
 django-stubs[compatible-mypy]>=6.1.2
 types-defusedxml>=0.7.0
+# Reader API (Phases 4-5): type stubs for Django REST framework.
+djangorestframework-stubs>=3.18.1

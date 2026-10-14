@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 
+import httpx
 import pytest
 from support import PMC_FIXTURES, RecordedBucket
 
@@ -16,7 +17,8 @@ from rb_backend.ingestion.pmc import (
     parse_version_listing,
     s3_to_https,
 )
-from rbcore.http import PoliteFetcher
+from rb_backend.ingestion.runtime import build_request_fetcher
+from rbcore.http import FetchError, PoliteFetcher
 
 
 def test_metadata_parses_a_recorded_document() -> None:
@@ -217,3 +219,21 @@ def test_forget_xml_without_a_cache_is_a_no_op() -> None:
     """A fetcher with no cache directory has nothing to forget."""
     with PoliteFetcher(cache_dir=None) as uncached:
         assert PmcBucket(uncached).forget_xml(f"{BASE_URL}/PMC1.1/PMC1.1.xml") is False
+
+
+def test_request_bucket_fails_fast_on_a_throttled_bucket() -> None:
+    """The lookup's bucket fetcher reports a 503 at once: one request, no back-off."""
+    requests: list[str] = []
+    sleeps: list[float] = []
+
+    def throttle(request: httpx.Request) -> httpx.Response:
+        """Answer every request 503 with an hour-long Retry-After (synthetic)."""
+        requests.append(str(request.url))
+        return httpx.Response(503, headers={"Retry-After": "3600"})
+
+    fetcher = build_request_fetcher(transport=httpx.MockTransport(throttle), sleep=sleeps.append)
+    with pytest.raises(FetchError) as caught:
+        PmcBucket(fetcher).list_versions("PMC10718527")
+    assert caught.value.status == 503
+    assert len(requests) == 1
+    assert sleeps == []

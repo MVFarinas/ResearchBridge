@@ -23,6 +23,9 @@ Flow for one version:
 6. Each figure, table and paragraph is decided with
    :func:`rbcore.licences.decide_part` over the version's effective decision,
    and settled the same way.
+7. The version's full-text search document is rebuilt
+   (:func:`rb_backend.corpus.search_index.refresh_search_document`); search
+   applies the gate when it reads it.
 
 Callers that change licence evidence call :func:`evaluate_version` inside the
 same transaction as that change, so a stored decision never outlives the
@@ -58,6 +61,7 @@ from rb_backend.corpus.models import (
 from rb_backend.corpus.models.gated import GATE_FIELDS, GatedPermissions
 from rb_backend.corpus.precedence import DEFINITE_REFUSALS, proposed_licence, resolve_licence
 from rb_backend.corpus.retention import remove_rejected_text
+from rb_backend.corpus.search_index import refresh_search_document
 from rbcore.licences import (
     NO_PERMISSIONS,
     UNKNOWN_LICENCE,
@@ -140,6 +144,8 @@ def evaluate_version(
         ):
             blocks = _active_blocks(locked)
         _evaluate_parts(locked, outcome, blocks, today=today, now=now)
+        # Keep the search index in step with the text and decision just stored.
+        refresh_search_document(locked)
     # Keep the caller's instance in step with what was stored.
     version.refresh_from_db()
     return outcome.status

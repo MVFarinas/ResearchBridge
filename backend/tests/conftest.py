@@ -7,12 +7,16 @@ from pathlib import Path
 
 import httpx
 import pytest
+from metadata_support import RecordedMetadata, make_clients
 from procrastinate import App
 from procrastinate.contrib.django import app as procrastinate_app
 from procrastinate.testing import InMemoryConnector
+from rest_framework.test import APIClient
 from support import RecordedBucket
 
+from rb_backend.api import views
 from rb_backend.ingestion.pmc import PmcBucket
+from rb_backend.metadata.services import MetadataClients
 from rbcore.http import PoliteFetcher, RateLimiter
 
 
@@ -38,6 +42,26 @@ def fetcher(recorded: RecordedBucket, tmp_path: Path) -> Iterator[PoliteFetcher]
 def bucket(fetcher: PoliteFetcher) -> PmcBucket:
     """A bucket client on the fake host."""
     return PmcBucket(fetcher)
+
+
+@pytest.fixture
+def recorded_metadata() -> RecordedMetadata:
+    """The fake metadata host (OpenAlex, iCite, Crossref, ID converter), recorded responses."""
+    return RecordedMetadata()
+
+
+@pytest.fixture
+def clients(recorded_metadata: RecordedMetadata) -> MetadataClients:
+    """Metadata clients on the fake host, without an OpenAlex key."""
+    return make_clients(recorded_metadata)
+
+
+@pytest.fixture
+def api(monkeypatch: pytest.MonkeyPatch, clients: MetadataClients, bucket: PmcBucket) -> APIClient:
+    """A DRF test client whose views use the recorded metadata host and bucket."""
+    monkeypatch.setattr(views, "metadata_clients", lambda: clients)
+    monkeypatch.setattr(views, "pmc_bucket", lambda: bucket)
+    return APIClient()
 
 
 @pytest.fixture

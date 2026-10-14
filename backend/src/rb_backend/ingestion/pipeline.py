@@ -46,6 +46,7 @@ from rb_backend.corpus.gate import evaluate_version
 from rb_backend.corpus.models import ContentState, GateStatus, Paper, PaperVersion, Source
 from rb_backend.corpus.precedence import DEFINITE_REFUSALS, resolve_licence
 from rb_backend.corpus.retention import purge_content
+from rb_backend.identifiers import normalise_doi
 from rb_backend.ingestion.pmc import PmcBucket, PmcError, PmcMetadata, normalise_pmcid
 from rb_backend.ingestion.store import store_article, sync_source_records
 from rbcore.http import FetchError
@@ -420,24 +421,6 @@ def _upsert_paper(metadata: PmcMetadata) -> Paper:
         paper.pmid = metadata.pmid
     paper.save()
     return paper
-
-
-def normalise_doi(value: str | None) -> str | None:
-    """Lower-case a DOI and strip any resolver prefix.
-
-    Args:
-        value: A DOI or DOI URL, or None.
-
-    Returns:
-        The bare, lower-cased DOI, or None.
-    """
-    if not value:
-        return None
-    text = value.strip()
-    for prefix in ("https://doi.org/", "http://doi.org/", "https://dx.doi.org/", "doi:"):
-        if text.lower().startswith(prefix):
-            text = text[len(prefix) :]
-    return text.lower() or None
 
 
 def _record_retraction(paper: Paper, is_retracted: bool, now: datetime) -> None:

@@ -1,0 +1,52 @@
+{
+  "_comment": "Recorded metadata responses (OpenAlex CC0, NIH iCite public domain, Crossref open metadata, NCBI PMC ID converter). See README.md. Checked by tests/test_metadata_fixtures.py.",
+  "retrieved": "2026-10-13",
+  "fixtures": [
+    {
+      "file": "openalex-work-doi-10.1371-journal.pmed.1004542.json",
+      "source_url": "https://api.openalex.org/works/doi:10.1371/journal.pmed.1004542?select=id%2Cdoi%2Cids%2Cdisplay_name%2Cpublication_year%2Cpublication_date%2Ctype%2Ccited_by_count%2Ccounts_by_year%2Cfwci%2Ccitation_normalized_percentile%2Cis_retracted%2Cprimary_location%2Cbest_oa_location%2Cauthorships",
+      "sha256": "a476e637d48ed0cebba053b1d4eecacac86fbafa86a1a06d2036bbc99a2bd149"
+    },
+    {
+      "file": "openalex-work-doi-10.1016-s0140-6736-97-11096-0.json",
+      "source_url": "https://api.openalex.org/works/doi:10.1016/s0140-6736%2897%2911096-0?select=id%2Cdoi%2Cids%2Cdisplay_name%2Cpublication_year%2Cpublication_date%2Ctype%2Ccited_by_count%2Ccounts_by_year%2Cfwci%2Ccitation_normalized_percentile%2Cis_retracted%2Cprimary_location%2Cbest_oa_location%2Cauthorships",
+      "sha256": "fed09faf03eb678bf5800997f50d5c12422f1d8978ae979e4e0893081e3d0632"
+    },
+    {
+      "file": "openalex-search-predatory-journals.json",
+      "source_url": "https://api.openalex.org/works?search=predatory+journals&page=1&per_page=10&select=id%2Cdoi%2Cids%2Cdisplay_name%2Cpublication_year%2Cpublication_date%2Ctype%2Ccited_by_count%2Ccounts_by_year%2Cfwci%2Ccitation_normalized_percentile%2Cis_retracted%2Cprimary_location%2Cbest_oa_location%2Cauthorships",
+      "sha256": "5462eec27bb8bc619b073cc13388ff4c6b282e4b94645a664fe2f69b5035ef4e"
+    },
+    {
+      "file": "icite-40173335.json",
+      "source_url": "https://icite.od.nih.gov/api/pubs?pmids=40173335&fl=pmid%2Cyear%2Ccitation_count%2Crelative_citation_ratio%2Cnih_percentile%2Cprovisional%2Cis_research_article%2CcitedByPmidsByYear",
+      "sha256": "3d14acf4bddc189b36ceba3bfa95ac9f59277028040dc702d407006cdc419744"
+    },
+    {
+      "file": "crossref-10.1371-journal.pmed.1004542.json",
+      "source_url": "https://api.crossref.org/works/10.1371/journal.pmed.1004542",
+      "sha256": "a9bf2f5e1d5f359e7f066830094e36c8d0e3279202feb6f5894205a5b4373e99"
+    },
+    {
+      "file": "crossref-10.1016-s0140-6736-97-11096-0.json",
+      "source_url": "https://api.crossref.org/works/10.1016/s0140-6736(97)11096-0",
+      "sha256": "5c643992a4edd711ac4c74c39c72ae217db7b07be54324560e8cac3753c013e9"
+    },
+    {
+      "file": "crossref-10.1159-000494475.json",
+      "source_url": "https://api.crossref.org/works/10.1159/000494475",
+      "sha256": "d05fcfdb2f44e57f2570fa41c6244cfa319f0ac81dd0f6b3c2fa90a85b3d4294",
+      "modified": "abstract removed; the rest of the record re-serialised as JSON with its content unchanged"
+    },
+    {
+      "file": "idconv-doi-10.1371-journal.pmed.1004542.json",
+      "source_url": "https://pmc.ncbi.nlm.nih.gov/tools/idconv/api/v1/articles/?ids=10.1371%2Fjournal.pmed.1004542&idtype=doi&format=json&tool=researchbridge",
+      "sha256": "9ee5899bf4fb51d03447c633c3abbd8db38366fc85000d0d3183bc5bb91989e5"
+    },
+    {
+      "file": "idconv-doi-10.1016-s0140-6736-97-11096-0.json",
+      "source_url": "https://pmc.ncbi.nlm.nih.gov/tools/idconv/api/v1/articles/?ids=10.1016%2Fs0140-6736%2897%2911096-0&idtype=doi&format=json&tool=researchbridge",
+      "sha256": "bfc7003117299bdb289676f5421ba328ea0d8fc04fdaae0c04a4c0662264f135"
+    }
+  ]
+}

@@ -74,9 +74,13 @@ Docker works with Docker Desktop or OrbStack through the normal `docker compose`
   committed fixtures. LLM code is tested with `rbcore.llm.FakeLLMClient`.
 - Synthetic test data is **named synthetic** (in its file name, docstring or variable name) and is
   never presented, stored or seeded as real.
-- Real fixtures: only small files from CC BY or CC0 sources, committed byte-for-byte with a
-  README giving attribution and source URLs and a manifest of SHA-256 checksums (see
+- Real fixtures: only small files from CC BY, CC0 or public-domain sources, or openly licensed
+  metadata records (facts only, such as Crossref or NCBI ID-converter responses), with the terms
+  stated in a README beside them that also gives attribution and source URLs, and a manifest of
+  SHA-256 checksums (see
   [libs/rbcore/tests/fixtures/jats/README.md](../libs/rbcore/tests/fixtures/jats/README.md)).
+  Files are committed byte-for-byte; a file trimmed of content that belongs to someone else (such
+  as an abstract inside a metadata record) is marked as modified in the manifest.
 
 ## Data, APIs and safety
 

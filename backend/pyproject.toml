@@ -1,0 +1,58 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "researchbridge-backend"
+version = "0.1.0"
+description = "ResearchBridge Django backend: corpus schema, licence gate enforcement, PMC ingestion and the background worker."
+readme = "README.md"
+requires-python = ">=3.12"
+classifiers = ["Private :: Do Not Upload", "Programming Language :: Python :: 3.12", "Framework :: Django :: 5.2"]
+dependencies = [
+  "researchbridge-rbcore",
+  # Django 5.2 is the current LTS (security support until April 2028).
+  "django>=5.2.18,<5.3",
+  # The PostgreSQL driver Django and Procrastinate both use (LGPL-3.0, used unmodified).
+  "psycopg[binary,pool]>=3.3.6",
+  # Postgres-backed task queue for the worker (MIT).
+  "procrastinate[django]>=3.10.0",
+  # Safe parsing of S3 bucket listings (no entities, no DTDs, no network).
+  "defusedxml>=0.7.1",
+  # Production serving inside the Docker image.
+  "gunicorn>=26.2.0",
+  "whitenoise>=6.12.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+rb_backend = ["py.typed"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# Test helpers (tests/support.py) are imported as a top-level module.
+pythonpath = ["tests"]
+DJANGO_SETTINGS_MODULE = "rb_backend.test_settings"
+addopts = ["-ra", "--strict-markers", "--strict-config", "--import-mode=importlib"]
+filterwarnings = ["error"]
+markers = [
+  "network: test needs network access (never run by default)",
+]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+files = ["src", "tests"]
+warn_unreachable = true
+plugins = ["mypy_django_plugin.main"]
+mypy_path = "tests"
+
+[[tool.mypy.overrides]]
+# Generated migrations are not type-checked.
+module = ["rb_backend.*.migrations.*"]
+ignore_errors = true
+
+[tool.django-stubs]
+django_settings_module = "rb_backend.test_settings"

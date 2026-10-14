@@ -1,0 +1,66 @@
+{
+  "_comment": "Recorded responses from the PMC Cloud Service bucket and NCBI ESearch. See README.md. Checked by tests/test_fixtures.py.",
+  "retrieved": "2026-10-13",
+  "fixtures": [
+    {
+      "file": "PMC10718527-listing.xml",
+      "source_url": "https://pmc-oa-opendata.s3.amazonaws.com/?list-type=2&prefix=PMC10718527.&delimiter=/",
+      "sha256": "d39c7f04c2f462d83340a434ac86e87d336142b459e451a1bd653dddf812261b"
+    },
+    {
+      "file": "PMC10718527.1.json",
+      "source_url": "https://pmc-oa-opendata.s3.amazonaws.com/PMC10718527.1/PMC10718527.1.json",
+      "sha256": "38104516e12ff4aae69f9d5da419a4a13aee2b1c136fa83f8967f88730accb01"
+    },
+    {
+      "file": "PMC11964404-listing.xml",
+      "source_url": "https://pmc-oa-opendata.s3.amazonaws.com/?list-type=2&prefix=PMC11964404.&delimiter=/",
+      "sha256": "40b477faa20a951b249879390d6237b2b53956317db8228aa43927b01b0edbd3"
+    },
+    {
+      "file": "PMC11964404.1.json",
+      "source_url": "https://pmc-oa-opendata.s3.amazonaws.com/PMC11964404.1/PMC11964404.1.json",
+      "sha256": "9ad21f2d048811954ed408460cdd86a431b8be1c48499b3a752c053cbe9796be"
+    },
+    {
+      "file": "PMC11964404.1.xml",
+      "source_url": "https://pmc-oa-opendata.s3.amazonaws.com/PMC11964404.1/PMC11964404.1.xml",
+      "sha256": "ce8234c3251a1f736488c5e6139f8d29345cc84adee9861f88d0799fd81878e4"
+    },
+    {
+      "file": "PMC13641010-listing.xml",
+      "source_url": "https://pmc-oa-opendata.s3.amazonaws.com/?list-type=2&prefix=PMC13641010.&delimiter=/",
+      "sha256": "178d1f5f44326835c050645bfc47b75b0a96a045ec755207969ac8ed7eff95e4"
+    },
+    {
+      "file": "PMC13641010.1.json",
+      "source_url": "https://pmc-oa-opendata.s3.amazonaws.com/PMC13641010.1/PMC13641010.1.json",
+      "sha256": "5bd68b9b40432614ce8c4c72bc12a945ccc143e609d150739615471f992ce9d1"
+    },
+    {
+      "file": "PMC7781593-listing.xml",
+      "source_url": "https://pmc-oa-opendata.s3.amazonaws.com/?list-type=2&prefix=PMC7781593.&delimiter=/",
+      "sha256": "12e153d4aaf3850e1bd3a6c4e4915edc3460932fcb59d64110853751013e46be"
+    },
+    {
+      "file": "PMC7781593.1.json",
+      "source_url": "https://pmc-oa-opendata.s3.amazonaws.com/PMC7781593.1/PMC7781593.1.json",
+      "sha256": "a355d6fd358b08029c447563d8a0a78d47e8e3c6a16ca46e5b538748b7a416ed"
+    },
+    {
+      "file": "PMC7853715-listing.xml",
+      "source_url": "https://pmc-oa-opendata.s3.amazonaws.com/?list-type=2&prefix=PMC7853715.&delimiter=/",
+      "sha256": "b8cf6c642a1307a6930e8b3e035f90662bd61cfd1de9a6fd7602bb5f02c14bce"
+    },
+    {
+      "file": "PMC7853715.1.json",
+      "source_url": "https://pmc-oa-opendata.s3.amazonaws.com/PMC7853715.1/PMC7853715.1.json",
+      "sha256": "33957acfcc7f16dbdf1ebb35346a8f50632a005594216f23e9290c1c899a4942"
+    },
+    {
+      "file": "esearch-hypertension-2024-cc-by.json",
+      "source_url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pmc&term=%28hypertension+AND+2024%5Bpdat%5D%29+AND+%28open_access%5BFilter%5D+OR+author_manuscript%5BFilter%5D%29+AND+cc_by_license%5BFilter%5D&retmode=json&retmax=5&retstart=0&sort=pub_date&tool=researchbridge",
+      "sha256": "aa87ea14793b69a49a0744189aa4c90f0ac2130552fee8467807c47e1532fe1f"
+    }
+  ]
+}

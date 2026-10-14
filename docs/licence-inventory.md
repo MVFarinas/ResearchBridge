@@ -29,24 +29,40 @@ run as a container), `planned` (not used yet), `reference only` (read for ideas,
 | types-lxml | Apache-2.0 | — | 2026.2.16 | dependency (dev) | lxml type stubs for mypy. |
 | pgvector/pgvector Docker image | PostgreSQL Licence (PostgreSQL and pgvector); image build files MIT | — | `0.8.7-pg16` | service (local dev database) | `docker-compose.yml`. |
 | actions/checkout, actions/setup-python, actions/setup-node | MIT | — | v7.0.1 `3d3c42e`, v7.0.0 `5fda3b9`, v7.0.0 `8207627` (SHA-pinned) | service (CI) | `.github/workflows/ci.yml`. |
+| Django | BSD-3-Clause | — | 5.2.18 (5.2 LTS) | dependency (backend) | Web framework, ORM, migrations, admin (Phase 2). |
+| psycopg (+ psycopg-binary, psycopg-pool) | **LGPL-3.0-only** | psycopg-binary wheels bundle libpq (PostgreSQL Licence) and OpenSSL (Apache-2.0) | 3.3.6 / 3.3.6 / 3.3.3 | dependency (backend), used unmodified | The PostgreSQL driver Django and Procrastinate both require; no permissive driver is supported by Django's ORM. Recorded deviation from "permissive direct dependencies only" (docs/phase-notes/phase-2.md): LGPL as an unmodified, dynamically imported library imposes no obligation on our code; never copy or modify its source. |
+| Procrastinate | MIT | — | 3.10.0 | dependency (backend) | Postgres-backed task queue for the worker (`procrastinate.contrib.django`). Choice recorded in docs/phase-notes/phase-2.md. Pulls in croniter (MIT), attrs (MIT), python-dateutil (Apache-2.0 or BSD-3), asgiref (BSD-3-Clause). |
+| defusedxml | PSF-2.0 (Python Software Foundation License; permissive) | — | 0.7.1 | dependency (backend) | Safe parsing of PMC bucket listings (no entities, DTDs or network). |
+| gunicorn | MIT | — | 26.2.0 | dependency (backend image) | WSGI server in `backend/Dockerfile`. |
+| WhiteNoise | MIT | — | 6.12.0 | dependency (backend image) | Serves the admin's static files. |
+| pytest-django | BSD-3-Clause | — | 4.14.0 | dependency (dev) | Backend tests against Postgres. |
+| django-stubs, django-stubs-ext | MIT | — | 6.1.2 | dependency (dev) | mypy plugin and stubs for Django. Pulls in types-pyyaml (Apache-2.0). |
+| types-defusedxml | Apache-2.0 | — | 0.7.0.20260504 | dependency (dev) | defusedxml stubs for mypy. |
+| python Docker image | PSF-2.0 (Python), Debian packages under their own free licences | — | `3.12-slim-bookworm` (tag) | service (backend image base) | `backend/Dockerfile`. |
 
 Transitive Python dependencies are pinned in [requirements/dev.txt](../requirements/dev.txt).
 Transitive dependencies under weak, file-level copyleft (MPL-2.0, e.g. certifi 2026.7.22 via
 httpx and pathspec 1.1.1 via mypy) are acceptable when installed and used unmodified; never copy
 or modify their source. The permissive-only rule above still applies to every direct dependency
-and to all copied code.
+and to all copied code, with one recorded exception awaiting the owner's confirmation: psycopg
+(LGPL-3.0, row above), the PostgreSQL driver Django and Procrastinate require, used unmodified as
+an imported library (docs/phase-notes/phase-2.md, deviation 2).
 
 ### Evaluated and not used
 
 | Project | Code licence | Version reviewed | Decision |
 |---|---|---|---|
+| Celery | BSD-3-Clause | 5.6.3 (PyPI) | **Not used** for the worker (Phase 2): it needs a separate broker (Redis or RabbitMQ), a second service to host and pay for, which §1.6's "fewest moving parts" argues against. |
+| django-q2 | MIT | 1.11.1 (PyPI) | **Not used** (Phase 2): can use the Django ORM as its broker, but by polling, without Postgres-native locking or LISTEN/NOTIFY. |
+| django-tasks | BSD-3-Clause | 0.12.0 (PyPI) | **Not used** (Phase 2): the reference backend for Django's new tasks API; its database backend is pre-1.0. Worth revisiting when the backend moves to Django 6.x. |
+| dj-database-url | BSD-3-Clause | 3.1.2 (PyPI) | **Not used** (Phase 2): parsing one PostgreSQL URL is a few tested lines (`rb_backend.envconfig`). |
 | pubmed_parser | MIT | 0.5.1 (PyPI sdist) | **Not used** for `rbcore.jats` (Phase 0). It parses with lxml's default parser (no hardening against entities or network), uses bare `except` and `print`, flattens only one level of inline markup, returns flat paragraphs with no stable IDs or nested sections, and does not record which field a licence came from. Its approach to matching COI footnotes by attribute value informed ours; no code was copied. |
 
 ## 2. Planned: permissive, attribution only
 
 | Project | Kind | Code licence | Weights / data licence | Version pinned | How used | Notes |
 |---|---|---|---|---|---|---|
-| allofplos | PLOS bulk download | MIT | PLOS content CC BY | — | planned (Phase 2) | |
+| allofplos | PLOS bulk download | MIT | PLOS content CC BY | — | **not used** (Phase 2) | PLOS deposits its articles in PMC, so they arrive through the PMC bucket under the same `license_code` gate; the 7 GB zip would add a second pipeline. PLOS coverage in the bucket was not measured (docs/phase-notes/phase-2.md). |
 | LaTeXML | arXiv LaTeX to HTML | Public domain | — | — | planned (after MVP) | |
 | ar5iv | arXiv HTML | MIT | per-paper licence | — | planned (after MVP) | |
 | GROBID | PDF fallback | Apache-2.0 | — | — | planned | |
@@ -90,12 +106,12 @@ and to all copied code.
 
 | Source | Terms | How used | Obligations |
 |---|---|---|---|
-| PMC Cloud Service (`s3://pmc-oa-opendata`) | Per-article licence (`license_code`); bucket terms | planned (Phase 2); fixtures (Phase 0) | Acknowledge NLM; no PMC logo or implied endorsement; redistribute only licensed data; keep it current or say it is not; honour `is_retracted`. `TDM` = never ingest. |
+| PMC Cloud Service (`s3://pmc-oa-opendata`) | Per-article licence (`license_code`); bucket terms | **in use** (Phase 2 ingestion, HTTPS, no credentials); fixtures (Phases 0, 2) | Acknowledge NLM; no PMC logo or implied endorsement; redistribute only licensed data; keep it current or say it is not; honour `is_retracted`. `TDM` = never ingest. |
 | Europe PMC REST | Per-article licence; free API | fixtures (Phase 0); planned | Its `fullTextXML` copy can lack the machine-readable licence that PMC's copy has (see fixtures); prefer the PMC copy. |
-| PLOS (journals.plos.org, allofplos) | CC BY 4.0 (some CC0) | fixture (Phase 0); planned | Attribution. |
+| PLOS (journals.plos.org, allofplos) | CC BY 4.0 (some CC0) | fixture (Phase 0); ingested via PMC (Phase 2) | Attribution. |
 | arXiv OAI-PMH and API | Metadata CC0; per-paper licence; API ToU | planned (after MVP) | At most 1 request per 3 s. Non-exclusive licence = no display. |
 | bioRxiv / medRxiv API | Per-preprint licence | planned | `cc_no` = never ingest. |
-| NCBI E-utilities | NLM terms | planned | At most 3 requests/s without a key (10 with `NCBI_API_KEY`). |
+| NCBI E-utilities | NLM terms | **in use** (Phase 2: ESearch discovery for `ingest_pmc`) | At most 3 requests/s without a key (10 with `NCBI_API_KEY`). `tool=researchbridge`; no e-mail address is sent. |
 | OpenAlex | CC0 | planned (Phases 4-5) | Usage-based pricing since Feb 2026; cache; show "as of" dates. |
 | OpenCitations | CC0 | planned | |
 | NIH iCite | Public domain | planned | |

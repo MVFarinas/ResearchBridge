@@ -39,6 +39,9 @@ convention = "google"
 "**/tests/**/*.py" = ["S101"]
 # Django migrations are generated code.
 "**/migrations/*.py" = ["D", "E501", "ANN", "RUF012"]
+# Django model Meta options (ordering, constraints) are mutable class attributes by design.
+"backend/**/models.py" = ["RUF012"]
+"backend/**/models/*.py" = ["RUF012"]
 
 [format]
 quote-style = "double"
